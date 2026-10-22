@@ -40,7 +40,9 @@ public partial class App : Application
         services.AddSingleton(dane);
         services.AddSingleton(Magazyn);
         services.AddSingleton<KalkulatorSerwis>();
-        services.AddSingleton<SerwisZdjec>();
+        var serwisZdjec = new SerwisZdjec(Magazyn);
+        serwisZdjec.UstawDane(dane); // NFR-11: limity rozmiaru zdjęć z ustawień
+        services.AddSingleton(serwisZdjec);
         services.AddSingleton<StanAplikacji>();
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<PulpitViewModel>();

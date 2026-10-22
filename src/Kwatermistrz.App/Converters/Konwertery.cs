@@ -241,3 +241,27 @@ public class KonwerterNazwaWzoru : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => Binding.DoNothing;
 }
+
+/// <summary>String równe parametrowi → bool (dwukierunkowe; do radio „punkt startu” w kreatorze, FR-1401).</summary>
+public class KonwerterRowneSlownik : IValueConverter
+{
+    public static readonly KonwerterRowneSlownik Instance = new();
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => Equals(value?.ToString(), parameter?.ToString());
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool wiec && wiec ? parameter : Binding.DoNothing;
+}
+
+/// <summary>String równe parametrowi → Visibility (do przełączania sekcji, FR-1401).</summary>
+public class KonwerterRowneDoWidocznosci : IValueConverter
+{
+    public static readonly KonwerterRowneDoWidocznosci Instance = new();
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => Equals(value?.ToString(), parameter?.ToString()) ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}

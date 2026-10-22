@@ -2,7 +2,23 @@
 
 Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie semantyczne.
 
-## [Nieopublikowane]
+## [1.0.0] — pierwsza wersja do codziennego użytku
+
+Pełna specyfikacja: `docs/wymagania.md`. Wszystkie wymagania [M] i [S] z wyjątkiem odłożonych (patrz „Odłożone” na końcu sekcji Etap 6); wymagania [C] poza 1.0.
+
+### Etap 6 — Eksport/import i szablony (FR-1106, FR-1403, FR-1405, FR-1406), monit dnia zerowego (FR-807)
+
+#### Dodane
+- **Eksport całości do Excela** (FR-1106): jeden plik .xlsx o układzie zbliżonym do arkuszy źródłowych — arkusze Broń (z wierszem sumy posiadanych, BR-04/06), Wyposażenie, Zestawy (sloty, warianty, koszty), Wyprawy, Zadania, Słowniki. Przycisk „Eksport xlsx” w pasku głównym. Test: budowa arkuszy + zapis/odczyt przez NPOI.
+- **Eksport/import rekonstrukcji** (FR-1405): plik `.kwreko` (zip: dane.json + zdjecia/) — przekazanie koledze lub przeniesienie między instalacjami. Eksport wybiera rekonstrukcję i pakuje jej przedmioty, repliki, zestawy, wyprawy, zadania (wraz z elementami wspólnymi) oraz zdjęcia. Import scala konfigurację przez podgląd pakietu (FR-1404) i wyodrębnia zdjęcia; przed importem kopia zapasowa (FR-1107).
+- **Import ogólny z mapowaniem kolumn** (FR-1403): dowolny plik xlsx lub csv — użytkownik wskazuje, która kolumna to które pole (nazwa, firma, kategoria, strona, wzór, miejsce, pochodzenie, liczba użyć, komentarz), opcjonalnie kategorię docelową. Sugestia mapowania po nagłówkach; mapowania zapisywalne i wielokrotnego użytku (plik mapowania-kolumn.json). Podgląd wierszy z ostrzeżeniami (nieznane wartości słowników), checkbox „Pomiń” per wiersz, znacznik „z importu, do przeglądu” (FR-1110), liczniki użyć oznaczone „do weryfikacji” (FR-806).
+- **Szablony konfiguracji** (FR-1406): „Pusta (minimalna)” i „Przykład — współczesna Rosja” (kategorie i sloty z rozdziału 5, wzory kamuflaży z próbkami) — bez danych o sprzęcie (NFR-15). Przyciski na ekranie Rekonstrukcje; zastosowanie przemapowuje kategorie przedmiotów po nazwie. Kreator pierwszego uruchomienia (FR-1401) oferuje teraz trzy punkty startu: pusta aplikacja, szablon konfiguracji, import z arkusza (FR-1101).
+- **Monit dnia zerowego** (FR-807): wyprawa z datą ≤ dzień zerowy wywołuje pytanie o odjęcie od liczników historycznych (replika, mundur, rok) — domyślna odpowiedź „tak”, zapobiega podwójnemu liczeniu. Kalkulator: `WplywNaLicznikiHistoryczne`.
+- **NFR-11**: zdjęcia przy zapisie zmniejszane do dłuższego boku 2048 px (ustawienie w Ustawieniach, 0 = wyłączone), oryginał opcjonalnie zachowywany w podkatalogu `oryginaly/`.
+- **FR-1205**: „Ostatnia zmiana: data i godzina” w stopce kart przedmiotu i repliki.
+
+#### Odłożone (poza 1.0.0)
+- Wydruk raportów i listy pakowania (FR-908 wydruk [S]), ostatnio otwarte pozycje w menu (FR-1206 [S]), zapamiętywanie filtrów między ekranami (NFR-12 reszta), automatyczna kopia przy zamknięciu (FR-1108), przypomnienie o kopii (FR-1109 [C]), wymagania [C] (FR-810, FR-811, FR-1007).
 
 ### Etap 5j — Wydajność, dostępność, instalacja (NFR-04, NFR-08, NFR-10)
 

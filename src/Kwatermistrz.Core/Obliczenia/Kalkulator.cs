@@ -1,3 +1,4 @@
+using System.Globalization;
 using Kwatermistrz.Core.Model;
 
 namespace Kwatermistrz.Core.Obliczenia;
@@ -403,5 +404,33 @@ public class Kalkulator
         if (kategoriaMundury != null)
             wgMundur += _dane.Przedmioty.Where(p => p.KategoriaId == kategoriaMundury.Id).Sum(p => p.LicznikHistoryczny);
         return (wgReplik, wgLat, wgMundur, bezRepliki, bezMunduru);
+    }
+
+    /// <summary>
+    /// FR-807: wpływ wyprawy sprzed/dnia zerowego na liczniki historyczne — kandydaci do odjęcia
+    /// (replika, mundur, rok). Zwraca pustą listę, gdy wyprawa jest po dniu zerowym lub nie ma wpływu.
+    /// </summary>
+    public List<(string Rodzaj, string Id, string Opis)> WplywNaLicznikiHistoryczne(Wyprawa wyprawa)
+    {
+        var wynik = new List<(string, string, string)>();
+        var dzienZerowy = _dane.Ustawienia.DzienZerowy;
+        if (dzienZerowy == null || wyprawa.Data > dzienZerowy.Value)
+            return wynik;
+        if (wyprawa.ReplikaGlownaId != null)
+        {
+            var replika = _dane.Repliki.FirstOrDefault(r => r.Id == wyprawa.ReplikaGlownaId);
+            if (replika != null)
+                wynik.Add(("Replika", replika.Id, $"{replika.ModelProducenta}: −1 wyprawa (licznik historyczny)"));
+        }
+        var (mundurId, _) = MundurWyprawy(wyprawa);
+        if (mundurId != null)
+        {
+            var mundur = _dane.Przedmioty.FirstOrDefault(p => p.Id == mundurId);
+            if (mundur != null)
+                wynik.Add(("Mundur", mundur.Id, $"{mundur.Nazwa}: −1 użycie (licznik historyczny)"));
+        }
+        wynik.Add(("Rok", wyprawa.Data.Year.ToString(CultureInfo.InvariantCulture),
+            $"Rok {wyprawa.Data.Year}: −1 wyprawa (licznik historyczny wg lat)"));
+        return wynik;
     }
 }

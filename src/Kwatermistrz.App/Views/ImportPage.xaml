@@ -72,5 +72,100 @@
                        Command="{Binding ZastosujCommand}" />
             <TextBlock Text="{Binding Komunikat}" VerticalAlignment="Center" Margin="12,0,0,0" />
         </StackPanel>
+
+        <!-- Import ogólny z mapowaniem kolumn (FR-1403) -->
+        <Expander Grid.Row="2" Margin="0,16,0,0" Header="Import ogólny — dowolny plik xlsx/csv z mapowaniem kolumn (FR-1403)">
+            <StackPanel Margin="0,8,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <ui:Button Content="Wybierz plik xlsx/csv…" Command="{Binding WybierzPlikOgolnyCommand}" />
+                    <TextBlock Text="{Binding SciezkaOgolna}" VerticalAlignment="Center" Margin="12,0,0,0"
+                               TextTrimming="CharacterEllipsis" MaxWidth="400" />
+                </StackPanel>
+
+                <!-- Zapisane mapowania (wielokrotnego użytku) -->
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Zapisane mapowania:" VerticalAlignment="Center" />
+                    <ComboBox MinWidth="200" Margin="8,0,0,0"
+                              ItemsSource="{Binding ZapisaneMapowania}"
+                              SelectedItem="{Binding WybraneMapowanie}"
+                              DisplayMemberPath="Nazwa" />
+                    <ui:Button Content="Wczytaj" Margin="8,0,0,0" Command="{Binding WczytajMapowanieCommand}"
+                               CommandParameter="{Binding WybraneMapowanie}" />
+                    <ui:Button Content="Usuń" Margin="8,0,0,0" Appearance="Danger" Command="{Binding UsunMapowanieCommand}"
+                               CommandParameter="{Binding WybraneMapowanie}" />
+                </StackPanel>
+
+                <!-- Mapowanie kolumn -->
+                <TextBlock Text="Mapowanie kolumn (kolumna źródła → pole):" Style="{StaticResource NaglowekSekcji}" Margin="0,16,0,4" />
+                <ItemsControl ItemsSource="{Binding MapowanieKolumny}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="90" />
+                                    <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding Indeks, StringFormat=Kolumna {0}}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="{Binding Naglowek, TargetNullValue=(bez nagłówka)}" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" />
+                                <ComboBox Grid.Column="2" Margin="8,0,0,0"
+                                          ItemsSource="{Binding DataContext.PolaMapowania, RelativeSource={RelativeSource AncestorType=Page}}"
+                                          SelectedValue="{Binding Pole}" SelectedValuePath="Pole" DisplayMemberPath="Nazwa" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Kategoria docelowa (opcjonalnie — nadpisuje kolumnę Kategoria):" VerticalAlignment="Center" />
+                    <ComboBox MinWidth="200" Margin="8,0,0,0"
+                              ItemsSource="{Binding Kategorie}"
+                              SelectedItem="{Binding KategoriaDocelowa}"
+                              DisplayMemberPath="Nazwa" />
+                    <TextBlock Text="Nazwa mapowania:" VerticalAlignment="Center" Margin="16,0,0,0" />
+                    <ui:TextBox MinWidth="160" Margin="8,0,0,0" Text="{Binding NazwaMapowania, UpdateSourceTrigger=PropertyChanged}" />
+                    <ui:Button Content="Zapisz mapowanie" Margin="8,0,0,0" Command="{Binding ZapiszMapowanieCommand}" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                    <ui:Button Content="Podgląd" Appearance="Primary" Command="{Binding PodgladOgolnyKomendaCommand}" />
+                    <ui:Button Content="Zastosuj import ogólny" Margin="8,0,0,0" Command="{Binding ZastosujOgolnyCommand}" />
+                    <TextBlock Text="{Binding LiczbaPodgladOgolny, StringFormat=Do dodania: {0}}" VerticalAlignment="Center" Margin="12,0,0,0" />
+                </StackPanel>
+
+                <!-- Podgląd wierszy (FR-1102) -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="300" Margin="0,8,0,0">
+                    <ItemsControl ItemsSource="{Binding PodgladOgolny}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderThickness="0,0,0,1" Padding="4" Margin="0,1"
+                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="40" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="120" />
+                                            <ColumnDefinition Width="160" />
+                                            <ColumnDefinition Width="60" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding NumerWiersza}" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding Nazwa}" />
+                                            <TextBlock Text="{Binding Ostrzezenie}" TextWrapping="Wrap" FontSize="11"
+                                                       Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                                       Visibility="{Binding Ostrzezenie, Converter={x:Static conv:KonwerterNieRowneNull.Instance}}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="2" Text="{Binding Firma}" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="3" Text="{Binding Kategoria}" VerticalAlignment="Center" />
+                                        <CheckBox Grid.Column="4" Content="Pomiń" IsChecked="{Binding Pomin}" VerticalAlignment="Center" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </StackPanel>
+        </Expander>
     </Grid>
 </Page>

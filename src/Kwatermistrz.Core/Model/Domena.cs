@@ -306,4 +306,10 @@ public class Ustawienia
     public string? OstatniEkran { get; set; }
     public double SzerokoscOkna { get; set; } = 1280;
     public double WysokoscOkna { get; set; } = 800;
+    /// <summary>NFR-12: ostatnio użyte filtry wg ekranu (klucz ekranu → tekst filtra wyszukiwania).</summary>
+    public Dictionary<string, string> OstatnieFiltry { get; set; } = new();
+    /// <summary>NFR-11 [S]: zmniejszaj zdjęcia przy zapisie do rozsądnego rozmiaru (dłuższy bok, px); 0 = bez zmniejszania.</summary>
+    public int MaksymalnyBokZdjecia { get; set; } = 2048;
+    /// <summary>NFR-11 [S]: zachowaj oryginał obok zmniejszonego (w podkatalogu oryginaly/).</summary>
+    public bool ZachowajOryginalZdjecia { get; set; }
 }

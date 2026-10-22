@@ -337,6 +337,9 @@
             <ui:Button Content="Usuń replikę" Appearance="Danger" Margin="8,0,0,0"
                        Command="{Binding DataContext.DataContext.UsunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                        CommandParameter="{Binding}" />
+            <!-- FR-1205: ostatnia zmiana na karcie -->
+            <TextBlock VerticalAlignment="Center" Margin="16,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       Text="{Binding Replika.OstatniaZmiana, StringFormat=Ostatnia zmiana: {0:dd.MM.yyyy HH:mm}}" />
         </StackPanel>
     </Grid>
 </UserControl>

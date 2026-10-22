@@ -102,6 +102,19 @@ public class MagazynJson
         return dane;
     }
 
+    /// <summary>Wczytuje dane ze strumienia (eksport rekonstrukcji, testy). Bez migracji — eksport zachowuje schemat źródła.</summary>
+    public static DaneAplikacji WczytajZeStrumienia(Stream strumien)
+    {
+        var dane = JsonSerializer.Deserialize<DaneAplikacji>(strumien, Opcje) ?? throw new InvalidDataException("Pusty dokument");
+        return dane;
+    }
+
+    /// <summary>Zapisuje dane do strumienia w formacie magazynu (eksport rekonstrukcji, testy).</summary>
+    public static void ZapiszDoStrumienia(DaneAplikacji dane, Stream strumien)
+    {
+        JsonSerializer.Serialize(strumien, dane, Opcje);
+    }
+
     /// <summary>Zapisuje dane atomowo: najpierw plik tymczasowy, potem zamiana. Po powrocie tej metody dane są na dysku (NFR-05).</summary>
     public void Zapisz(DaneAplikacji dane)
     {

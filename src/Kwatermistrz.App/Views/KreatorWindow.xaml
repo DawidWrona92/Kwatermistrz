@@ -2,8 +2,9 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
         Title="Kwatermistrz — pierwsze uruchomienie"
-        Width="520" Height="420"
+        Width="560" Height="560"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="{DynamicResource ApplicationBackgroundBrush}">
@@ -15,22 +16,47 @@
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0">
             <TextBlock Text="Witaj w Kwatermistrzu" FontSize="22" FontWeight="SemiBold" />
-            <TextBlock Text="Kreator pierwszego uruchomienia (FR-1401). Nazwij swoją pierwszą rekonstrukcję — resztę skonfigurujesz później."
-                       TextWrapping="Wrap" Margin="0,8,0,0" Opacity="0.8" />
+            <TextBlock Text="Kreator pierwszego uruchomienia (FR-1401). Wybierz punkt startu — resztę skonfigurujesz później."
+                       TextWrapping="Wrap" Margin="0,8,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
         </StackPanel>
-        <StackPanel Grid.Row="1" Margin="0,20,0,0">
-            <TextBlock Text="Nazwa rekonstrukcji (np. „101. Dywizja Powietrznodesantowa”)" />
-            <ui:TextBox Margin="0,4,0,0" Text="{Binding NazwaRekonstrukcji, UpdateSourceTrigger=PropertyChanged}" />
-            <TextBlock Text="Strona (opcjonalnie)" Margin="0,16,0,0" />
-            <ComboBox Margin="0,4,0,0"
-                      ItemsSource="{Binding Strony}"
-                      SelectedValue="{Binding WybranaStronaId}"
-                      SelectedValuePath="Id"
-                      DisplayMemberPath="Nazwa" />
-            <TextBlock Text="Punkt startu: pusta aplikacja ze słownikami startowymi. Import danych i szablony pojawią się w kolejnych krokach."
-                       TextWrapping="Wrap" Margin="0,16,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-        </StackPanel>
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="0,16,0,0">
+                <TextBlock Text="Punkt startu" FontWeight="SemiBold" />
+                <ItemsControl ItemsSource="{Binding Starty}" Margin="0,4,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <RadioButton GroupName="Start" Margin="0,4,0,0"
+                                         IsChecked="{Binding DataContext.WybranyStart, RelativeSource={RelativeSource AncestorType=Window}, Converter={x:Static conv:KonwerterRowneSlownik.Instance}, ConverterParameter={Binding Klucz}}"
+                                         Content="{Binding Nazwa}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Import z arkusza (FR-1101) — widoczny tylko przy wyborze „import” -->
+                <StackPanel Margin="24,8,0,0"
+                            Visibility="{Binding WybranyStart, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=import}">
+                    <TextBlock Text="Plik źródłowy (układ Dane_zrodlowe_Kwatermistrz.xlsx)" />
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <ui:TextBox MinWidth="300" IsReadOnly="True" Text="{Binding SciezkaImportu, Mode=OneWay}" />
+                        <ui:Button Content="Wybierz…" Margin="8,0,0,0" Command="{Binding WybierzPlikImportuCommand}" />
+                    </StackPanel>
+                    <TextBlock Text="Import działa z podglądem — po kreatorze zobaczysz, co powstanie, i zatwierdzisz przed zapisem (FR-1102)."
+                               TextWrapping="Wrap" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+
+                <TextBlock Text="Nazwa rekonstrukcji (przy starcie pustym/przykładowym; przy imporcie powstają rekonstrukcje ze stron)" Margin="0,16,0,0" TextWrapping="Wrap" />
+                <ui:TextBox Margin="0,4,0,0" Text="{Binding NazwaRekonstrukcji, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="Strona (opcjonalnie)" Margin="0,16,0,0" />
+                <ComboBox Margin="0,4,0,0"
+                          ItemsSource="{Binding Strony}"
+                          SelectedValue="{Binding WybranaStronaId}"
+                          SelectedValuePath="Id"
+                          DisplayMemberPath="Nazwa" />
+                <TextBlock Text="{Binding Komunikat}" TextWrapping="Wrap" Margin="0,12,0,0"
+                           Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
+            </StackPanel>
+        </ScrollViewer>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <ui:Button Content="Rozpocznij" Appearance="Primary" Command="{Binding PotwierdzCommand}" />
         </StackPanel>
     </Grid>

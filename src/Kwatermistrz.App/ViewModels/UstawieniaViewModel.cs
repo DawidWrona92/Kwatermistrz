@@ -51,6 +51,32 @@ public partial class UstawieniaViewModel : ObservableObject
         }
     }
 
+    /// <summary>NFR-11: maksymalny dłuższy bok zdjęcia przy zapisie (0 = bez zmniejszania).</summary>
+    public int MaksymalnyBokZdjecia
+    {
+        get => _dane.Ustawienia.MaksymalnyBokZdjecia;
+        set
+        {
+            if (value < 0)
+                return;
+            _dane.Ustawienia.MaksymalnyBokZdjecia = value;
+            OnPropertyChanged();
+            Zapisz();
+        }
+    }
+
+    /// <summary>NFR-11: zachowanie oryginału obok zmniejszonego zdjęcia.</summary>
+    public bool ZachowajOryginalZdjecia
+    {
+        get => _dane.Ustawienia.ZachowajOryginalZdjecia;
+        set
+        {
+            _dane.Ustawienia.ZachowajOryginalZdjecia = value;
+            OnPropertyChanged();
+            Zapisz();
+        }
+    }
+
     /// <summary>Ścieżka katalogu danych.</summary>
     public string KatalogDanych => _magazyn.KatalogDanych;
 

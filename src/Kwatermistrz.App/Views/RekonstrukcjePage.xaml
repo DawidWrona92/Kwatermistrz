@@ -26,6 +26,18 @@
                            Command="{Binding DodajNaWzorCommand}"
                            CommandParameter="{Binding Wybrana}" />
             </StackPanel>
+
+            <!-- Dołączone szablony konfiguracji (FR-1406) — kategorie, wzory, sloty, szablony kart; bez danych o sprzęcie -->
+            <TextBlock Text="Szablony konfiguracji (FR-1406)" Style="{StaticResource NaglowekSekcji}" Margin="0,20,0,4" />
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,8" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                Zastosowanie szablonu zmienia kategorie, wzory i szablony kart — przedmioty o pasujących nazwach kategorii zachowują przypisanie.
+            </TextBlock>
+            <StackPanel Orientation="Horizontal">
+                <ui:Button Content="Pusta (minimalna)" Command="{Binding ZastosujSzablonCommand}" CommandParameter="pusta"
+                           ToolTip="Startowe słowniki, szablony kart AEG/HPA, rekonstrukcja bez slotów" />
+                <ui:Button Content="Przykład — współczesna Rosja" Margin="8,0,0,0" Command="{Binding ZastosujSzablonCommand}" CommandParameter="przyklad"
+                           ToolTip="Kategorie i sloty z rozdziału 5, wzory kamuflaży; bez danych o sprzęcie" />
+            </StackPanel>
         </StackPanel>
         <StackPanel Grid.Column="1" Margin="16,0,0,0"
                     Visibility="{Binding Wybrana, Converter={x:Static conv:KonwerterNieRowneNull.Instance}}">

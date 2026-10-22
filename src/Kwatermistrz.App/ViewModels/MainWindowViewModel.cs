@@ -1,7 +1,10 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kwatermistrz.App.Services;
+using Kwatermistrz.Core.Konfiguracja;
 using Kwatermistrz.Core.Model;
+using Kwatermistrz.Core.Storage;
+using Microsoft.Win32;
 
 namespace Kwatermistrz.App.ViewModels;
 
@@ -27,9 +30,11 @@ public partial class MainWindowViewModel : ObservableObject
         WyprawyViewModel wyprawy,
         RaportyViewModel raporty,
         DoUzupelnieniaViewModel doUzupelnienia,
-        SzukanieViewModel szukanie)
+        SzukanieViewModel szukanie,
+        MagazynJson magazyn)
     {
         _dane = dane;
+        _magazyn = magazyn;
         _stan = stan;
         Pulpit = pulpit;
         Slowniki = slowniki;
@@ -48,6 +53,105 @@ public partial class MainWindowViewModel : ObservableObject
         _stan.AktywnaRekonstrukcjaId = dane.Ustawienia.OstatniaRekonstrukcjaId;
         if (!string.IsNullOrEmpty(dane.Ustawienia.OstatniEkran))
             _stan.AktualnyEkran = dane.Ustawienia.OstatniEkran;
+    }
+
+    private readonly MagazynJson _magazyn;
+
+    /// <summary>Komunikat paska stanu (wyniki eksportów/importów rekonstrukcji, FR-1106/FR-1405).</summary>
+    [ObservableProperty]
+    private string _komunikat = "";
+
+    /// <summary>Eksport całości do jednego pliku Excel (FR-1106): arkusze Broń, Wyposażenie, Zestawy, Wyprawy, Zadania, Słowniki.</summary>
+    [RelayCommand]
+    private void EksportujXlsx()
+    {
+        try
+        {
+            var dialog = new SaveFileDialog
+            {
+                Title = "Eksport całości do Excela",
+                Filter = "Arkusz Excel (*.xlsx)|*.xlsx",
+                FileName = $"Kwatermistrz-eksport-{DateTime.Now:yyyyMMdd}.xlsx",
+                DefaultExt = ".xlsx",
+            };
+            if (dialog.ShowDialog() != true)
+                return;
+            var arkusze = Kwatermistrz.Core.Eksport.EksporterXlsx.BudujArkusze(_dane);
+            Kwatermistrz.Core.Eksport.EksporterXlsx.Zapisz(arkusze, dialog.FileName);
+            Komunikat = $"Wyeksportowano do Excela: {dialog.FileName}";
+        }
+        catch (Exception ex)
+        {
+            Komunikat = "Błąd eksportu: " + ex.Message;
+        }
+    }
+
+    /// <summary>Eksport wybranej rekonstrukcji (dane + zdjęcia) do pliku .kwreko (FR-1405).</summary>
+    [RelayCommand]
+    private void EksportujRekonstrukcje(Rekonstrukcja? rekonstrukcja)
+    {
+        if (rekonstrukcja == null)
+            return;
+        try
+        {
+            var dialog = new SaveFileDialog
+            {
+                Title = $"Eksport rekonstrukcji „{rekonstrukcja.Nazwa}”",
+                Filter = "Eksport rekonstrukcji Kwatermistrz (*.kwreko)|*.kwreko",
+                FileName = $"Kwatermistrz-{rekonstrukcja.Nazwa}-{DateTime.Now:yyyyMMdd}.kwreko",
+                DefaultExt = ".kwreko",
+            };
+            if (dialog.ShowDialog() != true)
+                return;
+            var (przedmioty, repliki, zestawy, wyprawy, zadania, zdjecia) =
+                EksportRekonstrukcji.Eksportuj(_dane, rekonstrukcja.Id, _magazyn.KatalogDanych, dialog.FileName);
+            Komunikat = $"Wyeksportowano rekonstrukcję „{rekonstrukcja.Nazwa}”: {przedmioty} przedmiotów, {repliki} replik, " +
+                $"{zestawy} zestawów, {wyprawy} wypraw, {zadania} zadań, {zdjecia} zdjęć.";
+        }
+        catch (Exception ex)
+        {
+            Komunikat = "Błąd eksportu: " + ex.Message;
+        }
+    }
+
+    /// <summary>Import rekonstrukcji z pliku .kwreko: wyodrębnia dane i zdjęcia, scala konfigurację przez pakiet (FR-1405, FR-1404).</summary>
+    [RelayCommand]
+    private void ImportujRekonstrukcje()
+    {
+        try
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Wybierz eksport rekonstrukcji (.kwreko)",
+                Filter = "Eksport rekonstrukcji Kwatermistrz (*.kwreko)|*.kwreko|Wszystkie pliki (*.*)|*.*",
+                CheckFileExists = true,
+            };
+            if (dialog.ShowDialog() != true)
+                return;
+            var dane = EksportRekonstrukcji.Wczytaj(dialog.FileName);
+            _magazyn.Zapisz(_dane);
+            _magazyn.UtworzKopieZapasowa(); // FR-1107: przed importem kopia automatyczna
+            // konfiguracja (słowniki, kategorie, wzory, szablony) przez pakiet z podglądem scalania (FR-1404)
+            var pakiet = PakietKonfiguracji.Eksportuj(dane, "Z eksportu rekonstrukcji");
+            var podglad = ImporterPakietuKonfiguracji.PrzygotujPodglad(_dane, pakiet);
+            ImporterPakietuKonfiguracji.Zastosuj(_dane, podglad);
+            // dane rekonstrukcji: rekonstrukcja + przedmioty/repliki/zestawy/wyprawy/zadania
+            _dane.Rekonstrukcje.AddRange(dane.Rekonstrukcje);
+            _dane.Przedmioty.AddRange(dane.Przedmioty);
+            _dane.Repliki.AddRange(dane.Repliki);
+            _dane.Zestawy.AddRange(dane.Zestawy);
+            _dane.Wyprawy.AddRange(dane.Wyprawy);
+            _dane.Zadania.AddRange(dane.Zadania);
+            // zdjęcia do katalogu danych
+            var liczbaZdjec = EksportRekonstrukcji.WyodrebnijZdjecia(dialog.FileName, _magazyn.KatalogDanych);
+            _magazyn.Zapisz(_dane);
+            Komunikat = $"Zaimportowano rekonstrukcję: {dane.Przedmioty.Count} przedmiotów, {dane.Repliki.Count} replik, " +
+                $"{dane.Zestawy.Count} zestawów, {dane.Wyprawy.Count} wypraw, {liczbaZdjec} zdjęć. Konflikty konfiguracji rozstrzygnij na ekranie Pakiety.";
+        }
+        catch (Exception ex)
+        {
+            Komunikat = "Błąd importu: " + ex.Message;
+        }
     }
 
     /// <summary>ViewModel pulpitu (FR-101, FR-102).</summary>

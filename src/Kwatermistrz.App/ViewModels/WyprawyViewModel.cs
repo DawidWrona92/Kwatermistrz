@@ -152,6 +152,57 @@ public partial class WyprawyViewModel : ObservableObject
         OnPropertyChanged(nameof(Nowa));
     }
 
+    /// <summary>FR-807: kandydaci do odjęcia od liczników historycznych przy wyprawie z datą ≤ dzień zerowy (do monitu).</summary>
+    public IReadOnlyList<(string Rodzaj, string Id, string Opis)> KandydaciOdejmowania =>
+        _kalkulator.Kalkulator().WplywNaLicznikiHistoryczne(Nowa);
+
+    /// <summary>Czy nowa wyprawa ma datę ≤ dzień zerowy (FR-807 — aplikacja pyta o odjęcie od liczników).</summary>
+    public bool CzyPrzedDniemZerowym
+    {
+        get
+        {
+            var dzienZerowy = _dane.Ustawienia.DzienZerowy;
+            return dzienZerowy != null && Nowa.Data != default && Nowa.Data <= dzienZerowy.Value;
+        }
+    }
+
+    /// <summary>FR-807: odpowiedź na monit o odjęcie od liczników historycznych; domyślnie „tak”.</summary>
+    [ObservableProperty]
+    private bool _odejmijOdLicznikow = true;
+
+    partial void OnNowaChanged(Wyprawa value)
+    {
+        OnPropertyChanged(nameof(CzyPrzedDniemZerowym));
+        OnPropertyChanged(nameof(KandydaciOdejmowania));
+    }
+
+    /// <summary>FR-807: stosuje odpowiedź na monit — odlicza od liczników historycznych (replika, mundur, rok).</summary>
+    private void ZastosujOdejmowanie(Wyprawa wyprawa)
+    {
+        if (!OdejmijOdLicznikow)
+            return;
+        foreach (var (rodzaj, id, _) in _kalkulator.Kalkulator().WplywNaLicznikiHistoryczne(wyprawa))
+        {
+            switch (rodzaj)
+            {
+                case "Replika":
+                    var replika = _dane.Repliki.FirstOrDefault(r => r.Id == id);
+                    if (replika != null && replika.LicznikHistorycznyWypraw > 0)
+                        replika.LicznikHistorycznyWypraw--;
+                    break;
+                case "Mundur":
+                    var mundur = _dane.Przedmioty.FirstOrDefault(p => p.Id == id);
+                    if (mundur != null && mundur.LicznikHistoryczny > 0)
+                        mundur.LicznikHistoryczny--;
+                    break;
+                case "Rok":
+                    if (int.TryParse(id, out var rok) && _dane.Ustawienia.HistoryczneWyprawyWgRok.TryGetValue(rok, out var liczba) && liczba > 0)
+                        _dane.Ustawienia.HistoryczneWyprawyWgRok[rok] = liczba - 1;
+                    break;
+            }
+        }
+    }
+
     /// <summary>Szybkie dodanie wyprawy (FR-802): Enter, domyślna data dziś, zestaw ostatni (FR-803).</summary>
     [RelayCommand]
     private void DodajWyprawe()
@@ -160,7 +211,23 @@ public partial class WyprawyViewModel : ObservableObject
             Nowa.Data = DateOnly.FromDateTime(DateTime.Today);
         if (Nowa.RekonstrukcjaId == null)
             Nowa.RekonstrukcjaId = _stan.AktywnaRekonstrukcjaId;
-        // dzień zerowy: wyprawa z datą ≤ dzień zerowy to uzupełnienie historii (FR-807) — na razie zapisujemy
+        // FR-807: wyprawa z datą ≤ dzień zerowy — użytkownik decyduje o odjęciu od liczników historycznych
+        if (CzyPrzedDniemZerowym && KandydaciOdejmowania.Count > 0)
+        {
+            var tresc = string.Join("\n", KandydaciOdejmowania.Select(k => "• " + k.Opis));
+            var wynik = System.Windows.MessageBox.Show(
+                $"Ta wyprawa ma datę sprzed dnia zerowego ({_dane.Ustawienia.DzienZerowy:dd.MM.yyyy}).\n" +
+                "Liczy się jako uzupełnienie historii — żeby nie liczyć jej podwójnie, aplikacja może odjąć ją od liczników historycznych:\n" +
+                tresc + "\n\nOdjąć od liczników historycznych?",
+                "Dzień zerowy (FR-807)",
+                System.Windows.MessageBoxButton.YesNoCancel,
+                System.Windows.MessageBoxImage.Question);
+            if (wynik == System.Windows.MessageBoxResult.Cancel)
+                return;
+            OdejmijOdLicznikow = wynik == System.Windows.MessageBoxResult.Yes;
+            ZastosujOdejmowanie(Nowa);
+            OdejmijOdLicznikow = true;
+        }
         _dane.Wyprawy.Add(Nowa);
         _magazyn.Zapisz(_dane);
         // zapamiętaj warianty jako ostatnio użyte (FR-704)

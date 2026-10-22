@@ -28,6 +28,46 @@ public partial class RekonstrukcjeViewModel : ObservableObject
     [ObservableProperty]
     private string _nowaNazwa = "";
 
+    /// <summary>FR-1406: zastosowanie dołączonego szablonu konfiguracji („pusta” lub „przyklad”) do bieżących danych — kategorie, wzory, sloty i szablony kart; dane o sprzęcie zostają.</summary>
+    [RelayCommand]
+    private void ZastosujSzablon(string? klucz)
+    {
+        if (klucz == null)
+            return;
+        var (slowniki, szablonRekonstrukcji, szablonyKart) = Kwatermistrz.Core.Konfiguracja.SzablonyKonfiguracji.Buduj(klucz);
+        // kategorie i wzory: zastępujemy konfiguracją szablonu (dane o sprzęcie tracą przypisania do starych Id — użytkownik przypisuje ponownie)
+        var stareKategorie = _dane.Slowniki.Kategorie.ToDictionary(k => k.Id, k => k.Nazwa, StringComparer.Ordinal);
+        _dane.Slowniki = slowniki;
+        _dane.SzablonyKart.Clear();
+        _dane.SzablonyKart.AddRange(szablonyKart);
+        // przemapuj kategorie przedmiotów po nazwie (zachowanie przypisań tam, gdzie nazwa się zgadza)
+        var noweKategorie = slowniki.Kategorie.ToDictionary(k => Normalizacja.TekstDoPorownania(k.Nazwa), k => k.Id, StringComparer.Ordinal);
+        foreach (var p in _dane.Przedmioty)
+        {
+            if (stareKategorie.TryGetValue(p.KategoriaId, out var staraNazwa)
+                && noweKategorie.TryGetValue(Normalizacja.TekstDoPorownania(staraNazwa), out var noweId))
+                p.KategoriaId = noweId;
+        }
+        // rekonstrukcja z szablonu: dodaj jako nową (z unikalną nazwą), jeśli taka już istnieje
+        szablonRekonstrukcji.Nazwa = UnikalnaNazwa(szablonRekonstrukcji.Nazwa);
+        _dane.Rekonstrukcje.Add(szablonRekonstrukcji);
+        _dane.Ustawienia.OstatniaRekonstrukcjaId = szablonRekonstrukcji.Id;
+        _magazyn.Zapisz(_dane);
+        OnPropertyChanged(nameof(Rekonstrukcje));
+        Wybrana = szablonRekonstrukcji;
+    }
+
+    private string UnikalnaNazwa(string nazwa)
+    {
+        var istnieje = _dane.Rekonstrukcje.Any(r => Normalizacja.TekstDoPorownania(r.Nazwa) == Normalizacja.TekstDoPorownania(nazwa));
+        if (!istnieje)
+            return nazwa;
+        var i = 2;
+        while (_dane.Rekonstrukcje.Any(r => Normalizacja.TekstDoPorownania(r.Nazwa) == Normalizacja.TekstDoPorownania($"{nazwa} {i}")))
+            i++;
+        return $"{nazwa} {i}";
+    }
+
     /// <summary>Dodaje rekonstrukcję od zera — puste sloty (FR-1306).</summary>
     [RelayCommand]
     private void DodajPusta()

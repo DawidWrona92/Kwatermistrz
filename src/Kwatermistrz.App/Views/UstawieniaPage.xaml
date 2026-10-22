@@ -28,6 +28,15 @@
             <TextBlock Text="Katalog danych" Style="{StaticResource NaglowekSekcji}" Margin="0,20,0,8" />
             <TextBlock Text="{Binding KatalogDanych}" TextWrapping="Wrap" />
 
+            <TextBlock Text="Zdjęcia (NFR-11)" Style="{StaticResource NaglowekSekcji}" Margin="0,20,0,8" />
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Maksymalny dłuższy bok przy zapisie (px; 0 = bez zmniejszania):" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <ui:NumberBox MinWidth="100" Minimum="0" Maximum="20000"
+                              Value="{Binding MaksymalnyBokZdjecia, Mode=TwoWay}" />
+            </StackPanel>
+            <CheckBox Content="Zachowaj oryginał (w podkatalogu oryginaly/)" Margin="0,8,0,0"
+                      IsChecked="{Binding ZachowajOryginalZdjecia, Mode=TwoWay}" />
+
             <TextBlock Text="Progi i reguły" Style="{StaticResource NaglowekSekcji}" Margin="0,20,0,8" />
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Próg „bez testu” (dni):" VerticalAlignment="Center" Margin="0,0,8,0" />
