@@ -34,7 +34,11 @@
                 <ui:NumberBox MinWidth="100" Minimum="1" Maximum="3650"
                               Value="{Binding DniBezTestu, Mode=TwoWay}" />
             </StackPanel>
-            <TextBlock Margin="0,8,0,0" Opacity="0.7">
+            <TextBlock Margin="0,8,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                <Run Text="Wersja aplikacji: " />
+                <Run Text="{Binding WersjaAplikacji, Mode=OneWay}" />
+            </TextBlock>
+            <TextBlock Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                 <Run Text="Wersja reguł obliczeń: " />
                 <Run Text="{Binding WersjaRegul, Mode=OneWay}" />
             </TextBlock>

@@ -1,5 +1,38 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+
+    <!-- Dostępność (NFR-08): tekst ostry przy każdym skalowaniu DPI — brak rozmycia przy powiększeniu. -->
+    <Style x:Key="UstawieniaDostepnosci" TargetType="FrameworkElement">
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <!-- Widoczny fokus klawiatury (NFR-08): ramka 2 px w kolorze akcentu — nigdy tylko kolor tła.
+         Styl domyślny dla kontrolek WPF-UI (przyciski, pola); DataGrid i inne kontrolki
+         z własnymi szablonami dziedziczą widoczny fokus z szablonów WPF-UI. -->
+    <Style x:Key="FokusKlawiatury" TargetType="Control">
+        <Setter Property="FocusVisualStyle">
+            <Setter.Value>
+                <Style TargetType="Control">
+                    <Setter Property="Control.Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Control">
+                                <Rectangle Margin="1"
+                                           Stroke="{DynamicResource AccentFillColorDefaultBrush}"
+                                           StrokeThickness="2"
+                                           RadiusX="3" RadiusY="3" />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="ui:Button" BasedOn="{StaticResource FokusKlawiatury}" />
+    <Style TargetType="ui:TextBox" BasedOn="{StaticResource FokusKlawiatury}" />
 
     <!-- Typografia (§10.3): jedna rodzina Bahnschrift z zapasową Segoe UI. -->
     <FontFamily x:Key="CzcionkaBazowa">Bahnschrift, Segoe UI</FontFamily>

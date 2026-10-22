@@ -57,7 +57,13 @@
                                         <ColumnDefinition Width="160" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="{Binding Parametr}" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Parametr}" />
+                                        <!-- NFR-08: różnica oznaczona też tekstem, nie tylko kolorem tła -->
+                                        <TextBlock Text=" — różnica" Margin="6,0,0,0" FontSize="11"
+                                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                                   Visibility="{Binding CzyRoznica, Converter={StaticResource KonwerterBoolToVisibility}}" />
+                                    </StackPanel>
                                     <ItemsControl Grid.Column="1" ItemsSource="{Binding Wartosci}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>

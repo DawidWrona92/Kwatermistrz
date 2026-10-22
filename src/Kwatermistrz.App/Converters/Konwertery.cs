@@ -209,3 +209,35 @@ public class KonwerterBoolToVisibility : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => value is Visibility v && v == Visibility.Visible;
 }
+
+/// <summary>Id wzoru kamuflażu → obiekt wzoru (do próbki; NFR-08: tooltip z nazwą ustawiany osobno).</summary>
+public class KonwerterWzorKamuflazu : IValueConverter
+{
+    public static readonly KonwerterWzorKamuflazu Instance = new();
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not string id || parameter is not List<WzorKamuflazu> wzory)
+            return null!;
+        return wzory.FirstOrDefault(w => w.Id == id) ?? null!;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
+/// <summary>Id wzoru kamuflażu → nazwa wzoru (NFR-08: próbka zawsze ma obok nazwę).</summary>
+public class KonwerterNazwaWzoru : IValueConverter
+{
+    public static readonly KonwerterNazwaWzoru Instance = new();
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not string id || parameter is not List<WzorKamuflazu> wzory)
+            return "";
+        return wzory.FirstOrDefault(w => w.Id == id)?.Nazwa ?? "";
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}

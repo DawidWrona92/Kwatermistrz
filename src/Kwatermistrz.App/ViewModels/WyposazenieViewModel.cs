@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kwatermistrz.App.Services;
 using Kwatermistrz.Core.Model;
+using Kwatermistrz.Core.Obliczenia;
 using Kwatermistrz.Core.Storage;
 
 namespace Kwatermistrz.App.ViewModels;
@@ -128,7 +129,8 @@ public partial class WyposazenieViewModel : ObservableObject
     /// <summary>Odświeża listę po zmianie danych/filtrów.</summary>
     public void Odswiez()
     {
-        var kalk = _kalkulator.Kalkulator();
+        // indeks obliczeniowy budowany raz na odświeżenie — O(P·W) zamiast O(P²·W) przy NFR-04
+        var indeks = new IndeksObliczeniowy(_dane);
         var zapytanie = _dane.Przedmioty.AsEnumerable();
         if (WybranaKategoria != null)
             zapytanie = zapytanie.Where(p => p.KategoriaId == WybranaKategoria.Id);
@@ -147,11 +149,11 @@ public partial class WyposazenieViewModel : ObservableObject
                 (p.Komentarz != null && Normalizacja.TekstDoPorownania(p.Komentarz).Contains(szukane)));
         }
         if (TylkoBezUzycia)
-            zapytanie = zapytanie.Where(p => kalk.UzyciaPrzedmiotu(p) == 0);
+            zapytanie = zapytanie.Where(p => indeks.UzyciaPrzedmiotu(p) == 0);
         Wiersze.Clear();
         var kategorie = _dane.Slowniki.Kategorie.ToDictionary(k => k.Id, k => k.CzyNosnik);
         foreach (var p in zapytanie.OrderBy(p => p.Nazwa, StringComparer.CurrentCulture))
-            Wiersze.Add(new WierszPrzedmiotu(p, kalk.UzyciaPrzedmiotu(p))
+            Wiersze.Add(new WierszPrzedmiotu(p, indeks.UzyciaPrzedmiotu(p))
             {
                 CzyNosnik = kategorie.TryGetValue(p.KategoriaId, out var nosnik) && nosnik,
             });

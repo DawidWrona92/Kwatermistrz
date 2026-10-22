@@ -4,6 +4,6 @@
       Title="Placeholder">
     <StackPanel Margin="16" VerticalAlignment="Top">
         <TextBlock x:Name="Tytul" Style="{StaticResource TytulEkranu}" />
-        <TextBlock x:Name="Opis" Margin="0,12,0,0" Opacity="0.7" />
+        <TextBlock x:Name="Opis" Margin="0,12,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
     </StackPanel>
 </Page>

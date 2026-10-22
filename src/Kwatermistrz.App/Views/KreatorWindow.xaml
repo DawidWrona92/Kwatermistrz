@@ -28,7 +28,7 @@
                       SelectedValuePath="Id"
                       DisplayMemberPath="Nazwa" />
             <TextBlock Text="Punkt startu: pusta aplikacja ze słownikami startowymi. Import danych i szablony pojawią się w kolejnych krokach."
-                       TextWrapping="Wrap" Margin="0,16,0,0" Opacity="0.7" />
+                       TextWrapping="Wrap" Margin="0,16,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
         </StackPanel>
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
             <ui:Button Content="Rozpocznij" Appearance="Primary" Command="{Binding PotwierdzCommand}" />

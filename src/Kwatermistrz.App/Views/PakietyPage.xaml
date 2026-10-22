@@ -23,7 +23,7 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="16" MaxWidth="900">
             <TextBlock Text="Pakiety konfiguracji" Style="{StaticResource TytulEkranu}" />
-            <TextBlock TextWrapping="Wrap" Margin="0,4,0,0" Opacity="0.7">
+            <TextBlock TextWrapping="Wrap" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                 Pakiet zawiera konfigurację (słowniki, wzory, kategorie, rekonstrukcje z szablonami slotów, szablony kart) — bez przedmiotów, replik, wypraw, zdjęć i cen. Służy do wymiany konfiguracji między instalacjami (FR-1404).
             </TextBlock>
 
@@ -41,7 +41,7 @@
                 <ui:Button Content="Zastosuj import" Appearance="Primary" Margin="8,0,0,0"
                            Command="{Binding ZastosujCommand}" />
             </StackPanel>
-            <TextBlock Text="{Binding SciezkaPakietu}" TextWrapping="Wrap" Margin="0,8,0,0" Opacity="0.7" />
+            <TextBlock Text="{Binding SciezkaPakietu}" TextWrapping="Wrap" Margin="0,8,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
             <TextBlock Text="{Binding InfoPakietu}" TextWrapping="Wrap" Margin="0,4,0,0" />
 
             <ui:DataGrid ItemsSource="{Binding Wiersze}" AutoGenerateColumns="False"

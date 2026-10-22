@@ -35,7 +35,8 @@ public partial class PulpitViewModel : ObservableObject
     public void Odswiez()
     {
         var kalk = _kalkulator.Kalkulator();
-        LacznaLiczbaWypraw = kalk.LacznaLiczbaWypraw();
+        var indeks = new IndeksObliczeniowy(_dane);
+        LacznaLiczbaWypraw = indeks.LacznaLiczbaWypraw;
         WyprawyWRoku = kalk.WyprawyWRoku(DateOnly.FromDateTime(DateTime.Today).Year);
         DataPierwszejWyprawy = kalk.DataPierwszejWyprawy();
         var ostatnia = _dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(w => (DateOnly?)w.Data).Max();
@@ -49,14 +50,24 @@ public partial class PulpitViewModel : ObservableObject
         PrzedmiotyBezUzycia = kalk.PrzedmiotyBezUzycia();
         PolaNieznane = kalk.PolaNieznane();
         // ranking (FR-105)
-        Ranking = kalk.RankingReplik(5)
-            .Select(w => new WierszRankingu
+        // ranking z indeksu — bez wielokrotnego liczenia wypraw na replikę (NFR-04)
+        Ranking = _dane.Repliki
+            .Where(r => r.Status == StatusWlasnosci.Posiadany)
+            .Select(r =>
             {
-                ReplikaId = w.ReplikaId,
-                Nazwa = NazwaRepliki(w.ReplikaId),
-                Wyprawy = w.Wyprawy,
-                KosztNaWyprawe = w.KosztNaWyprawe,
+                var wyprawy = indeks.WyprawyRepliki(r);
+                var (calkowity, _, _) = Kalkulator.Koszty(r.Koszty);
+                return new WierszRankingu
+                {
+                    ReplikaId = r.Id,
+                    Nazwa = NazwaRepliki(r.Id),
+                    Wyprawy = wyprawy,
+                    KosztNaWyprawe = Kalkulator.KosztNaWyprawe(calkowity, wyprawy),
+                };
             })
+            .OrderByDescending(w => w.Wyprawy)
+            .ThenBy(w => w.ReplikaId, StringComparer.Ordinal)
+            .Take(5)
             .ToList();
         OnPropertyChanged(nameof(LacznaLiczbaWypraw));
         OnPropertyChanged(nameof(WyprawyWRoku));

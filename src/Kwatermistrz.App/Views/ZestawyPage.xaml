@@ -88,7 +88,7 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal">
                                         <ui:TextBox MinWidth="140" Text="{Binding Nazwa}" ToolTip="Nazwa slotu" />
-                                        <TextBlock VerticalAlignment="Center" Margin="8,0,0,0" Opacity="0.6">
+                                        <TextBlock VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                                             <Run Text="Wariantów: " /><Run Text="{Binding Warianty.Count}" />
                                         </TextBlock>
                                         <ui:Button Margin="8,0,0,0" Content="Dodaj wariant"
@@ -176,7 +176,7 @@
                             <Border Style="{StaticResource Karta}" Padding="8" Margin="0,4">
                                 <StackPanel>
                                     <TextBlock FontWeight="SemiBold" Text="{Binding NazwaMiejsca}" />
-                                    <TextBlock Opacity="0.6" Text="{Binding Postep, StringFormat=spakowane: {0}}" />
+                                    <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Postep, StringFormat=spakowane: {0}}" />
                                     <ItemsControl ItemsSource="{Binding Wiersze}" Margin="0,4,0,0">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
@@ -185,7 +185,7 @@
                                                               Checked="Spakowany_Changed" Unchecked="Spakowany_Changed" />
                                                     <TextBlock Text="{Binding Nazwa}" VerticalAlignment="Center" Margin="4,0,0,0" />
                                                     <TextBlock Text="{Binding NosnikNazwa, StringFormat={}(na: {0})}"
-                                                               VerticalAlignment="Center" Margin="8,0,0,0" Opacity="0.6"
+                                                               VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                Visibility="{Binding NosnikNazwa, Converter={StaticResource KonwerterNieRowneNull}}" />
                                                 </StackPanel>
                                             </DataTemplate>

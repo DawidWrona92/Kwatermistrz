@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -55,6 +56,14 @@ public partial class UstawieniaViewModel : ObservableObject
 
     /// <summary>Wersja reguł obliczeń (NFR-14) — tylko do odczytu.</summary>
     public string WersjaRegul => _dane.WersjaRegul;
+
+    /// <summary>Wersja aplikacji z metadanych zestawu (NFR-14, widoczna w O programie/Ustawieniach).</summary>
+    public static string WersjaAplikacji { get; } =
+        Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+        is { } wersja && wersja.Contains('+')
+            ? wersja[..wersja.IndexOf('+')]
+            : "dev";
 
     /// <summary>Komunikat po operacji na kopii (FR-1107).</summary>
     [ObservableProperty]

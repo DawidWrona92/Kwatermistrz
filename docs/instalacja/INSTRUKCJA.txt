@@ -1,0 +1,39 @@
+KWATERMISTRZ — INSTALACJA (bez uprawnień administratora)
+=========================================================
+
+Wymagania: Windows 10/11, 64-bit. Nic więcej — program nie wymaga instalacji
+i nie wymaga dostępu administratora.
+
+PIERWSZA INSTALACJA
+-------------------
+1. Rozpakuj zip (prawy przycisk → "Wyodrębnij wszystko…").
+2. Otwórz rozpakowany folder i uruchom Kwatermistrz.exe
+   (przy pierwszym uruchomieniu Windows może zapytać o zgodę — kliknij "Więcej informacji"
+   → "Uruchom mimo to"; to normalne dla aplikacji spoza Microsoft Store).
+3. Opcjonalnie: przeciągnij Kwatermistrz.exe na pulpit, żeby zrobić skrót.
+
+AKTUALIZACJA
+------------
+1. Zamknij Kwatermistrza.
+2. W nowym zipie znajdziesz Kwatermistrz.exe — skopiuj go w miejsce starego (zastąp plik).
+3. Uruchom ponownie. Twoje dane są bezpieczne: mieszkają osobno,
+   w folderze %AppData%\Kwatermistrz (wpisz %AppData%\Kwatermistrz w pasku adresu
+   Eksploratora, żeby go otworzyć). Podmiana exe nie rusza danych.
+
+TWOJE DANE
+----------
+- Wszystko trzymasz lokalnie: %AppData%\Kwatermistrz\dane.json (oraz podfolder zdjecia\).
+- Program działa offline, nie zakłada kont.
+- Przed ręczną edycją danych zrób kopię całego folderu %AppData%\Kwatermistrz.
+- W Ustawieniach znajdziesz też przycisk do ręcznej kopii zapasowej (folder kopie\).
+
+WSPÓŁDZIELENIE KONFIGURACJI Z KOLEGĄ
+------------------------------------
+Ekran "Pakiety": "Eksportuj konfigurację…" zapisuje plik .kwpakiet
+(kategorie, słowniki, szablony — BEZ Twoich przedmiotów i zdjęć).
+Kolega importuje go na swojej instalacji przez "Wczytaj pakiet…".
+
+POMOC
+-----
+Zgłoś problem autorowi, najlepiej dołączając kopię folderu %AppData%\Kwatermistrz\kopie
+(ostatnia kopia zapasowa sprzed problemu).

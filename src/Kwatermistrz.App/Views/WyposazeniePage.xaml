@@ -12,6 +12,8 @@
         <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
         <conv:KonwerterNieRowneNull x:Key="KonwerterNieRowneNull" />
         <conv:KonwerterWiekszeOdZera x:Key="KonwerterWiekszeOdZera" />
+        <conv:KonwerterWzorKamuflazu x:Key="KonwerterWzorKamuflazu" />
+        <conv:KonwerterNazwaWzoru x:Key="KonwerterNazwaWzoru" />
     </Page.Resources>
     <Grid Margin="8">
         <Grid.ColumnDefinitions>
@@ -34,7 +36,7 @@
                                 Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Left" Padding="8,4">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="{Binding Nazwa}" />
-                                <TextBlock Margin="6,0,0,0" Opacity="0.6">
+                                <TextBlock Margin="6,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                                     <TextBlock.Text>
                                         <MultiBinding Converter="{x:Static conv:KonwerterLicznikaKategorii.Instance}" ConverterParameter="{Binding Id}">
                                             <Binding Path="DataContext" RelativeSource="{RelativeSource AncestorType=Page}" />
@@ -66,7 +68,7 @@
                 <ui:Button Content="Dodaj przedmiot" Appearance="Primary" Margin="12,0,0,0"
                            Command="{Binding DodajCommand}" />
             </StackPanel>
-            <TextBlock Grid.Row="1" Margin="0,0,0,4" Opacity="0.7">
+            <TextBlock Grid.Row="1" Margin="0,0,0,4" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                 <Run Text="Pozycji: " /><Run Text="{Binding LiczbaWierszy, Mode=OneWay}" />
             </TextBlock>
             <ui:DataGrid Grid.Row="2"
@@ -85,10 +87,17 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="Wzór" Width="40">
+                    <!-- NFR-08: próbka wzoru zawsze ma obok nazwę (tekst), tooltip z nazwą przy najechaniu -->
+                    <DataGridTemplateColumn Header="Wzór" Width="110">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <controls:ProbkaKamuflazu />
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <controls:ProbkaKamuflazu
+                                        Wzor="{Binding WzorId, Converter={StaticResource KonwerterWzorKamuflazu}, ConverterParameter={Binding DataContext.DataContext.Slowniki.Wzory, RelativeSource={RelativeSource AncestorType=Page}}}"
+                                        ToolTip="{Binding WzorId, Converter={StaticResource KonwerterNazwaWzoru}, ConverterParameter={Binding DataContext.DataContext.Slowniki.Wzory, RelativeSource={RelativeSource AncestorType=Page}}}" />
+                                    <TextBlock Margin="6,0,0,0" VerticalAlignment="Center"
+                                               Text="{Binding WzorId, Converter={StaticResource KonwerterNazwaWzoru}, ConverterParameter={Binding DataContext.DataContext.Slowniki.Wzory, RelativeSource={RelativeSource AncestorType=Page}}}" />
+                                </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

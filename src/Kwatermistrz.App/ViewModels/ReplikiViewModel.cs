@@ -82,7 +82,8 @@ public partial class ReplikiViewModel : ObservableObject
     /// <summary>Odświeża listę replik (FR-301: ranking wg wypraw, filtry, aktywna rekonstrukcja FR-1303).</summary>
     public void Odswiez()
     {
-        var kalk = _kalkulator.Kalkulator();
+        // indeks obliczeniowy budowany raz na odświeżenie — O(R·W) zamiast O(R²·W) przy NFR-04
+        var indeks = new IndeksObliczeniowy(_dane);
         var zapytanie = _dane.Repliki.AsEnumerable();
         if (!PokazSprzedane)
             zapytanie = zapytanie.Where(r => r.Status != StatusWlasnosci.Sprzedany && r.Status != StatusWlasnosci.Wycofany);
@@ -104,7 +105,7 @@ public partial class ReplikiViewModel : ObservableObject
 
         var lista = zapytanie.ToList();
         var wiersze = lista
-            .Select(r => BudujWiersz(kalk, r))
+            .Select(r => BudujWiersz(indeks, r))
             .OrderByDescending(w => w.Wyprawy)
             .ThenBy(w => w.NazwaPelna, StringComparer.CurrentCulture)
             .ToList();
@@ -131,9 +132,10 @@ public partial class ReplikiViewModel : ObservableObject
     partial void OnTylkoAwariaChanged(bool value) => Odswiez();
     partial void OnTylkoBezTestuChanged(bool value) => Odswiez();
 
-    private WierszRepliki BudujWiersz(Kalkulator kalk, Replika r)
+    private WierszRepliki BudujWiersz(IndeksObliczeniowy indeks, Replika r)
     {
-        var w = kalk.WierszRepliki(r);
+        var wyprawy = indeks.WyprawyRepliki(r);
+        var (calkowity, oryginalna, dodatki) = Kalkulator.Koszty(r.Koszty);
         var otwarteZadania = _dane.Zadania
             .Where(z => z.DotyczyId == r.Id && z.Status == StatusZadania.Otwarte)
             .ToList();
@@ -148,15 +150,15 @@ public partial class ReplikiViewModel : ObservableObject
             .ToList();
         return new WierszRepliki(r, new WierszReplikiObliczenia
         {
-            ReplikaId = w.ReplikaId,
-            Status = w.Status,
-            Wyprawy = w.Wyprawy,
-            ProcentWypraw = w.ProcentWypraw,
-            KosztCalkowity = w.KosztCalkowity,
-            CenaOryginalna = w.CenaOryginalna,
-            KosztDodatkow = w.KosztDodatkow,
-            KosztNaWyprawe = w.KosztNaWyprawe,
-            DataOstatniegoTestu = w.DataOstatniegoTestu,
+            ReplikaId = r.Id,
+            Status = r.Status,
+            Wyprawy = wyprawy,
+            ProcentWypraw = indeks.ProcentWypraw(wyprawy),
+            KosztCalkowity = calkowity,
+            CenaOryginalna = oryginalna,
+            KosztDodatkow = dodatki,
+            KosztNaWyprawe = Kalkulator.KosztNaWyprawe(calkowity, wyprawy),
+            DataOstatniegoTestu = r.Pomiary.Count > 0 ? r.Pomiary.Max(p => p.Data) : null,
             CzyOtwartaAwaria = czyAwaria,
             OtwarteZadania = otwarteZadania.Count,
             OstatnieWyprawy = ostatnieWyprawy,

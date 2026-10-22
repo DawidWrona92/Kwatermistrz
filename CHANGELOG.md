@@ -4,6 +4,14 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 
 ## [Nieopublikowane]
 
+### Etap 5j — Wydajność, dostępność, instalacja (NFR-04, NFR-08, NFR-10)
+
+#### Dodane
+- **NFR-04 Wydajność**: nowy `IndeksObliczeniowy` (Core) — raz na odświeżenie listy rozwiazuje przecięcia wypraw z replikami i przedmiotami do słowników; listy replik i wyposażenia budują się w O(R·W)/O(P·W) zamiast O(R²·W)/O(P²·W). Ranking na pulpicie korzysta z tego samego indeksu. Testy: zgodność indeksu z `Kalkulator` (BR-01/02/03/08, komplety, konfiguracje nośnika) oraz budżety czasowe przy skali 5 000 przedmiotów / 2 000 wypraw / 5 000 zdjęć (budowa indeksu < 300 ms, zapis+odczyt JSON < 3 s).
+- **NFR-08 Dostępność**: tekst ostry przy powiększeniu (`TextFormattingMode=Display`, `UseLayoutRounding`, `SnapsToDevicePixels` na głównym oknie); widoczny fokus klawiatury (ramka 2 px w kolorze akcentu) dla przycisków i pól WPF-UI; szare teksty pomocnicze przez `TextFillColorSecondaryBrush` zamiast `Opacity` (kontrast AA też w motywie ciemnym); próbka kamuflażu zawsze z nazwą obok i tooltipem; miniatury zdjęć i przycisk „+” opisane dla czytnika ekranu (`AutomationProperties.Name`); wiersze z różnicami w porównaniu kart oznaczone też tekstem „różnica”, nie tylko kolorem.
+- **NFR-10 Instalacja**: `scripts/publikuj.ps1` — publikacja self-contained single-file (`Kwatermistrz.exe`, win-x64) + zip z instrukcją; paczka bez danych autora (NFR-15). Instrukcja po polsku dla osób bez wiedzy technicznej: `docs/instalacja/INSTRUKCJA.txt` (instalacja, aktualizacja = podmiana exe, gdzie są dane, współdzielenie konfiguracji). W Ustawieniach pokazana wersja aplikacji obok wersji reguł (NFR-14). Zweryfikowana publikacja win-x64 (~170 MB exe, bez plików .pdb).
+- `.gitignore`: katalog `dist/` (wyniki publikacji).
+
 ### Etap 5i — Porównanie i kopiowanie kart (FR-406, FR-407), konfiguracje nośnika (FR-208)
 
 #### Dodane

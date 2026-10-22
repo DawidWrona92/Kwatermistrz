@@ -112,13 +112,13 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
             <TextBlock Text="Brak pozycji — cena zakupu tworzy pierwszą przy zapisie karty (FR-503)."
-                       Opacity="0.6" Margin="0,4,0,0"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4,0,0"
                        Visibility="{Binding Przedmiot.Koszty.Count, Converter={x:Static conv:KonwerterRowneLiczbe.Instance}, ConverterParameter=0}" />
 
             <!-- Komplet (FR-206) -->
             <TextBlock Text="Komplet" Style="{StaticResource NaglowekSekcji}" Margin="0,16,0,4" />
             <TextBlock Visibility="{Binding CzyWKomplecie, Converter={x:Static conv:KonwerterNieRowneNull.Instance}}"
-                       Text="Element kompletu" Opacity="0.7" />
+                       Text="Element kompletu" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                 <ui:Button Content="Dołącz do kompletu…" Command="{Binding DataContext.DataContext.DolaczDoKompletuCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                            CommandParameter="{Binding DataContext.DataContext.Wybrany, RelativeSource={RelativeSource AncestorType=UserControl}}" />
@@ -153,7 +153,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <ui:TextBox Grid.Column="0" Text="{Binding Nazwa}" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="8,0" Opacity="0.7"
+                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                Text="{Binding ElementyId.Count, StringFormat={}{0} elem.}" />
                                     <ui:Button Grid.Column="2" Content="Zastosuj" Margin="4,0,0,0" Padding="6,2"
                                                Command="{Binding DataContext.DataContext.DataContext.ZastosujKonfiguracjeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

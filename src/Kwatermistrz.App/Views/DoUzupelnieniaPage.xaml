@@ -10,7 +10,7 @@
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
             <TextBlock Text="Do uzupełnienia" Style="{StaticResource TytulEkranu}" VerticalAlignment="Center" Margin="0,0,16,0" />
-            <TextBlock VerticalAlignment="Center" Opacity="0.7">
+            <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                 <Run Text="Pozycji: " /><Run Text="{Binding Liczba, Mode=OneWay}" />
             </TextBlock>
             <CheckBox Content="Tylko zadania" VerticalAlignment="Center" Margin="16,0,0,0"

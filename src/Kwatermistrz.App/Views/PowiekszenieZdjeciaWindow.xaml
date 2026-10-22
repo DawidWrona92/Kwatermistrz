@@ -17,7 +17,7 @@
             <Image x:Name="Obraz" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
         </ScrollViewer>
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="12,8">
-            <TextBlock x:Name="Etykieta" VerticalAlignment="Center" Opacity="0.7" TextWrapping="Wrap" />
+            <TextBlock x:Name="Etykieta" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
             <ui:Button Content="Zamknij" Appearance="Primary" Margin="12,0,0,0" Click="Zamknij_Click" />
         </StackPanel>
     </Grid>

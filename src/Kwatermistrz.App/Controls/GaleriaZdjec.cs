@@ -1,6 +1,7 @@
 using System.Collections;
 using System.IO;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -94,10 +95,13 @@ public class GaleriaZdjec : Control
                 Cursor = Cursors.Hand,
                 ToolTip = indeks == 0 ? "Zdjęcie główne — kliknij, aby powiększyć" : "Kliknij, aby powiększyć",
             };
+            // NFR-08: miniatura dostępna dla czytnika ekranu — nazwa = właściciel + numer + rola
+            AutomationProperties.SetName(miniatura,
+                $"{WlascicielNazwa}, zdjęcie {indeks + 1}{(indeks == 0 ? " (główne)" : "")}");
             var obraz = pelna != null ? SerwisZdjec.WczytajObraz(pelna, 144) : null;
             miniatura.Child = obraz != null
                 ? new Image { Source = obraz, Stretch = Stretch.UniformToFill }
-                : new TextBlock { Text = "?", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Opacity = 0.4 };
+                : new TextBlock { Text = "?", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = Brushes.Gray };
             var sciezkaLokalna = sciezka;
             var indeksLokalny = indeks;
             miniatura.MouseLeftButtonUp += (_, _) => PokazPowiekszenie(sciezkaLokalna!);
@@ -126,6 +130,8 @@ public class GaleriaZdjec : Control
             Content = new TextBlock { Text = "+", FontSize = 24, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
             ToolTip = "Dodaj zdjęcie…",
         };
+        // NFR-08: przycisk „+” czytelny dla czytnika ekranu (sam znak „+” byłby niejednoznaczny)
+        AutomationProperties.SetName(dodaj, $"Dodaj zdjęcie do: {WlascicielNazwa}");
         dodaj.Click += (_, _) => DodajZdjecia();
         kontener.Children.Add(dodaj);
     }

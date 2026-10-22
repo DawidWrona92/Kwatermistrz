@@ -30,7 +30,7 @@
                        Command="{Binding EksportujCsvCommand}" />
         </StackPanel>
 
-        <TextBlock Grid.Row="1" Margin="0,0,0,8" Opacity="0.7" TextWrapping="Wrap"
+        <TextBlock Grid.Row="1" Margin="0,0,0,8" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
                    Text="„Jak liczymy” (FR-911): procent wypraw = wyprawy repliki / łączna liczba wypraw; koszt na wyprawę = koszt całkowity / wyprawy (przy zerowej liczbie wypraw = koszt całkowity); koszt dodatków = koszt całkowity − cena oryginalna; użycia = licznik historyczny + wyprawy ze składem." />
 
         <!-- Raport „Broń” (FR-901) -->

@@ -52,7 +52,7 @@
                                         BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
                                     <StackPanel>
                                         <TextBlock Text="{Binding Opis}" TextWrapping="Wrap" />
-                                        <TextBlock Text="{Binding Zrodlo}" Opacity="0.6" FontSize="11" />
+                                        <TextBlock Text="{Binding Zrodlo}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11" />
                                         <ComboBox ItemsSource="{Binding Kandydaci}"
                                                   SelectedIndex="{Binding WyborUzytkownika}"
                                                   Visibility="{Binding Kandydaci.Count, Converter={x:Static conv:KonwerterWiekszeOdZera.Instance}}"

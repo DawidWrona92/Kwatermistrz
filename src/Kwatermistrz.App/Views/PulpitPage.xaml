@@ -99,7 +99,7 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="{Binding Nazwa}" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0" Text="{Binding Wyprawy, StringFormat={}{0} wypraw}" Opacity="0.85" />
-                                    <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0" Opacity="0.7"
+                                    <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                Text="{Binding KosztNaWyprawe, Converter={StaticResource KonwerterWaluty}, StringFormat={}{0} / wyprawę}" />
                                 </Grid>
                             </Button>
@@ -107,7 +107,7 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </Border>
-            <TextBlock Text="Brak replik posiadanych." Margin="0,4,0,0" Opacity="0.6"
+            <TextBlock Text="Brak replik posiadanych." Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                        Visibility="{Binding CzyRankingPusty, Converter={StaticResource KonwerterBoolToVisibility}}" />
 
             <!-- Mozaika wypraw (FR-102) -->

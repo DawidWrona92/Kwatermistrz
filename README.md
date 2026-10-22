@@ -30,13 +30,26 @@ Dane użytkownika: `%AppData%\Kwatermistrz\dane.json` (+ katalog `zdjecia/`, kop
 
 Interfejs: lewa szyna nawigacji, u góry wyszukiwanie (Ctrl+F), przełącznik rekonstrukcji i „Dodaj wyprawę” (Ctrl+N), po prawej panel karty. Motyw jasny/ciemny/systemowy w Ustawieniach.
 
+## Instalacja dla użytkowników (bez admina)
+
+Publikacja zgodnie z [decyzją 06](docs/decyzje/06-instalacja.md): self-contained, pojedynczy plik `Kwatermistrz.exe` w zipie z instrukcją — rozpakować i uruchomić, bez instalatora i bez uprawnień administratora (NFR-10). Aktualizacja = podmiana exe; dane w `%AppData%\Kwatermistrz` zostają (NFR-06).
+
+```powershell
+# wydanie paczki dist\Kwatermistrz-<wersja>.zip (Windows, .NET 10 SDK)
+powershell -File scripts\publikuj.ps1 -Wersja 1.0.0
+```
+
+Paczka nie zawiera danych autora (NFR-15). Instrukcja dla kolegów: [`docs/instalacja/INSTRUKCJA.txt`](docs/instalacja/INSTRUKCJA.txt).
+
 ## Struktura repozytorium
 
 ```
 src/Kwatermistrz.Core/    model domenowy, magazyn JSON, kalkulator BR, importer xlsx
 src/Kwatermistrz.App/     aplikacja WPF (interfejs)
 tests/Kwatermistrz.Core.Tests/  testy jednostkowe i akceptacyjne
+scripts/publikuj.ps1      wydanie paczki zip (NFR-10)
 docs/wymagania.md        specyfikacja (wersja 0.2)
 docs/dane-startowe/      plik źródłowy xlsx do importu
 docs/decyzje/            notatki decyzji technologicznych
+docs/instalacja/         instrukcja dla użytkowników (trafia do paczki)
 ```
