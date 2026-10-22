@@ -45,10 +45,10 @@ public partial class MainWindow : FluentWindow
         _strony["Slowniki"] = new SlownikiPage { DataContext = vm.Slowniki };
         _strony["Ustawienia"] = new UstawieniaPage { DataContext = vm.Ustawienia };
         _strony["Import"] = new ImportPage { DataContext = vm.Import };
-        _strony["Wyprawy"] = new PlaceholderPage("Wyprawy", "Etap 3");
+        _strony["Wyprawy"] = new WyprawyPage { DataContext = vm.Wyprawy };
         _strony["Bronie"] = new BroniePage { DataContext = vm.Repliki };
         _strony["Wyposazenie"] = new WyposazeniePage { DataContext = vm.Wyposazenie };
-        _strony["Zestawy"] = new PlaceholderPage("Zestawy", "Etap 3");
+        _strony["Zestawy"] = new ZestawyPage { DataContext = vm.Zestawy };
         _strony["Raporty"] = new PlaceholderPage("Raporty", "Etap 4");
         _strony["DoUzupelnienia"] = new PlaceholderPage("Do uzupełnienia", "Etap 4");
         // rekonstrukcje edytujemy w panelu karty po prawej stronie
@@ -117,6 +117,10 @@ public partial class MainWindow : FluentWindow
             ViewModel.Wyposazenie.Odswiez();
         if (ekran == "Bronie")
             ViewModel.Repliki.Odswiez();
+        if (ekran == "Wyprawy")
+            ViewModel.Wyprawy.Odswiez();
+        if (ekran == "Zestawy")
+            ViewModel.Zestawy.Odswiez();
     }
 
     private void ZamknijPanelKarty_Click(object sender, RoutedEventArgs e)

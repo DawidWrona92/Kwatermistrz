@@ -1,0 +1,163 @@
+<Page x:Class="Kwatermistrz.App.Views.ZestawyPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
+      xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
+      Title="Zestawy">
+    <Page.Resources>
+        <conv:KonwerterDaty x:Key="KonwerterDaty" />
+        <conv:KonwerterProcentu x:Key="KonwerterProcentu" />
+        <conv:KonwerterNazwySlownika x:Key="KonwerterNazwySlownika" />
+        <conv:KonwerterNieRowneNull x:Key="KonwerterNieRowneNull" />
+    </Page.Resources>
+    <Grid Margin="8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Lista zestawów (FR-709) -->
+        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+            <TextBlock Text="Zestawy" Style="{StaticResource TytulEkranu}" />
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,8">
+                <ui:TextBox MinWidth="140" PlaceholderText="Filtr…"
+                            Text="{Binding FiltrTekst, UpdateSourceTrigger=PropertyChanged}" />
+                <CheckBox Content="Tylko szkice" VerticalAlignment="Center" Margin="8,0,0,0"
+                          IsChecked="{Binding TylkoSzkice}" />
+                <ui:Button Content="Nowy" Appearance="Primary" Margin="8,0,0,0"
+                           Command="{Binding DodajCommand}" />
+            </StackPanel>
+            <ui:DataGrid ItemsSource="{Binding Wiersze}"
+                         AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                         SelectionMode="Single" SelectedItem="{Binding Wybrany}"
+                         HeadersVisibility="Column">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
+                    <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="60" />
+                    <DataGridTextColumn Header="%" Width="50">
+                        <DataGridTextColumn.Binding>
+                            <Binding Path="Procent" Converter="{StaticResource KonwerterProcentu}" />
+                        </DataGridTextColumn.Binding>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Ostatnie" Width="80">
+                        <DataGridTextColumn.Binding>
+                            <Binding Path="OstatnieUzycie" Converter="{StaticResource KonwerterDaty}" />
+                        </DataGridTextColumn.Binding>
+                    </DataGridTextColumn>
+                </DataGrid.Columns>
+            </ui:DataGrid>
+        </StackPanel>
+
+        <!-- Karta zestawu (FR-701, FR-702, FR-703) -->
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding Wybrany, Converter={StaticResource KonwerterNieRowneNull}}">
+            <StackPanel Margin="4" DataContext="{Binding Wybrany}">
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="90" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="90" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Nazwa" VerticalAlignment="Center" />
+                    <ui:TextBox Grid.Column="1" Text="{Binding Zestaw.Nazwa}" />
+                    <TextBlock Grid.Column="2" Text="Rekonstrukcja" VerticalAlignment="Center" Margin="8,0,0,0" />
+                    <ComboBox Grid.Column="3" Margin="8,0,0,0"
+                              ItemsSource="{Binding DataContext.Rekonstrukcje, RelativeSource={RelativeSource AncestorType=Page}}"
+                              SelectedValue="{Binding Zestaw.RekonstrukcjaId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
+                </Grid>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="Strona: " VerticalAlignment="Center" />
+                    <ComboBox MinWidth="140"
+                              ItemsSource="{Binding DataContext.Slowniki.Strony, RelativeSource={RelativeSource AncestorType=Page}}"
+                              SelectedValue="{Binding Zestaw.StronaId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
+                    <CheckBox Content="Szkic" VerticalAlignment="Center" Margin="12,0,0,0"
+                              IsChecked="{Binding Zestaw.CzySzkic}" />
+                </StackPanel>
+
+                <TextBlock Text="Sloty i warianty" Style="{StaticResource NaglowekSekcji}" Margin="0,8,0,4" />
+                <ItemsControl ItemsSource="{Binding Zestaw.Sloty}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderThickness="0,0,0,1" Padding="6" Margin="0,2"
+                                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:TextBox MinWidth="140" Text="{Binding Nazwa}" ToolTip="Nazwa slotu" />
+                                        <TextBlock VerticalAlignment="Center" Margin="8,0,0,0" Opacity="0.6">
+                                            <Run Text="Wariantów: " /><Run Text="{Binding Warianty.Count}" />
+                                        </TextBlock>
+                                        <ui:Button Margin="8,0,0,0" Content="Dodaj wariant"
+                                                   Command="{Binding DataContext.DodajWariantCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   CommandParameter="{Binding}" />
+                                        <ui:Button Margin="4,0,0,0" Appearance="Danger"
+                                                   Command="{Binding DataContext.UsunSlotCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   CommandParameter="{Binding}">
+                                            <ui:SymbolIcon Symbol="Dismiss24" />
+                                        </ui:Button>
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Warianty}" Margin="0,4,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+                                                        CornerRadius="4" Padding="6" Margin="0,2">
+                                                    <StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <RadioButton GroupName="Domyslny" Content="Domyślny"
+                                                                         IsChecked="{Binding DataContext.IndeksWariantuDomyslnego, RelativeSource={RelativeSource AncestorType=DataTemplate}}" />
+                                                            <CheckBox Content="Puste (celowo brak)" Margin="12,0,0,0"
+                                                                      IsChecked="{Binding CzyPuste}" VerticalAlignment="Center" />
+                                                            <ui:Button Margin="8,0,0,0" Content="Dodaj element"
+                                                                       Command="{Binding DataContext.DataContext.DodajElementCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                       CommandParameter="{Binding}" />
+                                                            <ui:Button Margin="4,0,0,0" Appearance="Danger"
+                                                                       Command="{Binding DataContext.DataContext.UsunWariantCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                       CommandParameter="{Binding}">
+                                                                <ui:SymbolIcon Symbol="Dismiss24" />
+                                                            </ui:Button>
+                                                        </StackPanel>
+                                                        <ItemsControl ItemsSource="{Binding Elementy}" Margin="0,4,0,0">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                                        <ComboBox MinWidth="110" SelectedValue="{Binding Typ}">
+                                                                            <ComboBoxItem Content="Przedmiot" Tag="0" />
+                                                                            <ComboBoxItem Content="Replika" Tag="1" />
+                                                                        </ComboBox>
+                                                                        <ComboBox MinWidth="220" Margin="8,0,0,0"
+                                                                                  ItemsSource="{Binding DataContext.DataContext.DataContext.Przedmioty, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                                  SelectedValue="{Binding ElementId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
+                                                                        <ui:Button Margin="4,0,0,0" Appearance="Danger"
+                                                                                   Command="{Binding DataContext.DataContext.DataContext.UsunElementCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                                   CommandParameter="{Binding}">
+                                                                            <ui:SymbolIcon Symbol="Dismiss24" />
+                                                                        </ui:Button>
+                                                                    </StackPanel>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <ui:Button Content="Dodaj slot" Margin="0,8,0,0"
+                           Command="{Binding DataContext.DodajSlotCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
+
+                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                    <ui:Button Content="Zapisz" Appearance="Primary"
+                               Command="{Binding DataContext.ZapiszKarteCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
+                    <ui:Button Content="Usuń zestaw" Appearance="Danger" Margin="8,0,0,0"
+                               Command="{Binding DataContext.UsunCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                               CommandParameter="{Binding}" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

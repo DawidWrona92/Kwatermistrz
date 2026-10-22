@@ -1,0 +1,103 @@
+<Page x:Class="Kwatermistrz.App.Views.WyprawyPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
+      Title="Wyprawy">
+    <Page.Resources>
+        <conv:KonwerterDaty x:Key="KonwerterDaty" />
+        <conv:KonwerterNazwySlownika x:Key="KonwerterNazwySlownika" />
+    </Page.Resources>
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Wyprawy" Style="{StaticResource TytulEkranu}" />
+
+        <!-- Szybkie dodawanie (FR-802) -->
+        <Border Grid.Row="1" Style="{StaticResource Karta}" Padding="10" Margin="0,8,0,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <DatePicker Grid.Column="0" SelectedDate="{Binding Nowa.Data}" ToolTip="Data (wymagana)" />
+                <ComboBox Grid.Column="1" MinWidth="160" Margin="8,0,0,0"
+                          ItemsSource="{Binding Zestawy}"
+                          SelectedValue="{Binding Nowa.ZestawId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa"
+                          SelectionChanged="Zestaw_SelectionChanged"
+                          ToolTip="Zestaw (opcjonalny)" />
+                <ComboBox Grid.Column="2" MinWidth="160" Margin="8,0,0,0"
+                          ItemsSource="{Binding Repliki}"
+                          SelectedValue="{Binding Nowa.ReplikaGlownaId}" SelectedValuePath="Id" DisplayMemberPath="ModelProducenta"
+                          ToolTip="Replika główna" />
+                <ui:TextBox Grid.Column="3" MinWidth="140" Margin="8,0,0,0"
+                            Text="{Binding Nowa.Miejsce}" PlaceholderText="Miejsce…" />
+                <ui:TextBox Grid.Column="4" MinWidth="140" Margin="8,0,0,0"
+                            Text="{Binding Nowa.Komentarz}" PlaceholderText="Komentarz…" />
+                <ui:Button Grid.Column="5" Margin="8,0,0,0" Appearance="Primary"
+                           Command="{Binding DodajWypraweCommand}" ToolTip="Dodaj wyprawę (Enter)">
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon Symbol="Add24" />
+                        <TextBlock Text="Dodaj" Margin="6,0,0,0" />
+                    </StackPanel>
+                </ui:Button>
+            </Grid>
+        </Border>
+
+        <!-- Filtry + lista (FR-808) -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                <ComboBox MinWidth="90" ItemsSource="{Binding Lata}"
+                          SelectedItem="{Binding FiltrRok}" ToolTip="Rok" />
+                <ComboBox MinWidth="160" Margin="8,0,0,0" ItemsSource="{Binding Repliki}"
+                          SelectedValue="{Binding FiltrReplikaId}" SelectedValuePath="Id" DisplayMemberPath="ModelProducenta"
+                          ToolTip="Replika" />
+                <ComboBox MinWidth="160" Margin="8,0,0,0" ItemsSource="{Binding Zestawy}"
+                          SelectedValue="{Binding FiltrZestawId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa"
+                          ToolTip="Zestaw" />
+                <ui:TextBox MinWidth="160" Margin="8,0,0,0" PlaceholderText="Filtr…"
+                            Text="{Binding FiltrTekst, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+            <ui:DataGrid Grid.Row="1"
+                         ItemsSource="{Binding Wiersze}"
+                         AutoGenerateColumns="False"
+                         CanUserAddRows="False"
+                         IsReadOnly="True"
+                         SelectionMode="Single"
+                         SelectedItem="{Binding Wybrana}"
+                         HeadersVisibility="Column">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Data" Binding="{Binding Data, Converter={StaticResource KonwerterDaty}}" Width="90" />
+                    <DataGridTextColumn Header="Miejsce" Binding="{Binding Miejsce}" Width="*" />
+                    <DataGridTextColumn Header="Replika główna" Binding="{Binding ReplikaNazwa}" Width="160" />
+                    <DataGridTextColumn Header="Zestaw" Binding="{Binding ZestawNazwa}" Width="140" />
+                    <DataGridTextColumn Header="Mundur" Binding="{Binding MundurNazwa}" Width="140" />
+                    <DataGridTextColumn Header="Komentarz" Binding="{Binding Komentarz}" Width="160" />
+                    <DataGridTemplateColumn Header="Akcje" Width="70">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ui:Button Appearance="Danger" ToolTip="Usuń wyprawę"
+                                           Command="{Binding DataContext.UsunCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                           CommandParameter="{Binding}">
+                                    <ui:SymbolIcon Symbol="Dismiss24" />
+                                </ui:Button>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </ui:DataGrid>
+        </Grid>
+    </Grid>
+</Page>

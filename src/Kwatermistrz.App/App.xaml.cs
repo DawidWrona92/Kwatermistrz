@@ -50,6 +50,8 @@ public partial class App : Application
         services.AddSingleton<WyposazenieViewModel>();
         services.AddSingleton<KategorieViewModel>();
         services.AddSingleton<ReplikiViewModel>();
+        services.AddSingleton<ZestawyViewModel>();
+        services.AddSingleton<WyprawyViewModel>();
         _provider = services.BuildServiceProvider();
 
         // motyw z ustawień (FR-1006)

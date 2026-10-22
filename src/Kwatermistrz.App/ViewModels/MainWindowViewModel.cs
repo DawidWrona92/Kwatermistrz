@@ -21,7 +21,9 @@ public partial class MainWindowViewModel : ObservableObject
         ImportViewModel import,
         WyposazenieViewModel wyposazenie,
         KategorieViewModel kategorie,
-        ReplikiViewModel repliki)
+        ReplikiViewModel repliki,
+        ZestawyViewModel zestawy,
+        WyprawyViewModel wyprawy)
     {
         _dane = dane;
         _stan = stan;
@@ -33,6 +35,8 @@ public partial class MainWindowViewModel : ObservableObject
         Wyposazenie = wyposazenie;
         Kategorie = kategorie;
         Repliki = repliki;
+        Zestawy = zestawy;
+        Wyprawy = wyprawy;
         _stan.AktywnaRekonstrukcjaId = dane.Ustawienia.OstatniaRekonstrukcjaId;
         if (!string.IsNullOrEmpty(dane.Ustawienia.OstatniEkran))
             _stan.AktualnyEkran = dane.Ustawienia.OstatniEkran;
@@ -61,6 +65,12 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>ViewModel replik (FR-301–305).</summary>
     public ReplikiViewModel Repliki { get; }
+
+    /// <summary>ViewModel zestawów (FR-701–709).</summary>
+    public ZestawyViewModel Zestawy { get; }
+
+    /// <summary>ViewModel wypraw (FR-801–809).</summary>
+    public WyprawyViewModel Wyprawy { get; }
 
     /// <summary>Wszystkie rekonstrukcje do przełącznika.</summary>
     public IReadOnlyList<Rekonstrukcja> RekonstrukcjeLista => _dane.Rekonstrukcje;

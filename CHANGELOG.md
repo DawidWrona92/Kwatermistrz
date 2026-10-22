@@ -4,6 +4,21 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 
 ## [Nieopublikowane]
 
+### Etap 3 — Wyprawy i zestawy (FR-701–705, FR-709, FR-801–805, FR-808–809, FR-101–103, FR-910 część)
+
+#### Dodane
+- Ekran **Zestawy** (FR-701–705, FR-709): lista zestawów z liczbą wypraw, % i datą ostatniego użycia; filtry (tekst, tylko szkice), aktywna rekonstrukcja (BR-16). Karta zestawu: nazwa (z podpowiedzią z nazwy munduru, gdy pusta), rekonstrukcja, strona, status szkic.
+- Edytor slotów i wariantów (FR-702, FR-703): dodawanie/usuwanie slotów, wariantów (lista elementów + jawne „puste”), wybór domyślnego wariantu (FR-704), wybór elementów spośród przedmiotów i replik (FR-805 — bez sprzedanych/wycofanych).
+- Ekran **Wyprawy** (FR-801–809): pasek szybkiego dodawania (FR-802) — data (domyślnie dziś), zestaw, replika główna (podpowiedź z zestawu: pierwszy wariant slotu broni głównej), miejsce, komentarz; Enter = zapis. Po wyborze zestawu skład ustawia się na warianty zapamiętane/domyślne (FR-803, FR-704) i zapamiętuje ostatnio użyte warianty.
+- Lista wypraw (FR-808): sortowana od najnowszej, filtry (rok, replika, zestaw, tekst), kolumny: data, miejsce, replika główna, zestaw, mundur, komentarz; usuwanie (oznacza `CzyUsunieta`) i przywracanie — liczniki aktualizują się natychmiast (FR-809). Aktywna rekonstrukcja filtruje listę (FR-1303/1304).
+- `ZestawyViewModel`, `WyprawyViewModel`, `WierszZestawu`, `WierszWyprawy`.
+- Przycisk „Dodaj wyprawę” w górnym pasku (FR-103) przenosi teraz do ekranu Wyprawy z fokusem na formularz.
+
+#### Uwagi
+- FR-706 (szkice elementów przy wpisywaniu w zestawie), FR-707 (lista pakowania), FR-708 (koszt zestawu) — Etap 5.
+- FR-807 (pytanie o odjęcie od liczników przy wyprawie przed dniem zerowym) — uproszczone: zapis bez pytania; pełna wersja w Etapie 5.
+- Kontrola spójności (FR-910) jako osobny ekran — Etap 4 (Raporty).
+
 ### Etap 2 — Repliki (FR-301–305, FR-401–405, FR-408–409, FR-501–505, FR-601–602, FR-604)
 
 #### Dodane
