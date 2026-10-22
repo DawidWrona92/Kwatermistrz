@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\src\Kwatermistrz.Core\Kwatermistrz.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\docs\dane-startowe\Dane_zrodlowe_Kwatermistrz.xlsx" CopyToOutputDirectory="PreserveNewest" Link="dane-startowe\Dane_zrodlowe_Kwatermistrz.xlsx" />
+  </ItemGroup>
+
 </Project>

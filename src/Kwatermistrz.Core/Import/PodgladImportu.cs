@@ -49,10 +49,10 @@ public class PodgladImportu
     /// <summary>Data dnia zerowego ustawiona przy imporcie (FR-807).</summary>
     public DateOnly DzienZerowy { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
-    /// <summary>Dodaje konflikt, jeśli jeszcze takiego nie ma (po źródle).</summary>
+    /// <summary>Dodaje konflikt. Deduplikacja tylko dla tego samego źródła, rodzaju i opisu — różne pozycje źródłowe (różne ładownice) to osobne decyzje.</summary>
     public KonfliktImportu DodajKonflikt(RodzajKonfliktu rodzaj, string opis, string zrodlo)
     {
-        var istniejacy = Konflikty.FirstOrDefault(k => k.Zrodlo == zrodlo && k.Rodzaj == rodzaj);
+        var istniejacy = Konflikty.FirstOrDefault(k => k.Zrodlo == zrodlo && k.Rodzaj == rodzaj && k.Opis == opis);
         if (istniejacy != null)
             return istniejacy;
         var konflikt = new KonfliktImportu { Rodzaj = rodzaj, Opis = opis, Zrodlo = zrodlo };

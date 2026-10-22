@@ -27,22 +27,59 @@ public static class Dopasowanie
             .ToList();
     }
 
-    /// <summary>Dopasowuje nazwę do listy kandydatów po tekście „kluczowym” (np. „firma nazwa”). Zwraca wszystkich kandydatów zawierających wszystkie słowa kluczowe.</summary>
+    /// <summary>Dopasowuje nazwę do listy kandydatów po tekście „kluczowym” (np. „firma nazwa”). Zwraca kandydatów spełniających wszystkie słowa kluczowe; gdy żaden nie spełnia wszystkich — kandydaci z tolerancją n-1 słów (np. „SSO Spektr” nie trafi w „SSO Sumrak”, ale „Spektr” już tak, gdy dodamy tekst wzoru).</summary>
     public static WynikDopasowania<T> Dopasuj<T>(string tekstZrodlowy, IEnumerable<T> kandydaci, Func<T, string> tekstKandydata)
     {
         var wynik = new WynikDopasowania<T>();
         var slowa = SlowaKluczowe(tekstZrodlowy);
         if (slowa.Count == 0)
             return wynik;
-        foreach (var kandydat in kandydaci)
+        var wszystkie = kandydaci
+            .Select(kandydat => (Kandydat: kandydat, Tekst: Normalizacja.TekstDoPorownania(tekstKandydata(kandydat)), Trafienia: slowa.Count(s => Normalizacja.TekstDoPorownania(tekstKandydata(kandydat)).Contains(s, StringComparison.Ordinal))))
+            .ToList();
+        foreach (var (kandydat, _, trafienia) in wszystkie.Where(x => x.Trafienia == slowa.Count))
+            wynik.Kandydaci.Add(kandydat);
+        if (wynik.Kandydaci.Count == 0 && slowa.Count > 1)
         {
-            var tekst = Normalizacja.TekstDoPorownania(tekstKandydata(kandydat));
-            if (slowa.All(s => tekst.Contains(s, StringComparison.Ordinal)))
-                wynik.Kandydaci.Add(kandydat);
+            // tolerancja n-1 słów — tylko gdy brak pełnych trafień; brakujące słowo musi być podobne do jakiegoś słowa kandydata („Sumak”→„Sumrak” tak, „Ręczny”→6Sh122 nie)
+            foreach (var x in wszystkie)
+            {
+                if (x.Trafienia < slowa.Count - 1)
+                    continue;
+                var brakujace = slowa.Where(w => !x.Tekst.Contains(w, StringComparison.Ordinal)).ToList();
+                var slowaKandydata = x.Tekst.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (brakujace.All(b => slowaKandydata.Any(sk => Podobne(b, sk))))
+                    wynik.Kandydaci.Add(x.Kandydat);
+            }
         }
         if (wynik.Kandydaci.Count == 1)
             wynik.Element = wynik.Kandydaci[0];
         return wynik;
+    }
+
+    /// <summary>Podobieństwo słów: ta sama długość (±1) i odległość Levenshteina ≤ 2 (dla słów ≥5 znaków) lub ≤1 (krótsze). „Sumak”/„Sumrak” = 2, „Ręczny”/„6Sh122” = daleko.</summary>
+    public static bool Podobne(string a, string b)
+    {
+        if (a == b)
+            return true;
+        if (Math.Abs(a.Length - b.Length) > 1)
+            return false;
+        var max = a.Length >= 5 ? 2 : 1;
+        return OdlegloscLevenshteina(a, b) <= max;
+    }
+
+    private static int OdlegloscLevenshteina(string a, string b)
+    {
+        var d = new int[a.Length + 1, b.Length + 1];
+        for (var i = 0; i <= a.Length; i++)
+            d[i, 0] = i;
+        for (var j = 0; j <= b.Length; j++)
+            d[0, j] = j;
+        for (var i = 1; i <= a.Length; i++)
+            for (var j = 1; j <= b.Length; j++)
+                d[i, j] = Math.Min(Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                    d[i - 1, j - 1] + (a[i - 1] == b[j - 1] ? 0 : 1));
+        return d[a.Length, b.Length];
     }
 
     /// <summary>Dopasowanie dokładne po nazwie (po normalizacji), potem częściowe.</summary>

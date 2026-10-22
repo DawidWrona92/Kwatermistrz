@@ -29,11 +29,12 @@ public static class Normalizacja
     }
 
 
-    /// <summary>Tekst do porównań: bez wielkości liter, bez polskich znaków diakrytycznych.</summary>
+    /// <summary>Tekst do porównań: bez wielkości liter, bez diakrytyków, myślniki i ukośniki jako spacje (§13.4). Litera ł nie dekomponuje się przez FormD, więc zamieniamy ją ręcznie.</summary>
     public static string TekstDoPorownania(string tekst)
     {
-        var bezD = UsunDiakrytyki(tekst.Trim().ToLowerInvariant());
-        return bezD;
+        var t = tekst.Trim().ToLowerInvariant();
+        t = t.Replace('ł', 'l').Replace('–', ' ').Replace('—', ' ').Replace('-', ' ').Replace('/', ' ');
+        return UsunDiakrytyki(t);
     }
 
     private static string UsunDiakrytyki(string tekst)

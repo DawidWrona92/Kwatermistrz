@@ -70,7 +70,7 @@ public class Kalkulator
         return suma == 0 ? 0m : (decimal)wyprawyRepliki / suma * 100m;
     }
 
-    /// <summary>BR-04/FR-502: koszt całkowity = suma pozycji; cena oryginalna = suma pozycji „Zakup repliki”; dodatki = różnica.</summary>
+    /// <summary>BR-04/FR-502: koszt całkowity = suma pozycji; cena oryginalna = suma pozycji rodzaju „Zakup repliki”; dodatki = reszta.</summary>
     public static (decimal Calkowity, decimal Oryginalna, decimal Dodatki) Koszty(IEnumerable<PozycjaKosztowa> pozycje)
     {
         var calkowity = pozycje.Sum(p => p.Kwota);
@@ -124,6 +124,13 @@ public class Kalkulator
     /// <summary>BR-08: użycia przedmiotu = licznik historyczny + wyprawy, w których przedmiot jest w składzie. Elementy kompletu mają wspólną liczbę użyć.</summary>
     public int UzyciaPrzedmiotu(Przedmiot przedmiot)
     {
+        // element kompletu ma wspólny licznik z kompletem (BR-08)
+        if (przedmiot.KompletId != null)
+        {
+            var komplet = _dane.Przedmioty.FirstOrDefault(p => p.Id == przedmiot.KompletId);
+            if (komplet != null && komplet.Id != przedmiot.Id)
+                return UzyciaPrzedmiotu(komplet);
+        }
         var wyprawyPrzedmiotu = _dane.Wyprawy.Count(w => !w.CzyUsunieta && CzyWnaSkładzie(w, przedmiot.Id));
         var licznik = przedmiot.LicznikHistoryczny;
         return licznik + wyprawyPrzedmiotu;
@@ -253,8 +260,10 @@ public class Kalkulator
             else
                 wgMundur++;
         }
-        wgMundur += _dane.Przedmioty.Where(p => p.KompletId != null || _dane.Przedmioty.Any(x => x.KompletId == p.Id))
-            .Sum(p => p.LicznikHistoryczny);
+        // historyczne liczniki mundurów: tylko przedmioty kategorii „Mundury” (tabela umundurowania, 13.2)
+        var kategoriaMundury = _dane.Slowniki.Kategorie.FirstOrDefault(k => k.CzyNosnik == false && Normalizacja.TekstDoPorownania(k.Nazwa).Contains("mundur"));
+        if (kategoriaMundury != null)
+            wgMundur += _dane.Przedmioty.Where(p => p.KategoriaId == kategoriaMundury.Id).Sum(p => p.LicznikHistoryczny);
         return (wgReplik, wgLat, wgMundur, bezRepliki, bezMunduru);
     }
 }
