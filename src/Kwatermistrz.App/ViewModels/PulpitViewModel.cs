@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Kwatermistrz.App.Controls;
 using Kwatermistrz.App.Services;
 using Kwatermistrz.Core.Model;
@@ -6,7 +7,16 @@ using Kwatermistrz.Core.Obliczenia;
 
 namespace Kwatermistrz.App.ViewModels;
 
-/// <summary>ViewModel pulpitu (FR-101, FR-102): liczby ogólne i mozaika wypraw.</summary>
+/// <summary>Wiersz rankingu replik na pulpicie (FR-105).</summary>
+public class WierszRankingu
+{
+    public string ReplikaId { get; set; } = "";
+    public string Nazwa { get; set; } = "";
+    public int Wyprawy { get; set; }
+    public decimal KosztNaWyprawe { get; set; }
+}
+
+/// <summary>ViewModel pulpitu (FR-101, FR-102): liczby ogólne, karty skrótowe (FR-104), ranking replik (FR-105), mozaika wypraw.</summary>
 public partial class PulpitViewModel : ObservableObject
 {
     private readonly DaneAplikacji _dane;
@@ -17,6 +27,9 @@ public partial class PulpitViewModel : ObservableObject
         _dane = dane;
         _kalkulator = kalkulator;
     }
+
+    /// <summary>Zdarzenie nawigacji do ekranu z filtrem — podpina widok główny.</summary>
+    public event Action<string, string?>? PrzejdzDo;
 
     /// <summary>Odświeża dane pulpitu (po zmianie danych lub rekonstrukcji).</summary>
     public void Odswiez()
@@ -29,12 +42,69 @@ public partial class PulpitViewModel : ObservableObject
         DataOstatniejWyprawy = ostatnia;
         DniOdOstatniej = ostatnia != null ? DateOnly.FromDateTime(DateTime.Today).DayNumber - ostatnia.Value.DayNumber : null;
         Kafelki = BudujKafelki(kalk, ostatnia);
+        // karty skrótowe (FR-104)
+        OtwarteAwaria = kalk.OtwarteAwaria();
+        OtwarteZadania = kalk.OtwarteZadania();
+        ReplikiBezTestu = kalk.ReplikiBezTestu(_dane.Ustawienia.DniBezTestu).Count;
+        PrzedmiotyBezUzycia = kalk.PrzedmiotyBezUzycia();
+        PolaNieznane = kalk.PolaNieznane();
+        // ranking (FR-105)
+        Ranking = kalk.RankingReplik(5)
+            .Select(w => new WierszRankingu
+            {
+                ReplikaId = w.ReplikaId,
+                Nazwa = NazwaRepliki(w.ReplikaId),
+                Wyprawy = w.Wyprawy,
+                KosztNaWyprawe = w.KosztNaWyprawe,
+            })
+            .ToList();
         OnPropertyChanged(nameof(LacznaLiczbaWypraw));
         OnPropertyChanged(nameof(WyprawyWRoku));
         OnPropertyChanged(nameof(DataPierwszejWyprawy));
         OnPropertyChanged(nameof(DataOstatniejWyprawy));
         OnPropertyChanged(nameof(DniOdOstatniej));
         OnPropertyChanged(nameof(Kafelki));
+        OnPropertyChanged(nameof(OtwarteAwaria));
+        OnPropertyChanged(nameof(OtwarteZadania));
+        OnPropertyChanged(nameof(ReplikiBezTestu));
+        OnPropertyChanged(nameof(PrzedmiotyBezUzycia));
+        OnPropertyChanged(nameof(PolaNieznane));
+        OnPropertyChanged(nameof(Ranking));
+        OnPropertyChanged(nameof(CzyRankingPusty));
+    }
+
+    private string NazwaRepliki(string id)
+    {
+        var r = _dane.Repliki.FirstOrDefault(x => x.Id == id);
+        return r == null ? "" : r.Prototyp != null ? $"{r.ModelProducenta} ({r.Prototyp})" : r.ModelProducenta;
+    }
+
+    /// <summary>FR-104: otwarte awarie — przejście do listy replik z filtrem „tylko awaria”.</summary>
+    [RelayCommand]
+    private void OtworzAwaria() => PrzejdzDo?.Invoke("Bronie", "awaria");
+
+    /// <summary>FR-104: otwarte zadania — przejście do widoku „Do uzupełnienia”.</summary>
+    [RelayCommand]
+    private void OtworzZadania() => PrzejdzDo?.Invoke("DoUzupelnienia", "zadania");
+
+    /// <summary>FR-104: repliki bez testu — przejście do listy replik z filtrem „bez testu”.</summary>
+    [RelayCommand]
+    private void OtworzBezTestu() => PrzejdzDo?.Invoke("Bronie", "bezTestu");
+
+    /// <summary>FR-104: przedmioty bez użyć — przejście do wyposażenia z filtrem „bez użyć”.</summary>
+    [RelayCommand]
+    private void OtworzBezUzycia() => PrzejdzDo?.Invoke("Wyposazenie", "bezUzycia");
+
+    /// <summary>FR-104: pola „nieznane” — przejście do widoku „Do uzupełnienia”.</summary>
+    [RelayCommand]
+    private void OtworzPolaNieznane() => PrzejdzDo?.Invoke("DoUzupelnienia", null);
+
+    /// <summary>FR-105: otwarcie karty repliki z rankingu.</summary>
+    [RelayCommand]
+    private void OtworzRanking(WierszRankingu? wiersz)
+    {
+        if (wiersz != null)
+            PrzejdzDo?.Invoke("Bronie", wiersz.ReplikaId);
     }
 
     /// <summary>Łączna liczba wypraw (BR-01).</summary>
@@ -57,6 +127,27 @@ public partial class PulpitViewModel : ObservableObject
 
     /// <summary>Dane aplikacji — do kolorów kafelków (wzory mundurów).</summary>
     public DaneAplikacji Dane => _dane;
+
+    /// <summary>FR-104: liczba otwartych awarii.</summary>
+    public int OtwarteAwaria { get; private set; }
+
+    /// <summary>FR-104: liczba otwartych zadań (łącznie).</summary>
+    public int OtwarteZadania { get; private set; }
+
+    /// <summary>FR-104: liczba replik posiadanych bez testu dłużej niż próg.</summary>
+    public int ReplikiBezTestu { get; private set; }
+
+    /// <summary>FR-104: liczba przedmiotów posiadanych bez żadnego użycia.</summary>
+    public int PrzedmiotyBezUzycia { get; private set; }
+
+    /// <summary>FR-104: liczba pól kart technicznych „nieznane” do uzupełnienia.</summary>
+    public int PolaNieznane { get; private set; }
+
+    /// <summary>FR-105: ranking pięciu replik z największą liczbą wypraw, z kosztem na wyprawę.</summary>
+    public IReadOnlyList<WierszRankingu> Ranking { get; private set; } = new List<WierszRankingu>();
+
+    /// <summary>Prawda, gdy ranking jest pusty (brak replik posiadanych).</summary>
+    public bool CzyRankingPusty => Ranking.Count == 0;
 
     private List<KafelekWyprawy> BudujKafelki(Kalkulator kalk, DateOnly? ostatnia)
     {

@@ -29,6 +29,8 @@
                       ToolTip="Stan" />
             <CheckBox Content="Tylko z otwartą awarią" VerticalAlignment="Center" Margin="12,0,0,0"
                       IsChecked="{Binding TylkoAwaria}" />
+            <CheckBox Content="Bez testu" VerticalAlignment="Center" Margin="12,0,0,0"
+                      IsChecked="{Binding TylkoBezTestu}" ToolTip="Bez testu dłużej niż próg z ustawień (FR-104)" />
             <CheckBox Content="Pokaż sprzedane i wycofane" VerticalAlignment="Center" Margin="12,0,0,0"
                       IsChecked="{Binding PokazSprzedane}" />
             <ui:Button Content="Dodaj replikę" Appearance="Primary" Margin="12,0,0,0"

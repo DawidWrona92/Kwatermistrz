@@ -13,6 +13,8 @@
             <TextBlock VerticalAlignment="Center" Opacity="0.7">
                 <Run Text="Pozycji: " /><Run Text="{Binding Liczba, Mode=OneWay}" />
             </TextBlock>
+            <CheckBox Content="Tylko zadania" VerticalAlignment="Center" Margin="16,0,0,0"
+                      IsChecked="{Binding TylkoZadania}" />
         </StackPanel>
         <ui:DataGrid Grid.Row="1"
                      ItemsSource="{Binding Pozycje}"

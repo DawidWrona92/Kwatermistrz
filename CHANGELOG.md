@@ -4,6 +4,16 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 
 ## [Nieopublikowane]
 
+### Etap 5b — Pulpit: karty skrótowe i ranking (FR-104, FR-105)
+
+#### Dodane
+- **Karty skrótowe na pulpicie** (FR-104) z liczbą i przejściem do listy: otwarte awarie, otwarte zadania, repliki bez testu (próg z ustawień, FR-1006), przedmioty bez użyć, pola „nieznane” kart technicznych.
+- **Ranking pięciu replik** z największą liczbą wypraw (FR-105) — nazwa, liczba wypraw, koszt na wyprawę (BR-05); klik otwiera kartę repliki.
+- Przejścia ustawiają filtr na ekranie docelowym: „Tylko z otwartą awarią” / „Bez testu” (Broń), „Bez użyć” (Wyposażenie), „Tylko zadania” (Do uzupełnienia).
+- Widok **Do uzupełnienia** (FR-1204) pokazuje teraz także otwarte zadania (FR-601) z nawigacją do karty repliki/przedmiotu.
+- Core `Kalkulator`: `OtwarteAwaria`, `OtwarteZadania`, `ReplikiBezTestu`, `PrzedmiotyBezUzycia`, `PolaNieznane`, `RankingReplik`.
+- 5 testów pulpitowych (FR-104/105).
+
 ### Etap 5a — Pakiety konfiguracji (FR-1404, część FR-1003)
 
 #### Dodane

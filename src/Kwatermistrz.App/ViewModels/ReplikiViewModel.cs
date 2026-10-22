@@ -55,6 +55,10 @@ public partial class ReplikiViewModel : ObservableObject
     [ObservableProperty]
     private bool _tylkoAwaria;
 
+    /// <summary>Tylko repliki bez testu dłużej niż próg z ustawień (FR-104).</summary>
+    [ObservableProperty]
+    private bool _tylkoBezTestu;
+
     /// <summary>Słowniki do filtrów i karty.</summary>
     public Slowniki Slowniki => _dane.Slowniki;
 
@@ -98,6 +102,11 @@ public partial class ReplikiViewModel : ObservableObject
             .ToList();
         if (TylkoAwaria)
             wiersze = wiersze.Where(w => w.CzyOtwartaAwaria).ToList();
+        if (TylkoBezTestu)
+        {
+            var prog = DateOnly.FromDateTime(DateTime.Today).AddDays(-_dane.Ustawienia.DniBezTestu);
+            wiersze = wiersze.Where(w => w.DataOstatniegoTestu == null || w.DataOstatniegoTestu < prog).ToList();
+        }
         for (var i = 0; i < wiersze.Count; i++)
             wiersze[i].MiejsceWRankingu = i + 1;
 
@@ -112,6 +121,7 @@ public partial class ReplikiViewModel : ObservableObject
     partial void OnFiltrStronaIdChanged(string? value) => Odswiez();
     partial void OnFiltrStanIdChanged(string? value) => Odswiez();
     partial void OnTylkoAwariaChanged(bool value) => Odswiez();
+    partial void OnTylkoBezTestuChanged(bool value) => Odswiez();
 
     private WierszRepliki BudujWiersz(Kalkulator kalk, Replika r)
     {

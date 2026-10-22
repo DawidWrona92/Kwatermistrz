@@ -7,6 +7,8 @@
       Title="Pulpit">
     <Page.Resources>
         <conv:KonwerterDaty x:Key="KonwerterDaty" />
+        <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
+        <conv:KonwerterBoolToVisibility x:Key="KonwerterBoolToVisibility" />
     </Page.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="16">
@@ -45,6 +47,68 @@
                     </StackPanel>
                 </Border>
             </WrapPanel>
+
+            <!-- Karty skrótowe (FR-104) -->
+            <TextBlock Text="Do zrobienia i sprawdzenia" Style="{StaticResource NaglowekSekcji}" Margin="0,20,0,8" />
+            <WrapPanel Margin="0,0,0,0">
+                <Border Style="{StaticResource KartaLiczby}" Cursor="Hand" MouseLeftButtonUp="KartaSkrotowa_Click" Tag="awaria">
+                    <StackPanel>
+                        <TextBlock Text="Otwarte awarie" Style="{StaticResource EtykietaLiczby}" />
+                        <TextBlock Text="{Binding OtwarteAwaria}" Style="{StaticResource LiczbaPulpitu}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource KartaLiczby}" Cursor="Hand" MouseLeftButtonUp="KartaSkrotowa_Click" Tag="zadania">
+                    <StackPanel>
+                        <TextBlock Text="Otwarte zadania" Style="{StaticResource EtykietaLiczby}" />
+                        <TextBlock Text="{Binding OtwarteZadania}" Style="{StaticResource LiczbaPulpitu}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource KartaLiczby}" Cursor="Hand" MouseLeftButtonUp="KartaSkrotowa_Click" Tag="bezTestu">
+                    <StackPanel>
+                        <TextBlock Text="Repliki bez testu" Style="{StaticResource EtykietaLiczby}" ToolTip="Bez testu dłużej niż próg z ustawień" />
+                        <TextBlock Text="{Binding ReplikiBezTestu}" Style="{StaticResource LiczbaPulpitu}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource KartaLiczby}" Cursor="Hand" MouseLeftButtonUp="KartaSkrotowa_Click" Tag="bezUzycia">
+                    <StackPanel>
+                        <TextBlock Text="Przedmioty bez użyć" Style="{StaticResource EtykietaLiczby}" />
+                        <TextBlock Text="{Binding PrzedmiotyBezUzycia}" Style="{StaticResource LiczbaPulpitu}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource KartaLiczby}" Cursor="Hand" MouseLeftButtonUp="KartaSkrotowa_Click" Tag="polaNieznane">
+                    <StackPanel>
+                        <TextBlock Text="Pola „nieznane”" Style="{StaticResource EtykietaLiczby}" />
+                        <TextBlock Text="{Binding PolaNieznane}" Style="{StaticResource LiczbaPulpitu}" />
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+
+            <!-- Ranking replik (FR-105) -->
+            <TextBlock Text="Najczęściej używane repliki" Style="{StaticResource NaglowekSekcji}" Margin="0,20,0,8" />
+            <Border Style="{StaticResource Karta}" Padding="12">
+                <ItemsControl ItemsSource="{Binding Ranking}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Left"
+                                    Padding="4" Cursor="Hand" Click="Ranking_Click" Tag="{Binding ReplikaId}">
+                                <Grid Width="560">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Nazwa}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0" Text="{Binding Wyprawy, StringFormat={}{0} wypraw}" Opacity="0.85" />
+                                    <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0" Opacity="0.7"
+                                               Text="{Binding KosztNaWyprawe, Converter={StaticResource KonwerterWaluty}, StringFormat={}{0} / wyprawę}" />
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+            <TextBlock Text="Brak replik posiadanych." Margin="0,4,0,0" Opacity="0.6"
+                       Visibility="{Binding CzyRankingPusty, Converter={StaticResource KonwerterBoolToVisibility}}" />
 
             <!-- Mozaika wypraw (FR-102) -->
             <TextBlock Text="Mozaika wypraw" Style="{StaticResource NaglowekSekcji}" Margin="0,20,0,8" />

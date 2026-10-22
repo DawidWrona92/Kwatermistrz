@@ -243,3 +243,105 @@ public class RegulyBiznesoweTests
         Assert.Equal("Ideał", Normalizacja.Przytnij("Ideał "));
     }
 }
+
+/// <summary>Testy pulpitowe FR-104/105: karty skrótowe i ranking replik.</summary>
+public class PulpitTests
+{
+    private static (DaneAplikacji dane, Kalkulator kalk) Przygotuj()
+    {
+        var dane = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        return (dane, new Kalkulator(dane));
+    }
+
+    [Fact]
+    public void FR104_OtwarteAwaria_LiczyTylkoZadaniaSemantykiAwaria()
+    {
+        var (dane, kalk) = Przygotuj();
+        dane.Zadania.Add(new Zadanie { Semantyka = SemantykaZadania.Awaria, Status = StatusZadania.Otwarte });
+        dane.Zadania.Add(new Zadanie { Semantyka = SemantykaZadania.Awaria, Status = StatusZadania.Zamkniete });
+        dane.Zadania.Add(new Zadanie { Semantyka = SemantykaZadania.DoZrobienia, Status = StatusZadania.Otwarte });
+
+        Assert.Equal(1, kalk.OtwarteAwaria());
+        Assert.Equal(2, kalk.OtwarteZadania());
+    }
+
+    [Fact]
+    public void FR104_ReplikiBezTestu_LiczyStarszeNizProgIRozneBezPomiarow()
+    {
+        var (dane, kalk) = Przygotuj();
+        var dzis = DateOnly.FromDateTime(DateTime.Today);
+        var stara = new Replika { ModelProducenta = "Stara" };
+        stara.Pomiary.Add(new Pomiar { Data = dzis.AddDays(-200) });
+        var swieza = new Replika { ModelProducenta = "Świeża" };
+        swieza.Pomiary.Add(new Pomiar { Data = dzis.AddDays(-10) });
+        var bezTestu = new Replika { ModelProducenta = "Bez testu" };
+        var sprzedana = new Replika { ModelProducenta = "Sprzedana", Status = StatusWlasnosci.Sprzedany };
+        dane.Repliki.AddRange(new[] { stara, swieza, bezTestu, sprzedana });
+
+        var wynik = kalk.ReplikiBezTestu(180);
+
+        Assert.Equal(2, wynik.Count);
+        Assert.Contains(wynik, r => r.ModelProducenta == "Stara");
+        Assert.Contains(wynik, r => r.ModelProducenta == "Bez testu");
+        Assert.DoesNotContain(wynik, r => r.ModelProducenta == "Świeża");
+        Assert.DoesNotContain(wynik, r => r.ModelProducenta == "Sprzedana");
+    }
+
+    [Fact]
+    public void FR104_PrzedmiotyBezUzycia_LiczyPosiadaneBezUzyc()
+    {
+        var (dane, kalk) = Przygotuj();
+        var replika = new Replika { ModelProducenta = "R1" };
+        dane.Repliki.Add(replika);
+        var uzyty = new Przedmiot { Nazwa = "Użyty" };
+        var nieuzyty = new Przedmiot { Nazwa = "Nieuzyty" };
+        var historyczny = new Przedmiot { Nazwa = "Historyczny", LicznikHistoryczny = 3 };
+        var sprzedany = new Przedmiot { Nazwa = "Sprzedany", Status = StatusWlasnosci.Sprzedany };
+        dane.Przedmioty.AddRange(new[] { uzyty, nieuzyty, historyczny, sprzedany });
+        // „użyty” ma użycia tylko przez skład ręczny wyprawy
+        dane.Wyprawy.Add(new Wyprawa
+        {
+            Data = new DateOnly(2026, 1, 1),
+            ReplikaGlownaId = replika.Id,
+            SkladReczny = new() { new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = uzyty.Id } },
+        });
+
+        Assert.Equal(1, kalk.PrzedmiotyBezUzycia());
+    }
+
+    [Fact]
+    public void FR104_PolaNieznane_LiczyPolaStanuNieznane()
+    {
+        var (dane, kalk) = Przygotuj();
+        var r = new Replika { ModelProducenta = "R1" };
+        r.KartaTechniczna["p1"] = new WartoscPolaKarty { Tekst = "?", Stan = StanWartosciPola.Nieznane };
+        r.KartaTechniczna["p2"] = new WartoscPolaKarty { Tekst = "OK", Stan = StanWartosciPola.Wypelnione };
+        r.KartaTechniczna["p3"] = new WartoscPolaKarty { Stan = StanWartosciPola.Nieznane };
+        dane.Repliki.Add(r);
+
+        Assert.Equal(2, kalk.PolaNieznane());
+    }
+
+    [Fact]
+    public void FR105_RankingReplik_SortujePoWyprawachIWylaczaSprzedane()
+    {
+        var (dane, kalk) = Przygotuj();
+        var r1 = new Replika { ModelProducenta = "R1", LicznikHistorycznyWypraw = 10 };
+        r1.Koszty.Add(new PozycjaKosztowa { Kwota = 1000m, Semantyka = SemantykaKosztu.Zakup });
+        var r2 = new Replika { ModelProducenta = "R2", LicznikHistorycznyWypraw = 5 };
+        var r3 = new Replika { ModelProducenta = "R3", LicznikHistorycznyWypraw = 20, Status = StatusWlasnosci.Sprzedany };
+        var r4 = new Replika { ModelProducenta = "R4", LicznikHistorycznyWypraw = 3 };
+        var r5 = new Replika { ModelProducenta = "R5", LicznikHistorycznyWypraw = 1 };
+        var r6 = new Replika { ModelProducenta = "R6", LicznikHistorycznyWypraw = 0 };
+        dane.Repliki.AddRange(new[] { r1, r2, r3, r4, r5, r6 });
+
+        var ranking = kalk.RankingReplik(5);
+
+        Assert.Equal(5, ranking.Count);
+        Assert.Equal(r1.Id, ranking[0].ReplikaId);
+        Assert.Equal(1000m / 10m, ranking[0].KosztNaWyprawe);
+        Assert.Equal(r2.Id, ranking[1].ReplikaId);
+        Assert.Equal(r4.Id, ranking[2].ReplikaId);
+        Assert.DoesNotContain(ranking, w => w.ReplikaId == r3.Id);
+    }
+}

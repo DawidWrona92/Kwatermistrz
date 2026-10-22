@@ -22,7 +22,11 @@ public partial class MainWindow : FluentWindow
         if (ViewModel == null)
             return;
         if (DataContext is MainWindowViewModel vm && vm.Pulpit != null)
+        {
             vm.Pulpit.Odswiez();
+            // karty skrótowe pulpitu (FR-104) i ranking (FR-105) — przejście do listy z filtrem
+            vm.Pulpit.PrzejdzDo += PrzejdzZPulpitu;
+        }
         // globalne wyszukiwanie (FR-1201): wyniki pod polem, Enter otwiera pierwszy
         PoleSzukania.TextChanged += (_, _) =>
         {
@@ -149,6 +153,35 @@ public partial class MainWindow : FluentWindow
     private void ZamknijPanelKarty_Click(object sender, RoutedEventArgs e)
     {
         PanelKarty.Visibility = Visibility.Collapsed;
+    }
+
+    /// <summary>Przejście z karty pulpitu (FR-104) lub rankingu (FR-105): ekran + filtr/wybór rekordu.</summary>
+    private void PrzejdzZPulpitu(string ekran, string? parametr)
+    {
+        if (ViewModel == null)
+            return;
+        PokazEkran(ekran);
+        ZaznaczNawigacje(ekran);
+        ViewModel.AktualnyEkran = ekran;
+        if (ekran == "Bronie")
+        {
+            ViewModel.Repliki.TylkoAwaria = parametr == "awaria";
+            ViewModel.Repliki.TylkoBezTestu = parametr == "bezTestu";
+            ViewModel.Repliki.Odswiez();
+            if (parametr != null && parametr != "awaria" && parametr != "bezTestu")
+                ViewModel.Repliki.Wybrana = ViewModel.Repliki.Wiersze.FirstOrDefault(w => w.Id == parametr);
+        }
+        if (ekran == "Wyposazenie")
+        {
+            ViewModel.Wyposazenie.TylkoBezUzycia = parametr == "bezUzycia";
+            ViewModel.Wyposazenie.Odswiez();
+        }
+        if (ekran == "DoUzupelnienia")
+        {
+            ViewModel.DoUzupelnienia.TylkoZadania = parametr == "zadania";
+            ViewModel.DoUzupelnienia.Odswiez();
+        }
+        OdswiezKarte();
     }
 
     private void WynikSzukania_Click(object sender, RoutedEventArgs e)

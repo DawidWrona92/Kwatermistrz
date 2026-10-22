@@ -240,6 +240,43 @@ public class Kalkulator
         return przypisania.Count == 0 || przypisania.Contains(aktywnaRekonstrukcjaId);
     }
 
+    /// <summary>FR-104: liczba otwartych awarii (zadań o semantyce „Awaria” ze statusem otwartym).</summary>
+    public int OtwarteAwaria() => _dane.Zadania.Count(z =>
+        z.Status == StatusZadania.Otwarte && z.Semantyka == SemantykaZadania.Awaria);
+
+    /// <summary>FR-104: liczba wszystkich otwartych zadań (także do kupienia i do zrobienia).</summary>
+    public int OtwarteZadania() => _dane.Zadania.Count(z => z.Status == StatusZadania.Otwarte);
+
+    /// <summary>FR-104: repliki posiadane, których ostatni test (pomiar) jest starszy niż próg dni lub których nigdy nie testowano. Repliki bez żadnego pomiaru liczą się od „zawsze”.</summary>
+    public List<Replika> ReplikiBezTestu(int progDni)
+    {
+        var dzis = DateOnly.FromDateTime(DateTime.Today);
+        var prog = dzis.AddDays(-progDni);
+        return _dane.Repliki
+            .Where(r => r.Status == StatusWlasnosci.Posiadany)
+            .Where(r => r.Pomiary.Count == 0 || r.Pomiary.Max(p => p.Data) < prog)
+            .ToList();
+    }
+
+    /// <summary>FR-104: liczba przedmiotów posiadanych bez żadnego użycia (BR-08, łącznie z licznikiem historycznym).</summary>
+    public int PrzedmiotyBezUzycia() => _dane.Przedmioty
+        .Count(p => p.Status == StatusWlasnosci.Posiadany && UzyciaPrzedmiotu(p) == 0);
+
+    /// <summary>FR-104: liczba pól kart technicznych oznaczonych jako „nieznane” do uzupełnienia.</summary>
+    public int PolaNieznane() => _dane.Repliki
+        .Sum(r => r.KartaTechniczna.Count(k => k.Value.Stan == StanWartosciPola.Nieznane));
+
+    /// <summary>FR-105: ranking replik posiadanych wg liczby wypraw (najwięcej na górze), z kosztem na wyprawę (BR-05).</summary>
+    public List<WierszRepliki> RankingReplik(int liczba)
+    {
+        return ReplikiPosiadane()
+            .Select(WierszRepliki)
+            .OrderByDescending(w => w.Wyprawy)
+            .ThenBy(w => w.ReplikaId, StringComparer.Ordinal)
+            .Take(liczba)
+            .ToList();
+    }
+
     /// <summary>FR-910: trzy sumy kontrolne — wg replik, wg lat, wg mundurów.</summary>
     public (int WgReplik, int WgLat, int WgMundur, int BezRepliki, int BezMunduru) KontrolaSpojnosci()
     {

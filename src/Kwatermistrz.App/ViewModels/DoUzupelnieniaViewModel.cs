@@ -36,10 +36,28 @@ public partial class DoUzupelnieniaViewModel : ObservableObject
     /// <summary>Liczba pozycji.</summary>
     public int Liczba => Pozycje.Count;
 
-    /// <summary>Odświeża listę (FR-1204: pola nieznane, pozycje kosztowe bez opisu, przedmioty/repliki „do uzupełnienia”, liczniki do weryfikacji).</summary>
+    /// <summary>Tylko otwarte zadania (FR-104, FR-601) — ustawiane z pulpitu.</summary>
+    [ObservableProperty]
+    private bool _tylkoZadania;
+
+    /// <summary>Odświeża listę (FR-1204: pola nieznane, pozycje kosztowe bez opisu, przedmioty/repliki „do uzupełnienia”, liczniki do weryfikacji, otwarte zadania FR-104).</summary>
     public void Odswiez()
     {
         Pozycje.Clear();
+        // otwarte zadania (FR-601, FR-104)
+        foreach (var z in _dane.Zadania.Where(z => z.Status == StatusZadania.Otwarte))
+            Pozycje.Add(new PozycjaDoUzupelnienia
+            {
+                Rodzaj = "Zadanie",
+                Opis = $"{NazwaRodzaju(z.RodzajId)} — {z.Opis}" + (z.DotyczyId != null ? $" ({NazwaDotyczy(z)})" : ""),
+                Ekran = z.DotyczyId != null ? (CzyReplika(z.DotyczyId) ? "Bronie" : "Wyposazenie") : null,
+                RekordId = z.DotyczyId,
+            });
+        if (TylkoZadania)
+        {
+            OnPropertyChanged(nameof(Liczba));
+            return;
+        }
         // przedmioty i repliki ze znacznikiem „z importu, do przeglądu” (FR-1110)
         foreach (var p in _dane.Przedmioty.Where(p => p.ZnacznikZImportu))
             Pozycje.Add(new PozycjaDoUzupelnienia
@@ -119,4 +137,20 @@ public partial class DoUzupelnieniaViewModel : ObservableObject
         Pozycje.Remove(pozycja!);
         OnPropertyChanged(nameof(Liczba));
     }
+
+    private string NazwaRodzaju(string rodzajId)
+        => _dane.Slowniki.RodzajeZadan.FirstOrDefault(r => r.Id == rodzajId)?.Nazwa ?? "Zadanie";
+
+    private string NazwaDotyczy(Zadanie z)
+    {
+        var replika = _dane.Repliki.FirstOrDefault(r => r.Id == z.DotyczyId);
+        if (replika != null)
+            return replika.ModelProducenta;
+        var przedmiot = _dane.Przedmioty.FirstOrDefault(p => p.Id == z.DotyczyId);
+        return przedmiot?.Nazwa ?? "";
+    }
+
+    private bool CzyReplika(string id) => _dane.Repliki.Any(r => r.Id == id);
+
+    partial void OnTylkoZadaniaChanged(bool value) => Odswiez();
 }

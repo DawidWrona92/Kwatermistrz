@@ -45,6 +45,10 @@ public partial class WyposazenieViewModel : ObservableObject
     [ObservableProperty]
     private bool _pokazSprzedane;
 
+    /// <summary>Tylko przedmioty bez żadnego użycia (FR-104).</summary>
+    [ObservableProperty]
+    private bool _tylkoBezUzycia;
+
     /// <summary>Licznik pozycji na liście.</summary>
     public int LiczbaWierszy => Wiersze.Count;
 
@@ -81,6 +85,8 @@ public partial class WyposazenieViewModel : ObservableObject
                 (p.Firma != null && Normalizacja.TekstDoPorownania(p.Firma).Contains(szukane)) ||
                 (p.Komentarz != null && Normalizacja.TekstDoPorownania(p.Komentarz).Contains(szukane)));
         }
+        if (TylkoBezUzycia)
+            zapytanie = zapytanie.Where(p => kalk.UzyciaPrzedmiotu(p) == 0);
         Wiersze.Clear();
         foreach (var p in zapytanie.OrderBy(p => p.Nazwa, StringComparer.CurrentCulture))
             Wiersze.Add(new WierszPrzedmiotu(p, kalk.UzyciaPrzedmiotu(p)));
@@ -91,6 +97,7 @@ public partial class WyposazenieViewModel : ObservableObject
     partial void OnWybranaKategoriaChanged(Kategoria? value) => Odswiez();
     partial void OnFiltrTekstChanged(string value) => Odswiez();
     partial void OnPokazSprzedaneChanged(bool value) => Odswiez();
+    partial void OnTylkoBezUzyciaChanged(bool value) => Odswiez();
 
     /// <summary>Wybiera kategorię z nawigacji (FR-201).</summary>
     [RelayCommand]

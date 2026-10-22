@@ -59,7 +59,7 @@ public class PakietKonfiguracjiTests : IDisposable
         Assert.Contains(wczytany.Wzory, w => w.Nazwa == "EMR Letni");
         Assert.Contains(wczytany.Kategorie, k => k.Nazwa == "Ładownice" && k.CzyNosnik);
         Assert.Single(wczytany.SzablonyKart);
-        Assert.Empty(wczytany.Wzory.SelectMany(w => w.KoloryProbki).Where(k => k.Length == 0));
+        Assert.DoesNotContain(wczytany.Wzory.SelectMany(w => w.KoloryProbki), k => k.Length == 0);
     }
 
     [Fact]
@@ -122,8 +122,8 @@ public class PakietKonfiguracjiTests : IDisposable
         var wsparcie = dane.Slowniki.Role.Single(r => r.Nazwa == "Wsparcie");
         Assert.Contains("MG", wsparcie.Aliasy); // nowy alias z pakietu (FR-1003)
         Assert.Equal("MG", wsparcie.Aliasy.Single(a => a == "MG"));
-        Assert.Single(dane.Slowniki.Role.Where(r => r.Nazwa == "Wsparcie"));
-        Assert.Equal(nameof(SemantykaKosztu.Zakup), dane.Slowniki.RodzajeKosztow.Single(r => r.Nazwa == "Zakup repliki").Semantyka);
+        Assert.Single(dane.Slowniki.Role, r => r.Nazwa == "Wsparcie");
+        Assert.Equal(nameof(SemantykaKosztu.Zakup), Assert.Single(dane.Slowniki.RodzajeKosztow, r => r.Nazwa == "Zakup repliki").Semantyka);
         Assert.Equal(idIstniejacej, wsparcie.Id); // Id lokalne zachowane
     }
 
