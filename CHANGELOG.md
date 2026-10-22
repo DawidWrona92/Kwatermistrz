@@ -4,6 +4,14 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 
 ## [Nieopublikowane]
 
+### Etap 5c/5d — Podpowiedzi pól karty (FR-405) i cena zakupu przedmiotu (FR-503)
+
+#### Dodane
+- **Podpowiedzi wartości pól karty technicznej** (FR-405): pola tekstowe zamienione na edytowalne ComboBox z wcześniejszymi wartościami tego parametru u innych replik (ogranicza rozjazdy zapisu, np. „Specna Arms” kontra „Speca Arms”).
+- **Cena zakupu przedmiotu tworzy pozycję kosztową** (FR-503): `Przedmiot.SynchronizujCenaZakupu` — przy zapisie karty tworzy/aktualizuje pozycję „Zakup” (semantyka stała BR-04), przy wyczyszczeniu pola usuwa własną pozycję; ręczne pozycje zakupu zostają nietknięte. Synchronizacja także przy duplikowaniu i „Dodaj N takich samych”.
+- Karta przedmiotu pokazuje listę pozycji kosztowych (data, opis, kwota).
+- 4 testy FR-503.
+
 ### Etap 5b — Pulpit: karty skrótowe i ranking (FR-104, FR-105)
 
 #### Dodane

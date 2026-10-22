@@ -345,3 +345,69 @@ public class PulpitTests
         Assert.DoesNotContain(ranking, w => w.ReplikaId == r3.Id);
     }
 }
+
+/// <summary>Testy FR-503: pole „cena zakupu” przedmiotu synchronizuje pozycję kosztową.</summary>
+public class Fr503Tests
+{
+    private static (DaneAplikacji dane, Slowniki slowniki) Przygotuj()
+    {
+        var dane = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        return (dane, dane.Slowniki);
+    }
+
+    [Fact]
+    public void CenaZakupu_TworzyPozycjeZakupu()
+    {
+        var (dane, slowniki) = Przygotuj();
+        var p = new Przedmiot { Nazwa = "Gorka", CenaZakupu = 450m, DataZakupu = new DateOnly(2025, 3, 1) };
+
+        p.SynchronizujCenaZakupu(slowniki, p.DataZakupu!.Value);
+
+        var pozycja = Assert.Single(p.Koszty);
+        Assert.Equal(450m, pozycja.Kwota);
+        Assert.Equal(SemantykaKosztu.Zakup, pozycja.Semantyka);
+        Assert.Equal(new DateOnly(2025, 3, 1), pozycja.Data);
+        Assert.Equal(slowniki.RodzajeKosztow.First(r => r.Semantyka == nameof(SemantykaKosztu.Zakup)).Id, pozycja.RodzajId);
+    }
+
+    [Fact]
+    public void ZmianaCeny_AktualizujeIstniejacaPozycje()
+    {
+        var (dane, slowniki) = Przygotuj();
+        var p = new Przedmiot { Nazwa = "Gorka", CenaZakupu = 450m };
+        p.SynchronizujCenaZakupu(slowniki, DateOnly.FromDateTime(DateTime.Today));
+        p.CenaZakupu = 500m;
+
+        p.SynchronizujCenaZakupu(slowniki, DateOnly.FromDateTime(DateTime.Today));
+
+        var pozycja = Assert.Single(p.Koszty);
+        Assert.Equal(500m, pozycja.Kwota);
+    }
+
+    [Fact]
+    public void WyczyszczenieCeny_UsuwaPozycjeZakupu()
+    {
+        var (dane, slowniki) = Przygotuj();
+        var p = new Przedmiot { Nazwa = "Gorka", CenaZakupu = 450m };
+        p.SynchronizujCenaZakupu(slowniki, DateOnly.FromDateTime(DateTime.Today));
+        p.CenaZakupu = null;
+
+        p.SynchronizujCenaZakupu(slowniki, DateOnly.FromDateTime(DateTime.Today));
+
+        Assert.Empty(p.Koszty);
+    }
+
+    [Fact]
+    public void PozycjaRecznaZZakupem_NieJestNadpisywana()
+    {
+        var (dane, slowniki) = Przygotuj();
+        var p = new Przedmiot { Nazwa = "Gorka", CenaZakupu = 450m };
+        p.Koszty.Add(new PozycjaKosztowa { Opis = "Zakup z faktury", Kwota = 400m, Semantyka = SemantykaKosztu.Zakup });
+
+        p.SynchronizujCenaZakupu(slowniki, DateOnly.FromDateTime(DateTime.Today));
+
+        Assert.Equal(2, p.Koszty.Count);
+        Assert.Contains(p.Koszty, k => k.Opis == "Zakup z faktury" && k.Kwota == 400m);
+        Assert.Contains(p.Koszty, k => k.Opis == "Cena zakupu" && k.Kwota == 450m);
+    }
+}

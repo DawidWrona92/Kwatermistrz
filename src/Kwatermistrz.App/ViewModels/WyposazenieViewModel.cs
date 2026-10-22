@@ -153,6 +153,7 @@ public partial class WyposazenieViewModel : ObservableObject
                 CenaZakupu = Wybrany.Przedmiot.CenaZakupu,
                 Komentarz = Wybrany.Przedmiot.Komentarz,
             };
+            kopia.SynchronizujCenaZakupu(_dane.Slowniki, DateOnly.FromDateTime(DateTime.Today));
             _dane.Przedmioty.Add(kopia);
         }
         _magazyn.Zapisz(_dane);
@@ -177,19 +178,21 @@ public partial class WyposazenieViewModel : ObservableObject
             CenaZakupu = Wybrany.Przedmiot.CenaZakupu,
             Komentarz = Wybrany.Przedmiot.Komentarz,
         };
+        kopia.SynchronizujCenaZakupu(_dane.Slowniki, DateOnly.FromDateTime(DateTime.Today));
         _dane.Przedmioty.Add(kopia);
         _magazyn.Zapisz(_dane);
         Odswiez();
         Wybrany = Wiersze.FirstOrDefault(w => w.Id == kopia.Id);
     }
 
-    /// <summary>Zapisuje kartę wybranego przedmiotu po zatwierdzeniu formularza (FR-1203, FR-204).</summary>
+    /// <summary>Zapisuje kartę wybranego przedmiotu po zatwierdzeniu formularza (FR-1203, FR-204); pole „cena zakupu” synchronizuje pozycję kosztową (FR-503).</summary>
     [RelayCommand]
     private void ZapiszKarte()
     {
         if (Wybrany == null)
             return;
         Wybrany.Przedmiot.ZnacznikZImportu = false;
+        Wybrany.Przedmiot.SynchronizujCenaZakupu(_dane.Slowniki, Wybrany.Przedmiot.DataZakupu ?? DateOnly.FromDateTime(DateTime.Today));
         _magazyn.Zapisz(_dane);
         Odswiez();
     }

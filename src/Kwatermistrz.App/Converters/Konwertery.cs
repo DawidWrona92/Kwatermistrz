@@ -134,6 +134,22 @@ public class KonwerterLicznikaKategorii : IMultiValueConverter
         => throw new NotSupportedException();
 }
 
+/// <summary>Liczba równa parametrowi → Visibility.Visible, inaczej Collapsed.</summary>
+public class KonwerterRowneLiczbe : IValueConverter
+{
+    public static readonly KonwerterRowneLiczbe Instance = new();
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var rowne = value != null && parameter != null
+            && System.Convert.ToInt64(value, CultureInfo.InvariantCulture) == System.Convert.ToInt64(parameter, CultureInfo.InvariantCulture);
+        return rowne ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
 /// <summary>Bool → Visibility (do oznaczeń awarii itp.).</summary>
 public class KonwerterBoolToVisibility : IValueConverter
 {

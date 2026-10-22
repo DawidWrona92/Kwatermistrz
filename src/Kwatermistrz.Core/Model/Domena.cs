@@ -36,6 +36,38 @@ public class Przedmiot
     public bool ZnacznikZImportu { get; set; }
     public bool DoUzupelnienia { get; set; }
     public DateTime OstatniaZmiana { get; set; } = DateTime.Now;
+
+    /// <summary>FR-503: synchronizuje uproszczone pole „cena zakupu” z pozycjami kosztowymi — tworzy lub aktualizuje pozycję rodzaju „Zakup” (semantyka stała BR-04). Wywoływane przy zapisie karty przedmiotu.</summary>
+    public void SynchronizujCenaZakupu(Slowniki slowniki, DateOnly dataZakupu)
+    {
+        var rodzajZakup = slowniki.RodzajeKosztow.FirstOrDefault(r => r.Semantyka == nameof(SemantykaKosztu.Zakup));
+        // pole zarządza tylko własną pozycją (rozpoznawaną po opisie); ręczne pozycje zakupu zostają
+        var pozycjaZakupu = Koszty.FirstOrDefault(k => k.Opis == "Cena zakupu");
+        if (CenaZakupu == null || CenaZakupu == 0m)
+        {
+            // brak ceny — pozycja zakupu znika (jeśli była tylko z pola „cena zakupu”)
+            if (pozycjaZakupu != null && pozycjaZakupu.Opis == "Cena zakupu")
+                Koszty.Remove(pozycjaZakupu);
+            return;
+        }
+        if (pozycjaZakupu == null)
+        {
+            Koszty.Add(new PozycjaKosztowa
+            {
+                Data = dataZakupu,
+                Opis = "Cena zakupu",
+                Kwota = CenaZakupu.Value,
+                RodzajId = rodzajZakup?.Id ?? "",
+                Semantyka = SemantykaKosztu.Zakup,
+            });
+        }
+        else
+        {
+            pozycjaZakupu.Kwota = CenaZakupu.Value;
+            if (DataZakupu != null)
+                pozycjaZakupu.Data = DataZakupu.Value;
+        }
+    }
 }
 
 /// <summary>Replika ASG (rozdział 6.2).</summary>

@@ -354,7 +354,7 @@ public partial class ReplikiViewModel : ObservableObject
                 return new List<WierszParametruKarty>();
             return szablon.Parametry
                 .OrderBy(p => p.Kolejnosc)
-                .Select(p => new WierszParametruKarty(p, Wybrana.Replika))
+                .Select(p => new WierszParametruKarty(p, Wybrana.Replika, PodpowiedziParametru(p.Id)))
                 .ToList();
         }
     }
@@ -378,15 +378,18 @@ public partial class ReplikiViewModel : ObservableObject
 /// <summary>Wiersz parametru karty technicznej z trzema stanami (FR-404).</summary>
 public class WierszParametruKarty
 {
-    public WierszParametruKarty(ParametrKarty parametr, Replika replika)
+    public WierszParametruKarty(ParametrKarty parametr, Replika replika, IReadOnlyList<string>? podpowiedzi = null)
     {
         Parametr = parametr;
         replika.KartaTechniczna.TryGetValue(parametr.Id, out var wartosc);
         Wartosc = wartosc ?? new WartoscPolaKarty();
+        Podpowiedzi = podpowiedzi ?? new List<string>();
     }
 
     public ParametrKarty Parametr { get; }
     public WartoscPolaKarty Wartosc { get; }
     public string Nazwa => Parametr.Nazwa;
     public bool Ukryty => Parametr.Ukryty;
+    /// <summary>Podpowiedzi wartości dla tego parametra (FR-405) — wcześniejsze wartości u innych replik.</summary>
+    public IReadOnlyList<string> Podpowiedzi { get; }
 }

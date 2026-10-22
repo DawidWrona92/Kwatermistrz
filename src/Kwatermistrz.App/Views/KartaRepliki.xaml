@@ -155,7 +155,10 @@
                                     <ColumnDefinition Width="130" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="{Binding Nazwa}" VerticalAlignment="Center" />
-                                <ui:TextBox Grid.Column="1" Text="{Binding Wartosc.Tekst}" />
+                                <!-- Edytowalne ComboBox z podpowiedziami wartości (FR-405) -->
+                                <ComboBox Grid.Column="1" IsEditable="True"
+                                          Text="{Binding Wartosc.Tekst, UpdateSourceTrigger=PropertyChanged}"
+                                          ItemsSource="{Binding Podpowiedzi}" />
                                 <ComboBox Grid.Column="2" Margin="8,0,0,0"
                                           ItemsSource="{Binding Source={StaticResource StanyPola}}"
                                           SelectedItem="{Binding Wartosc.Stan}" />

@@ -10,6 +10,7 @@
         <conv:KonwerterNazwSlownikaWiele x:Key="KonwerterNazwSlownikaWiele" />
         <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
         <conv:KonwerterDaty x:Key="KonwerterDaty" />
+        <conv:KonwerterRowne x:Key="KonwerterRowne" />
         <ObjectDataProvider x:Key="Statusy" MethodName="GetValues" ObjectType="{x:Type sys:Enum}"
                             xmlns:sys="clr-namespace:System;assembly=System.Runtime">
             <ObjectDataProvider.MethodParameters>
@@ -71,7 +72,8 @@
                           ItemsSource="{Binding Source={StaticResource Statusy}}"
                           SelectedItem="{Binding Przedmiot.Status}" />
 
-                <TextBlock Grid.Row="7" Grid.Column="0" Text="Cena zakupu" VerticalAlignment="Center" Margin="0,4,0,0" />
+                <TextBlock Grid.Row="7" Grid.Column="0" Text="Cena zakupu" VerticalAlignment="Center" Margin="0,4,0,0"
+                           ToolTip="Tworzy pozycję kosztową „Zakup” (FR-503)" />
                 <ui:TextBox Grid.Row="7" Grid.Column="1" Margin="0,4,0,0" Text="{Binding Przedmiot.CenaZakupu}" />
 
                 <TextBlock Grid.Row="8" Grid.Column="0" Text="Data zakupu" VerticalAlignment="Center" Margin="0,4,0,0" />
@@ -81,6 +83,29 @@
                 <ui:TextBox Grid.Row="9" Grid.Column="1" Margin="0,4,0,0" Text="{Binding Przedmiot.Komentarz}"
                             TextWrapping="Wrap" AcceptsReturn="True" MinHeight="60" />
             </Grid>
+
+            <!-- Pozycje kosztowe (FR-501, FR-503) -->
+            <TextBlock Text="Pozycje kosztowe" Style="{StaticResource NaglowekSekcji}" Margin="0,16,0,4" />
+            <ItemsControl ItemsSource="{Binding Przedmiot.Koszty}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="90" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding Data, Converter={StaticResource KonwerterDaty}}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="{Binding Opis}" VerticalAlignment="Center" Margin="8,0" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right"
+                                       Text="{Binding Kwota, Converter={StaticResource KonwerterWaluty}}" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Text="Brak pozycji — cena zakupu tworzy pierwszą przy zapisie karty (FR-503)."
+                       Opacity="0.6" Margin="0,4,0,0"
+                       Visibility="{Binding Przedmiot.Koszty.Count, Converter={x:Static conv:KonwerterRowneLiczbe.Instance}, ConverterParameter=0}" />
 
             <!-- Komplet (FR-206) -->
             <TextBlock Text="Komplet" Style="{StaticResource NaglowekSekcji}" Margin="0,16,0,4" />
