@@ -9,6 +9,7 @@
         <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
         <conv:KonwerterProcentu x:Key="KonwerterProcentu" />
         <conv:KonwerterRowne x:Key="KonwerterRowne" />
+        <conv:KonwerterDaty x:Key="KonwerterDaty" />
     </Page.Resources>
     <Grid Margin="8">
         <Grid.RowDefinitions>
@@ -133,6 +134,71 @@
                 <DataGridTextColumn Header="Koszt/użycie" Width="90">
                     <DataGridTextColumn.Binding>
                         <Binding Path="KosztNaUzycie" Converter="{StaticResource KonwerterWaluty}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+            </DataGrid.Columns>
+        </ui:DataGrid>
+
+        <!-- Raport „Koszty” (FR-905) -->
+        <ui:DataGrid Grid.Row="2"
+                     ItemsSource="{Binding RaportKoszty}"
+                     AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                     HeadersVisibility="Column"
+                     Visibility="{Binding WybranyRaport, Converter={StaticResource KonwerterRowne}, ConverterParameter=Koszty}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Grupa" Binding="{Binding Grupa}" Width="120" />
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
+                <DataGridTextColumn Header="Kwota" Width="110">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="Kwota" Converter="{StaticResource KonwerterWaluty}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+            </DataGrid.Columns>
+        </ui:DataGrid>
+
+        <!-- Raport „Zestawy” (FR-906) -->
+        <ui:DataGrid Grid.Row="2"
+                     ItemsSource="{Binding RaportZestawy}"
+                     AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                     HeadersVisibility="Column"
+                     Visibility="{Binding WybranyRaport, Converter={StaticResource KonwerterRowne}, ConverterParameter=Zestawy}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
+                <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="70" />
+                <DataGridTextColumn Header="%" Width="60">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="Procent" Converter="{StaticResource KonwerterProcentu}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Ostatnie" Width="90">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="OstatnieUzycie" Converter="{StaticResource KonwerterDaty}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Koszt zestawu" Width="100">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="KosztZestawu" Converter="{StaticResource KonwerterWaluty}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Koszt/wyp." Width="90">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="KosztNaWyprawe" Converter="{StaticResource KonwerterWaluty}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+            </DataGrid.Columns>
+        </ui:DataGrid>
+
+        <!-- Raport „Stan replik” (FR-907) -->
+        <ui:DataGrid Grid.Row="2"
+                     ItemsSource="{Binding RaportStan}"
+                     AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                     HeadersVisibility="Column"
+                     Visibility="{Binding WybranyRaport, Converter={StaticResource KonwerterRowne}, ConverterParameter=Stan replik}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
+                <DataGridTextColumn Header="Liczba" Width="120">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="Liczba" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
             </DataGrid.Columns>

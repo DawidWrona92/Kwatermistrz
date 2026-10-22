@@ -4,6 +4,14 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 
 ## [Nieopublikowane]
 
+### Etap 5g — Raporty Koszty / Zestawy / Stan replik (FR-905, FR-906, FR-907)
+
+#### Dodane
+- Raport **Koszty** (FR-905): wydatki wg roku, wg kategorii i wg rodzaju (nazwa ze słownika) + wartość posiadanej kolekcji wg cen zakupu (przedmioty i repliki osobno, BR-04 „Zakup”), wszystko z filtrem aktywnej rekonstrukcji.
+- Raport **Zestawy** (FR-906): wyprawy, procent, ostatnie użycie, koszt zestawu (FR-708), koszt na wyprawę (BR-05); wiersz sumy.
+- Raport **Stan replik** (FR-907): rozkład stanów, repliki bez testu powyżej progu (FR-104), otwarte awarie z opisem.
+- Eksport CSV dla trzech nowych raportów (FR-908).
+
 ### Etap 5f — Lista pakowania (FR-707) i koszt zestawu (FR-708)
 
 #### Dodane
