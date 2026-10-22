@@ -4,6 +4,14 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 
 ## [Nieopublikowane]
 
+### Etap 5h — Wykresy (FR-909)
+
+#### Dodane
+- Raport **Wykresy** (FR-909), trzy kontrolki rysowane w czystym WPF (bez nowych zależności):
+  - **WykresPionowy** — słupkowy wykres wypraw wg lat (BR-07), z wartościami nad słupkami i etykietami lat.
+  - **WykresPoziomy** — poziome słupki udziału wypraw wg strony (pierwsza strona repliki głównej) i wg munduru (BR-09), z wartością i procentem.
+- Kolory wykresów (`Stal`, `Linia`, `Sygnal`, `Poprawny`, `Uwaga`) jako aliasy w palecie, podążają za motywem jasnym/ciemnym (FR-1006).
+
 ### Etap 5g — Raporty Koszty / Zestawy / Stan replik (FR-905, FR-906, FR-907)
 
 #### Dodane

@@ -14,4 +14,13 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
+    <!-- Wykresy (FR-909): rysowane w OnRender, bez szablonu. -->
+    <Style TargetType="{x:Type controls:WykresPionowy}">
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="MinHeight" Value="140" />
+    </Style>
+    <Style TargetType="{x:Type controls:WykresPoziomy}">
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
 </ResourceDictionary>

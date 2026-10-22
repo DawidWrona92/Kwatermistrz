@@ -28,4 +28,11 @@
     <!-- Kolory neutralne kafelków mozaiki (FR-102) -->
     <SolidColorBrush x:Key="KafelekNeutralny" Color="#ECEDEA" />
 
+    <!-- Kolory wykresów (FR-909): aliasy zmieniane razem z motywem (UstawieniaViewModel) -->
+    <SolidColorBrush x:Key="Stal" Color="#2F4A6B" />
+    <SolidColorBrush x:Key="Linia" Color="#CDD0CA" />
+    <SolidColorBrush x:Key="Sygnal" Color="#A83A2B" />
+    <SolidColorBrush x:Key="Poprawny" Color="#4A7A52" />
+    <SolidColorBrush x:Key="Uwaga" Color="#9A6B00" />
+
 </ResourceDictionary>

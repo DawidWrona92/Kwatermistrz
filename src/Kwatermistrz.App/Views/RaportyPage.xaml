@@ -4,6 +4,7 @@
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
       xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
+      xmlns:sys="clr-namespace:System;assembly=System.Runtime"
       Title="Raporty">
     <Page.Resources>
         <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
@@ -203,6 +204,28 @@
                 </DataGridTextColumn>
             </DataGrid.Columns>
         </ui:DataGrid>
+
+        <!-- Wykresy (FR-909) -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding WybranyRaport, Converter={StaticResource KonwerterRowne}, ConverterParameter=Wykresy}">
+            <StackPanel Margin="8">
+                <Border Style="{StaticResource Karta}" Padding="12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <controls:WykresPionowy Tytul="Wyprawy wg lat" Dane="{Binding WykresWyprawyWgLat}" Height="220" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Karta}" Padding="12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <controls:WykresPoziomy Tytul="Udział wypraw wg strony" Dane="{Binding WykresUdzialWgStrony}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Karta}" Padding="12">
+                    <StackPanel>
+                        <controls:WykresPoziomy Tytul="Udział wypraw wg munduru" Dane="{Binding WykresUdzialWgMunduru}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
 
         <!-- Kontrola spójności (FR-910) -->
         <Border Grid.Row="2" Style="{StaticResource Karta}" Padding="16"

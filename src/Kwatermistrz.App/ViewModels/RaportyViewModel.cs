@@ -90,7 +90,7 @@ public class WierszRaportuStanu
 }
 
 
-/// <summary>ViewModel ekranu raportów (FR-901–904, FR-908, FR-910, FR-911): cztery raporty, eksport CSV, kontrola spójności.</summary>
+/// <summary>ViewModel ekranu raportów (FR-901–911): raporty tabelaryczne + wykresy (FR-909), eksport CSV, kontrola spójności.</summary>
 public partial class RaportyViewModel : ObservableObject
 {
     private readonly DaneAplikacji _dane;
@@ -143,7 +143,16 @@ public partial class RaportyViewModel : ObservableObject
     public Slowniki Slowniki => _dane.Slowniki;
 
     /// <summary>Lista raportów do wyboru.</summary>
-    public static IReadOnlyList<string> Raporty => new[] { "Bronie", "Umundurowanie", "Wyprawy wg lat", "Użycie wyposażenia", "Koszty", "Zestawy", "Stan replik", "Kontrola spójności" };
+    public static IReadOnlyList<string> Raporty => new[] { "Bronie", "Umundurowanie", "Wyprawy wg lat", "Użycie wyposażenia", "Koszty", "Zestawy", "Stan replik", "Wykresy", "Kontrola spójności" };
+
+    /// <summary>Słupki wykresu „Wyprawy wg lat” (FR-909).</summary>
+    public ObservableCollection<Controls.WierszWykresu> WykresWyprawyWgLat { get; } = new();
+
+    /// <summary>Poziome słupki udziału wg strony (FR-909).</summary>
+    public ObservableCollection<Controls.WierszWykresu> WykresUdzialWgStrony { get; } = new();
+
+    /// <summary>Poziome słupki udziału wg munduru (FR-909).</summary>
+    public ObservableCollection<Controls.WierszWykresu> WykresUdzialWgMunduru { get; } = new();
 
     partial void OnWybranyRaportChanged(string value) => Odswiez();
     partial void OnUwzglednijSprzedaneChanged(bool value) => Odswiez();
@@ -160,7 +169,72 @@ public partial class RaportyViewModel : ObservableObject
             case "Koszty": BudujRaportKosztow(); break;
             case "Zestawy": BudujRaportZestawow(); break;
             case "Stan replik": BudujRaportStanu(); break;
+            case "Wykresy": BudujWykresy(); break;
             case "Kontrola spójności": BudujKontrola(); break;
+        }
+    }
+
+    /// <summary>FR-909: wykresy — słupkowy wypraw wg lat, poziome słupki udziału wg strony i wg munduru.</summary>
+    private void BudujWykresy()
+    {
+        var kalk = _kalkulator.Kalkulator();
+        WykresWyprawyWgLat.Clear();
+        WykresUdzialWgStrony.Clear();
+        WykresUdzialWgMunduru.Clear();
+
+        // słupki: wyprawy wg lat (BR-07)
+        var lata = _dane.Ustawienia.HistoryczneWyprawyWgRok.Keys
+            .Concat(_dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(w => w.Data.Year))
+            .Distinct()
+            .OrderBy(y => y);
+        foreach (var rok in lata)
+            WykresWyprawyWgLat.Add(new Controls.WierszWykresu
+            {
+                Etykieta = rok.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                Wartosc = kalk.WyprawyWRoku(rok),
+            });
+
+        // poziome słupki: udział wypraw wg strony (repliki głównej wyprawy)
+        var wyprawy = _dane.Wyprawy.Where(w => !w.CzyUsunieta && w.ReplikaGlownaId != null).ToList();
+        var replikiWgId = _dane.Repliki.ToDictionary(r => r.Id);
+        var wgStrony = wyprawy
+            .GroupBy(w => replikiWgId.TryGetValue(w.ReplikaGlownaId!, out var r) && r.StronyId.Count > 0 ? r.StronyId[0] : "")
+            .Select(g => (Id: g.Key, Liczba: g.Count()))
+            .OrderByDescending(x => x.Liczba)
+            .ToList();
+        var sumaStron = wgStrony.Sum(x => x.Liczba);
+        foreach (var (id, liczba) in wgStrony)
+            WykresUdzialWgStrony.Add(new Controls.WierszWykresu
+            {
+                Etykieta = id.Length == 0 ? "(bez strony)" : NazwaSlownika(_dane.Slowniki.Strony, id) ?? id,
+                Wartosc = liczba,
+                Udzial = sumaStron > 0 ? (decimal)liczba / sumaStron : 0m,
+            });
+
+        // poziome słupki: udział wg munduru (BR-09)
+        var grupyMundur = wyprawy
+            .Select(w => kalk.MundurWyprawy(w).MundurId ?? "")
+            .GroupBy(id => id)
+            .Select(g => (Id: g.Key, Liczba: g.Count()))
+            .OrderByDescending(x => x.Liczba)
+            .ToList();
+        var sumaMundur = grupyMundur.Sum(x => x.Liczba);
+        foreach (var (id, liczba) in grupyMundur)
+        {
+            string etykieta;
+            if (id.Length == 0)
+                etykieta = "(bez munduru)";
+            else
+            {
+                var przedmiot = _dane.Przedmioty.FirstOrDefault(p => p.Id == id);
+                etykieta = przedmiot?.Nazwa ?? id;
+            }
+            WykresUdzialWgMunduru.Add(new Controls.WierszWykresu
+            {
+                Etykieta = etykieta,
+                Wartosc = liczba,
+                Udzial = sumaMundur > 0 ? (decimal)liczba / sumaMundur : 0m,
+            });
         }
     }
 
