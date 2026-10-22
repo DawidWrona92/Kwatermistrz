@@ -76,6 +76,10 @@ public partial class ImporterKwatermistrz
                     $"Karta_techniczna: {string.Join(", ", grupa.Select(g => g.Wiersz.Numer))}");
                 konflikt.Kandydaci = grupa.Select(g => $"wiersz {g.Wiersz.Numer}: {g.Nazwa}").ToList();
                 konflikt.DomyslnyWybor = grupa.FindIndex(g => g.Wiersz.Numer == wybrany.Wiersz.Numer);
+                // FR-1102: wybór użytkownika nadpisuje domyślny (Q8)
+                var wybor = konflikt.Decyzja;
+                if (wybor >= 0 && wybor < grupa.Count)
+                    wybrany = (grupa[wybor].Wiersz, grupa[wybor].Nazwa, grupa[wybor].CzyHpa);
             }
             // zadania stosujemy zawsze z wybranej (pełniejszej) karty — duplikaty się nie dublują
             ZastosujKarte(k, wybrany.Wiersz, wybrany.Nazwa, wybrany.CzyHpa);

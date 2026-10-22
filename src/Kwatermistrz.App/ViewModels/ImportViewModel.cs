@@ -120,11 +120,13 @@ public partial class WierszPodgladuOgolnegoVm : ObservableObject
 }
 
 /// <summary>Wiersz wyboru kolumny źródłowej → pole importu (FR-1403).</summary>
-public class WierszMapowaniaKolumny
+/// <summary>Wiersz mapowania kolumny w imporcie ogólnym (FR-1403) — z INPC, żeby „Wczytaj mapowanie” odświeżał UI.</summary>
+public partial class WierszMapowaniaKolumny : ObservableObject
 {
     public int Indeks { get; set; }
     public string? Naglowek { get; set; }
-    public PoleImportu Pole { get; set; } = PoleImportu.Puste;
+    [ObservableProperty]
+    private PoleImportu _pole = PoleImportu.Puste;
 }
 
 public partial class ImportViewModel
@@ -192,6 +194,7 @@ public partial class ImportViewModel
     public int LiczbaPodgladOgolny => _podgladOgolny.Count(w => !w.Pomin);
 
     private List<ArkuszXlsx> _arkuszeOgolne = new();
+    private int _wierszNaglowkaOgolny;
 
     private void OdswiezMapowania()
     {
@@ -220,7 +223,9 @@ public partial class ImportViewModel
             _arkuszeOgolne = ImporterOgolny.WczytajPlik(dialog.FileName);
             var arkusz = _arkuszeOgolne.First();
             NazwaArkusza = arkusz.Nazwa;
-            var sugestia = ImporterOgolny.SugerujMapowanie(arkusz);
+            // pierwszy niepusty wiersz to nagłówek — dane zaczynają się od następnego (inaczej nagłówek leciałby jako rekord)
+            _wierszNaglowkaOgolny = arkusz.Wiersze.FindIndex(w => w.Komorki.Any(c => !string.IsNullOrWhiteSpace(c)));
+            var sugestia = ImporterOgolny.SugerujMapowanie(arkusz, _wierszNaglowkaOgolny);
             MapowanieKolumny.Clear();
             var maxKol = arkusz.Wiersze.Select(w => w.Komorki.Count).DefaultIfEmpty(0).Max();
             var naglowek = arkusz.Wiersze.FirstOrDefault();
@@ -254,7 +259,7 @@ public partial class ImportViewModel
             Kolumny = MapowanieKolumny.ToDictionary(w => w.Indeks, w => w.Pole),
             KategoriaId = KategoriaDocelowa?.Id,
         };
-        var wiersze = ImporterOgolny.PrzygotujPodglad(_dane, _arkuszeOgolne.First(), mapowanie);
+        var wiersze = ImporterOgolny.PrzygotujPodglad(_dane, _arkuszeOgolne.First(), mapowanie, _wierszNaglowkaOgolny + 1);
         _podgladOgolny = wiersze.Select(w => new WierszPodgladuOgolnegoVm(w)).ToList();
         foreach (var w in _podgladOgolny)
             w.PropertyChanged += (_, _) => OnPropertyChanged(nameof(LiczbaPodgladOgolny));
@@ -272,9 +277,8 @@ public partial class ImportViewModel
             Komunikat = "Najpierw przygotuj podgląd.";
             return;
         }
+        _magazyn.UtworzKopieZapasowa(); // FR-1107: przed importem kopia (kopia zawiera stan sprzed importu)
         var liczba = ImporterOgolny.Zastosuj(_dane, _podgladOgolny.Select(w => { w.Wiersz.Pomin = w.Pomin; return w.Wiersz; }));
-        _magazyn.Zapisz(_dane);
-        _magazyn.UtworzKopieZapasowa();
         _magazyn.Zapisz(_dane);
         Komunikat = $"Zaimportowano {liczba} przedmiotów. Rekordy mają znacznik „z importu, do przeglądu” (FR-1110).";
         _podgladOgolny = new List<WierszPodgladuOgolnegoVm>();
@@ -320,7 +324,6 @@ public partial class ImportViewModel
             ? _dane.Slowniki.Kategorie.FirstOrDefault(k => k.Id == mapowanie.KategoriaId)
             : null;
         foreach (var w in MapowanieKolumny)
-            if (mapowanie.Kolumny.TryGetValue(w.Indeks, out var p))
-                w.Pole = p;
+            w.Pole = mapowanie.Kolumny.TryGetValue(w.Indeks, out var p) ? p : PoleImportu.Puste;
     }
 }

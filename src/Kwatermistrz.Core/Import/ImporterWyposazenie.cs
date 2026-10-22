@@ -178,6 +178,10 @@ public partial class ImporterKwatermistrz
                     $"Wyposazenie: Ładownice");
                 konflikt.Kandydaci = kandydaci.Select(n => $"{n.Firma} {n.Nazwa}").ToList();
                 konflikt.DomyslnyWybor = 0;
+                // FR-1102: wybór nośnika z ekranu konfliktów (pominięcie = bez montażu)
+                var wybor = konflikt.Decyzja;
+                if (wybor >= 0 && wybor < kandydaci.Count)
+                    ladownica.ZamontowanyNaId = kandydaci[wybor].Id;
             }
         }
     }

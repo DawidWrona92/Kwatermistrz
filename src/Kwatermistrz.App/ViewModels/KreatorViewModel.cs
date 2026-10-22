@@ -88,14 +88,26 @@ public partial class KreatorViewModel : ObservableObject
             }
             else
             {
-                var (slowniki, szablonRekonstrukcji, szablonyKart) = SzablonyKonfiguracji.Buduj(WybranyStart);
-                _dane.Slowniki = slowniki;
-                _dane.SzablonyKart.AddRange(szablonyKart);
+                // kreator: dane są już świeże (NoweDane: słowniki startowe + szablony AEG/HPA) — szablon SCALAMY, nie podmieniamy
+                var (slownikiSzablonu, szablonRekonstrukcji, szablonyKart) = SzablonyKonfiguracji.Buduj(WybranyStart);
+                var wynik = MergerSlownikow.ScalSlowniki(_dane.Slowniki, slownikiSzablonu);
+                foreach (var szablon in szablonyKart)
+                {
+                    var istniejacy = _dane.SzablonyKart.FirstOrDefault(x =>
+                        Normalizacja.TekstDoPorownania(x.Nazwa) == Normalizacja.TekstDoPorownania(szablon.Nazwa));
+                    if (istniejacy != null)
+                        continue;
+                    szablon.NapedId = wynik.MapujSlownik("Napedy", szablon.NapedId);
+                    _dane.SzablonyKart.Add(szablon);
+                }
                 var rekonstrukcja = szablonRekonstrukcji;
                 if (nazwa != null)
                     rekonstrukcja.Nazwa = nazwa;
+                // strona: wybrana w kreatorze (już lokalne Id) albo z szablonu przemapowane na lokalne
                 if (WybranaStronaId != null)
                     rekonstrukcja.StronaId = WybranaStronaId;
+                else
+                    rekonstrukcja.StronaId = wynik.MapujSlownik("Strony", rekonstrukcja.StronaId);
                 if (rekonstrukcja.SzablonSlotow.Count == 0)
                     rekonstrukcja.SzablonSlotow = StartoweSlowniki.StartoweSloty();
                 _dane.Rekonstrukcje.Add(rekonstrukcja);

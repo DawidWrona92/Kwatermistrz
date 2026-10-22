@@ -173,8 +173,26 @@ public static class ImporterPakietuKonfiguracji
         return podglad;
     }
 
-    /// <summary>Stosuje zatwierdzone decyzje do danych: słowniki (z aliasami przy scalaniu, FR-1003), wzory, kategorie, rekonstrukcje z szablonami slotów i szablony kart. Mapuje Id wartości z pakietu na lokalne. Zmiany trafiają do danych; zapis wykonuje wywołujący.</summary>
-    public static void Zastosuj(DaneAplikacji dane, PodgladPakietuKonfiguracji podglad)
+    /// <summary>Mapy Id po zastosowaniu decyzji: Id z pakietu/eksportu → Id lokalne
+    /// (dla słowników: klucz rodzaju → mapa; kategorie i wzory: bezpośrednio). Służą do przemapowania rekordów importowanych równolegle (np. z .kwreko).</summary>
+    public class MapyId
+    {
+        public Dictionary<string, Dictionary<string, string>> Slowniki { get; } = new();
+        public Dictionary<string, string> Wzory { get; } = new();
+        public Dictionary<string, string> Kategorie { get; } = new();
+        /// <summary>Mapuje Id wartości słownika; nieznane Id zwraca bez zmiany.</summary>
+        public string? MapujSlownik(string rodzaj, string? id)
+            => id != null && Slowniki.TryGetValue(rodzaj, out var mapa) && mapa.TryGetValue(id, out var lokalny) ? lokalny : id;
+        /// <summary>Mapuje Id wzoru; nieznane Id zwraca bez zmiany.</summary>
+        public string? MapujWzor(string? id)
+            => id != null && Wzory.TryGetValue(id, out var lokalny) ? lokalny : id;
+        /// <summary>Mapuje Id kategorii; nieznane Id zwraca bez zmiany.</summary>
+        public string? MapujKategoria(string? id)
+            => id != null && Kategorie.TryGetValue(id, out var lokalny) ? lokalny : id;
+    }
+
+    /// <summary>Stosuje zatwierdzone decyzje do danych: słowniki (z aliasami przy scalaniu, FR-1003), wzory, kategorie, rekonstrukcje z szablonami slotów i szablony kart. Zwraca mapy Id wartości z pakietu na lokalne (do przemapowania rekordów spoza konfiguracji). Zmiany trafiają do danych; zapis wykonuje wywołujący.</summary>
+    public static MapyId Zastosuj(DaneAplikacji dane, PodgladPakietuKonfiguracji podglad)
     {
         var mapySlownikow = new Dictionary<string, Dictionary<string, string>>();
 
@@ -328,6 +346,15 @@ public static class ImporterPakietuKonfiguracji
                 }).ToList(),
             });
         }
+
+        var mapy = new MapyId();
+        foreach (var (klucz, mapa) in mapySlownikow)
+            mapy.Slowniki[klucz] = mapa;
+        foreach (var (klucz, mapa) in mapaWzorow)
+            mapy.Wzory[klucz] = mapa;
+        foreach (var (klucz, mapa) in mapaKategorii)
+            mapy.Kategorie[klucz] = mapa;
+        return mapy;
     }
 
     private static string? Mapuj(Dictionary<string, Dictionary<string, string>> mapy, string slownik, string? idPakietu)

@@ -88,6 +88,10 @@ public partial class ImporterKwatermistrz
                         $"Umundurowanie wiersz {wiersz.Numer}");
                     konflikt.Kandydaci = dopasowanie.Kandydaci.Select(p => $"{p.Firma} {p.Nazwa}").ToList();
                     konflikt.DomyslnyWybor = 0;
+                    // FR-1102: wybór użytkownika (pominięcie = szkic mimo kandydatów)
+                    var wybor = konflikt.Decyzja;
+                    if (!konflikt.Pomin && wybor >= 0 && wybor < dopasowanie.Kandydaci.Count)
+                        mundur = dopasowanie.Kandydaci[wybor];
                 }
                 else
                 {
@@ -305,7 +309,8 @@ public partial class ImporterKwatermistrz
                 r.Prototyp != null ? $"{r.ModelProducenta} {r.Prototyp}" : r.ModelProducenta);
             if (dopasowanieRepliki0.Jednoznaczne && dopasowanieRepliki0.Element != null)
                 return new ElementWariantu { Typ = TypElementu.Replika, ElementId = dopasowanieRepliki0.Element.Id };
-            return TworzSzkicElementu(k, tekst, nazwaSlotu, numerWiersza, dopasowanieRepliki0.Kandydaci.Select(r => r.ModelProducenta).ToList());
+            return TworzSzkicElementu(k, tekst, nazwaSlotu, numerWiersza,
+                dopasowanieRepliki0.Kandydaci.Select(r => r.Prototyp != null ? $"{r.ModelProducenta} {r.Prototyp}" : r.ModelProducenta).ToList());
         }
 
         // przedmioty tylko z kategorii slotu, bez szkiców
@@ -327,8 +332,8 @@ public partial class ImporterKwatermistrz
             dopasowaniePrzedmiotu.Kandydaci.Select(p => $"{p.Firma} {p.Nazwa}").ToList());
     }
 
-    /// <summary>Tworzy szkic elementu (FR-706) z konfliktem do decyzji.</summary>
-    private static ElementWariantu TworzSzkicElementu(KontekstImportu k, string tekst, string nazwaSlotu, int numerWiersza, List<string> kandydaci)
+    /// <summary>Tworzy szkic elementu (FR-706) z konfliktem do decyzji; decyzja użytkownika (wybór kandydata / pominij) jest stosowana od razu. Zwraca null, gdy użytkownik wybrał „pomiń”.</summary>
+    private static ElementWariantu? TworzSzkicElementu(KontekstImportu k, string tekst, string nazwaSlotu, int numerWiersza, List<string> kandydaci)
     {
         var konflikt = k.Podglad.DodajKonflikt(
             kandydaci.Count > 1 ? RodzajKonfliktu.Niejednoznaczne : RodzajKonfliktu.BrakOdpowiednika,
@@ -338,6 +343,26 @@ public partial class ImporterKwatermistrz
             $"Zestawy wiersz {numerWiersza}");
         konflikt.Kandydaci = kandydaci;
         konflikt.DomyslnyWybor = 0;
+        // FR-1102: decyzja z ekranu konfliktów — pominij albo wybór kandydata zamiast szkicu
+        if (konflikt.Pomin)
+            return null;
+        if (konflikt.WyborUzytkownika is int wybor && wybor >= 0 && wybor < kandydaci.Count && kandydaci.Count > 1)
+        {
+            var wybrany = kandydaci[wybor];
+            var replika = k.Dane.Repliki.FirstOrDefault(r =>
+                (r.Prototyp != null ? $"{r.ModelProducenta} {r.Prototyp}" : r.ModelProducenta) == wybrany);
+            if (replika != null)
+                return new ElementWariantu { Typ = TypElementu.Replika, ElementId = replika.Id };
+            var przedmiot = k.Dane.Przedmioty.FirstOrDefault(p => $"{p.Firma} {p.Nazwa}" == wybrany);
+            if (przedmiot != null)
+                return new ElementWariantu
+                {
+                    Typ = przedmiot.KompletId != null || k.Dane.Przedmioty.Any(x => x.KompletId == przedmiot.Id)
+                        ? TypElementu.Komplet
+                        : TypElementu.Przedmiot,
+                    ElementId = przedmiot.Id,
+                };
+        }
         var szkic = new Przedmiot
         {
             KategoriaId = IdKategoriiDlaSlotu(k, nazwaSlotu),

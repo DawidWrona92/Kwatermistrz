@@ -80,8 +80,11 @@ public static class ImporterOgolny
         {
             string? Pole(PoleImportu pole)
             {
-                var kol = mapowanie.Kolumny.FirstOrDefault(x => x.Value == pole).Key;
-                return kol >= 0 ? Normalizacja.Przytnij(wiersz.Komorka(kol)) : null;
+                // brak mapowania = brak wartości; wcześniej FirstOrDefault().Key dawało 0 i kolumna 0 leciała do każdego niezmapowanego pola
+                foreach (var (kol, p) in mapowanie.Kolumny)
+                    if (p == pole)
+                        return Normalizacja.Przytnij(wiersz.Komorka(kol));
+                return null;
             }
             var nazwa = Pole(PoleImportu.Nazwa) ?? Pole(PoleImportu.Firma);
             if (mapowanie.TylkoPelneWiersze && nazwa == null)
@@ -215,7 +218,8 @@ public static class ImporterOgolny
                 _ when z.Contains("komentarz") || z.Contains("uwag") || z.Contains("opis") => PoleImportu.Komentarz,
                 _ => PoleImportu.Puste,
             };
-            mapowanie.Kolumny[i] = pole;
+            if (pole != PoleImportu.Puste)
+                mapowanie.Kolumny[i] = pole;
         }
         return mapowanie;
     }

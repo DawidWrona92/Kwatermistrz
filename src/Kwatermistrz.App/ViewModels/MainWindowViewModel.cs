@@ -129,24 +129,27 @@ public partial class MainWindowViewModel : ObservableObject
             if (dialog.ShowDialog() != true)
                 return;
             var dane = EksportRekonstrukcji.Wczytaj(dialog.FileName);
-            _magazyn.Zapisz(_dane);
             _magazyn.UtworzKopieZapasowa(); // FR-1107: przed importem kopia automatyczna
             // konfiguracja (słowniki, kategorie, wzory, szablony) przez pakiet z podglądem scalania (FR-1404)
             var pakiet = PakietKonfiguracji.Eksportuj(dane, "Z eksportu rekonstrukcji");
             var podglad = ImporterPakietuKonfiguracji.PrzygotujPodglad(_dane, pakiet);
-            ImporterPakietuKonfiguracji.Zastosuj(_dane, podglad);
-            // dane rekonstrukcji: rekonstrukcja + przedmioty/repliki/zestawy/wyprawy/zadania
-            _dane.Rekonstrukcje.AddRange(dane.Rekonstrukcje);
-            _dane.Przedmioty.AddRange(dane.Przedmioty);
-            _dane.Repliki.AddRange(dane.Repliki);
-            _dane.Zestawy.AddRange(dane.Zestawy);
-            _dane.Wyprawy.AddRange(dane.Wyprawy);
-            _dane.Zadania.AddRange(dane.Zadania);
+            var mapy = ImporterPakietuKonfiguracji.Zastosuj(_dane, podglad);
+            // dane rekonstrukcji: pomiń już istniejące, przemapuj Id słowników na lokalne (ponowny import = bez duplikatów)
+            var wynik = ScalaczRekordow.Scal(_dane, dane, mapy);
+            // ustawienia z eksportu (dzień zerowy, liczniki historyczne wg rok) — tylko gdy lokalnie jeszcze pusto
+            if (_dane.Ustawienia.DzienZerowy == null && dane.Ustawienia.DzienZerowy != null)
+                _dane.Ustawienia.DzienZerowy = dane.Ustawienia.DzienZerowy;
+            foreach (var (rok, liczba) in dane.Ustawienia.HistoryczneWyprawyWgRok)
+                _dane.Ustawienia.HistoryczneWyprawyWgRok.TryAdd(rok, liczba);
+            if (_dane.Ustawienia.DataPierwszejWyprawy == null && dane.Ustawienia.DataPierwszejWyprawy != null)
+                _dane.Ustawienia.DataPierwszejWyprawy = dane.Ustawienia.DataPierwszejWyprawy;
             // zdjęcia do katalogu danych
             var liczbaZdjec = EksportRekonstrukcji.WyodrebnijZdjecia(dialog.FileName, _magazyn.KatalogDanych);
             _magazyn.Zapisz(_dane);
-            Komunikat = $"Zaimportowano rekonstrukcję: {dane.Przedmioty.Count} przedmiotów, {dane.Repliki.Count} replik, " +
-                $"{dane.Zestawy.Count} zestawów, {dane.Wyprawy.Count} wypraw, {liczbaZdjec} zdjęć. Konflikty konfiguracji rozstrzygnij na ekranie Pakiety.";
+            var pominieteInfo = wynik.Pominiete > 0 ? $" (pominięto {wynik.Pominiete} już istniejących)" : "";
+            Komunikat = $"Zaimportowano rekonstrukcję: {_dane.Przedmioty.Count} przedmiotów (łącznie), {_dane.Repliki.Count} replik, " +
+                $"{_dane.Zestawy.Count} zestawów, {_dane.Wyprawy.Count} wypraw, {liczbaZdjec} zdjęć{pominieteInfo}. " +
+                "Nowe słowniki i kategorie dodano automatycznie (aliasami dopasowano istniejące).";
         }
         catch (Exception ex)
         {

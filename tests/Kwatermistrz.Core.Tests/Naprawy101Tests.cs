@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using Kwatermistrz.Core.Import;
 using Kwatermistrz.Core.Konfiguracja;
 using Kwatermistrz.Core.Model;
 using Kwatermistrz.Core.Obliczenia;
@@ -170,5 +171,120 @@ public class Naprawy101Tests
             if (Directory.Exists(katalog)) Directory.Delete(katalog, recursive: true);
             if (File.Exists(plik)) File.Delete(plik);
         }
+    }
+}
+
+public class Naprawy101ScalanieTests
+{
+    [Fact]
+    public void ScalaczRekordow_PonownyImportNieTworzyDuplikatow()
+    {
+        var lokalne = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        var eksport = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        var stronaId = lokalne.Slowniki.Strony[0].Id;
+        var katId = lokalne.Slowniki.Kategorie.Count > 0 ? lokalne.Slowniki.Kategorie[0].Id : "";
+        var replika = new Replika { ModelProducenta = "AK", StronyId = new List<string> { stronaId } };
+        var przedmiot = new Przedmiot { Nazwa = "Kamizelka", KategoriaId = katId };
+        var zestaw = new Zestaw { Nazwa = "Zestaw letni", Sloty = new List<SlotZestawu>
+        {
+            new() { Nazwa = "Broń", Warianty = new List<WariantSlotu> { new() { Elementy = new List<ElementWariantu> { new() { Typ = TypElementu.Replika, ElementId = replika.Id } } } } },
+        } };
+        var wyprawa = new Wyprawa { Data = new DateOnly(2026, 3, 1), ReplikaGlownaId = replika.Id, ZestawId = zestaw.Id };
+        var zadanie = new Zadanie { DotyczyTyp = "Replika", DotyczyId = replika.Id, RodzajId = lokalne.Slowniki.RodzajeZadan[0].Id, Opis = "Wymiana" };
+        var rekonstrukcja = new Rekonstrukcja { Nazwa = "Rosja", StronaId = stronaId };
+        lokalne.Rekonstrukcje.Add(rekonstrukcja);
+        lokalne.Repliki.Add(replika);
+        lokalne.Przedmioty.Add(przedmiot);
+        lokalne.Zestawy.Add(zestaw);
+        lokalne.Wyprawy.Add(wyprawa);
+        lokalne.Zadania.Add(zadanie);
+
+        // "eksport" = te same rekordy (symulacja eksportu własnej instalacji)
+        var mapy = new Kwatermistrz.Core.Konfiguracja.ImporterPakietuKonfiguracji.MapyId();
+        var wynik = Kwatermistrz.Core.Konfiguracja.ScalaczRekordow.Scal(lokalne, lokalne, mapy);
+
+        Assert.Equal(6, wynik.Pominiete); // wszystkie 6 rekordów ju¿ istnieje
+        Assert.Single(lokalne.Repliki);
+        Assert.Single(lokalne.Przedmioty);
+        Assert.Single(lokalne.Zestawy);
+        Assert.Single(lokalne.Wyprawy);
+        Assert.Single(lokalne.Zadania);
+        Assert.Single(lokalne.Rekonstrukcje);
+    }
+
+    [Fact]
+    public void ImporterXlsx_ScalanieSlownikow_PrzemapowujeIdIIstniejaceZostaja()
+    {
+        var daneBazowe = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        var importowane = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() }; // inne Id!
+        var stronaImport = importowane.Slowniki.Strony.First(s => s.Nazwa == "Rosja");
+        var stronaBaza = daneBazowe.Slowniki.Strony.First(s => s.Nazwa == "Rosja");
+        Assert.NotEqual(stronaImport.Id, stronaBaza.Id);
+        var replika = new Replika { ModelProducenta = "AK", StronyId = new List<string> { stronaImport.Id } };
+        var przedmiot = new Przedmiot { Nazwa = "Mundur", KategoriaId = importowane.Slowniki.Kategorie[0].Id };
+        importowane.Repliki.Add(replika);
+        importowane.Przedmioty.Add(przedmiot);
+        importowane.Rekonstrukcje.Add(new Rekonstrukcja { Nazwa = "Rosja", StronaId = stronaImport.Id });
+
+        var podglad = new Kwatermistrz.Core.Import.PodgladImportu { Dane = importowane };
+        Kwatermistrz.Core.Import.ImporterKwatermistrz.Zastosuj(podglad, daneBazowe);
+
+        // referencje wskazuj\u0105 lokalne Id, nie importowane
+        Assert.Equal(stronaBaza.Id, daneBazowe.Repliki[0].StronyId[0]);
+        Assert.Equal(daneBazowe.Slowniki.Kategorie[0].Id, daneBazowe.Przedmioty[0].KategoriaId);
+        Assert.Equal(stronaBaza.Id, daneBazowe.Rekonstrukcje.Single(r => r.Nazwa == "Rosja").StronaId);
+        // lokalne warto\u015bci nie zosta\u0142y zdublowane
+        Assert.Equal(StartoweSlowniki.Utworz().Strony.Count, daneBazowe.Slowniki.Strony.Count);
+    }
+
+    [Fact]
+    public void ImporterXlsx_PonownyImport_PomijaIstniejacaRekonstrukcje()
+    {
+        var daneBazowe = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        var importowane = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        importowane.Rekonstrukcje.Add(new Rekonstrukcja { Nazwa = "Rosja" });
+        var podglad = new Kwatermistrz.Core.Import.PodgladImportu { Dane = importowane };
+
+        Kwatermistrz.Core.Import.ImporterKwatermistrz.Zastosuj(podglad, daneBazowe);
+        Kwatermistrz.Core.Import.ImporterKwatermistrz.Zastosuj(podglad, daneBazowe); // drugi raz
+
+        Assert.Single(daneBazowe.Rekonstrukcje);
+    }
+
+    [Fact]
+    public void MergerSlownikow_IstniejacaWartosc_ZostajeBezDublowania()
+    {
+        var lokalne = StartoweSlowniki.Utworz();
+        var przed = lokalne.Strony.Count;
+        var szablon = StartoweSlowniki.Utworz(); // te same nazwy, inne Id
+        szablon.Strony.Add(new WartoscSlownika { Nazwa = "Własna strona" });
+
+        var wynik = Kwatermistrz.Core.Konfiguracja.MergerSlownikow.ScalSlowniki(lokalne, szablon);
+
+        Assert.Equal(przed + 1, lokalne.Strony.Count); // tylko "Własna strona" dopisana
+        Assert.True(wynik.Dopisane >= 1);
+        // Id lokalnej wartości zachowane: mapa szablon->lokalne wskazuje istniejącą wartość
+        var rosjaSzablon = szablon.Strony.First(s => s.Nazwa == "Rosja");
+        var rosjaLokalna = lokalne.Strony.First(s => s.Nazwa == "Rosja");
+        Assert.Equal(rosjaLokalna.Id, wynik.MapujSlownik("Strony", rosjaSzablon.Id));
+    }
+
+    [Fact]
+    public void ImporterOgolny_Pole_BezMapowaniaDajeNull()
+    {
+        var dane = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        var arkusz = new ArkuszXlsx { Nazwa = "test" };
+        arkusz.Wiersze.Add(new WierszXlsx { Numer = 1, Komorki = new List<string?> { "nagłówek A", "nagłówek B" } });
+        arkusz.Wiersze.Add(new WierszXlsx { Numer = 2, Komorki = new List<string?> { "Wartość A", "Wartość B" } });
+        var mapowanie = new Kwatermistrz.Core.Import.MapowanieKolumn { Nazwa = "test", TylkoPelneWiersze = false }; // puste mapowanie
+
+        var podglad = Kwatermistrz.Core.Import.ImporterOgolny.PrzygotujPodglad(dane, arkusz, mapowanie, wierszNaglowka: 1);
+
+        // nagłówek pominięty (wiersz 1), wiersz danych jako rekord; bez mapowania kolumna 0 nie może trafić do pól
+        Assert.Single(podglad);
+        Assert.Equal(2, podglad[0].NumerWiersza);
+        Assert.Equal("", podglad[0].Przedmiot.Nazwa);
+        Assert.Null(podglad[0].Przedmiot.Firma);
+        Assert.Null(podglad[0].Przedmiot.Komentarz);
     }
 }
