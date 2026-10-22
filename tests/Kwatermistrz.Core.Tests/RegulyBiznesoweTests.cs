@@ -1,0 +1,245 @@
+using Kwatermistrz.Core.Model;
+using Kwatermistrz.Core.Obliczenia;
+
+namespace Kwatermistrz.Core.Tests;
+
+/// <summary>Testy reguł BR-01..BR-11, BR-15 na danych syntetycznych (NFR-09). Wartości końcowe po imporcie sprawdza ImportTesty.</summary>
+public class RegulyBiznesoweTests
+{
+    private static (DaneAplikacji dane, Kalkulator kalk) Przygotuj()
+    {
+        var dane = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        return (dane, new Kalkulator(dane));
+    }
+
+    private static Replika NowaReplika(string nazwa, int licznikHistoryczny = 0, StatusWlasnosci status = StatusWlasnosci.Posiadany)
+        => new() { ModelProducenta = nazwa, LicznikHistorycznyWypraw = licznikHistoryczny, Status = status };
+
+    [Fact]
+    public void BR01_WyprawyRepliki_SumaLicznikaHistorycznegoIZapisanych()
+    {
+        var (dane, kalk) = Przygotuj();
+        var replika = NowaReplika("R1", licznikHistoryczny: 5);
+        dane.Repliki.Add(replika);
+        dane.Wyprawy.Add(new Wyprawa { Data = new DateOnly(2026, 1, 10), ReplikaGlownaId = replika.Id });
+        dane.Wyprawy.Add(new Wyprawa { Data = new DateOnly(2026, 2, 1), ReplikaGlownaId = replika.Id });
+        dane.Wyprawy.Add(new Wyprawa { Data = new DateOnly(2026, 2, 2) }); // bez repliki
+
+        Assert.Equal(7, kalk.WyprawyRepliki(replika));
+    }
+
+    [Fact]
+    public void BR02_LacznaLiczbaWypraw_LiczyTezSprzedaneIDoSprzedazy()
+    {
+        var (dane, kalk) = Przygotuj();
+        dane.Repliki.Add(NowaReplika("A", 10));
+        dane.Repliki.Add(NowaReplika("B", 1, StatusWlasnosci.DoSprzedazy));
+        dane.Repliki.Add(NowaReplika("C", 3, StatusWlasnosci.Sprzedany));
+
+        Assert.Equal(14, kalk.LacznaLiczbaWypraw());
+    }
+
+    [Fact]
+    public void BR03_ProcentWypraw_SprzedaneWchodzaDoMianownika()
+    {
+        var (dane, kalk) = Przygotuj();
+        dane.Repliki.Add(NowaReplika("A", 19));
+        dane.Repliki.Add(NowaReplika("S", 70, StatusWlasnosci.Sprzedany));
+
+        // 19 / 89 = 21,348...% -> 21,3%
+        Assert.Equal(21.3m, Math.Round(kalk.ProcentWypraw(19), 1));
+    }
+
+    [Fact]
+    public void BR04_Koszty_RozbicieNaOryginalnaIDodatki()
+    {
+        var (dane, kalk) = Przygotuj();
+        var replika = NowaReplika("R1");
+        dane.Slowniki.RodzajeKosztow.Single(r => r.Semantyka == nameof(SemantykaKosztu.Zakup));
+        replika.Koszty.Add(new PozycjaKosztowa { Kwota = 960m, Semantyka = SemantykaKosztu.Zakup });
+        replika.Koszty.Add(new PozycjaKosztowa { Kwota = 112m, Semantyka = SemantykaKosztu.Ulepszenie });
+        replika.Koszty.Add(new PozycjaKosztowa { Kwota = -100m, Semantyka = SemantykaKosztu.Zwrot });
+        dane.Repliki.Add(replika);
+
+        var w = kalk.WierszRepliki(replika);
+        Assert.Equal(972m, w.KosztCalkowity);
+        Assert.Equal(960m, w.CenaOryginalna);
+        Assert.Equal(12m, w.KosztDodatkow);
+    }
+
+    [Fact]
+    public void BR05_KosztNaWyprawe_BezWyprawPelnyKoszt()
+    {
+        Assert.Equal(1076m, Kalkulator.KosztNaWyprawe(1076m, 0));
+    }
+
+    [Fact]
+    public void BR05_KosztNaWyprawe_Dzielenie()
+    {
+        // 3297,12 / 19 = 173,5326... -> 173,53 przy wyświetlaniu
+        Assert.Equal(173.53m, Math.Round(Kalkulator.KosztNaWyprawe(3297.12m, 19), 2));
+        Assert.Equal(800m, Kalkulator.KosztNaWyprawe(800m, 1));
+    }
+
+    [Fact]
+    public void BR06_SrednieKosztow_LiczaSieTylkoPosiadane()
+    {
+        var (dane, kalk) = Przygotuj();
+        var posiadana = NowaReplika("A");
+        posiadana.Koszty.Add(new PozycjaKosztowa { Kwota = 1000m, Semantyka = SemantykaKosztu.Zakup });
+        var doSprzedazy = NowaReplika("B", status: StatusWlasnosci.DoSprzedazy);
+        doSprzedazy.Koszty.Add(new PozycjaKosztowa { Kwota = 5000m, Semantyka = SemantykaKosztu.Zakup });
+        var sprzedana = NowaReplika("C", status: StatusWlasnosci.Sprzedany);
+        sprzedana.Koszty.Add(new PozycjaKosztowa { Kwota = 9000m, Semantyka = SemantykaKosztu.Zakup });
+        dane.Repliki.AddRange(new[] { posiadana, doSprzedazy, sprzedana });
+
+        var tylkoPosiadane = kalk.ReplikiPosiadane().ToList();
+        Assert.Single(tylkoPosiadane);
+        Assert.Equal(1000m, Kalkulator.Koszty(tylkoPosiadane[0].Koszty).Calkowity);
+    }
+
+    [Fact]
+    public void BR07_WyprawyWRoku_LiczyHistoryczneIZapisane()
+    {
+        var (dane, kalk) = Przygotuj();
+        dane.Ustawienia.HistoryczneWyprawyWgRok[2025] = 19;
+        dane.Ustawienia.HistoryczneWyprawyWgRok[2026] = 13;
+        dane.Wyprawy.Add(new Wyprawa { Data = new DateOnly(2026, 5, 1) });
+        dane.Wyprawy.Add(new Wyprawa { Data = new DateOnly(2026, 6, 1) });
+        dane.Wyprawy.Add(new Wyprawa { Data = new DateOnly(2025, 12, 31) });
+
+        Assert.Equal(15, kalk.WyprawyWRoku(2026));
+        Assert.Equal(20, kalk.WyprawyWRoku(2025));
+        Assert.Equal(0, kalk.WyprawyWRoku(2024));
+    }
+
+    [Fact]
+    public void BR08_UzyciaPrzedmiotu_LicznikPlusWyprawyZeSkladu()
+    {
+        var (dane, kalk) = Przygotuj();
+        var mundur = new Przedmiot { Nazwa = "Mundur", LicznikHistoryczny = 7 };
+        dane.Przedmioty.Add(mundur);
+        var inny = new Przedmiot { Nazwa = "Inny" };
+        dane.Przedmioty.Add(inny);
+
+        var zestaw = new Zestaw { Nazwa = "Z1" };
+        var slot = new SlotZestawu { Nazwa = "Mundur" };
+        slot.Warianty.Add(new WariantSlotu { Elementy = { new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = mundur.Id } } });
+        zestaw.Sloty.Add(slot);
+        dane.Zestawy.Add(zestaw);
+        var rekonstrukcja = new Rekonstrukcja { Nazwa = "R" };
+        rekonstrukcja.SzablonSlotow.Add(new SlotSzablonu { Nazwa = "Mundur", CzySlotMunduru = true });
+        dane.Rekonstrukcje.Add(rekonstrukcja);
+
+        dane.Wyprawy.Add(new Wyprawa
+        {
+            Data = new DateOnly(2026, 3, 1),
+            ZestawId = zestaw.Id,
+            RekonstrukcjaId = rekonstrukcja.Id,
+            WybraneWarianty = new() { [slot.Id] = 0 },
+        });
+
+        Assert.Equal(8, kalk.UzyciaPrzedmiotu(mundur));
+        Assert.Equal(0, kalk.UzyciaPrzedmiotu(inny));
+    }
+
+    [Fact]
+    public void BR09_MundurWyprawy_PierwszyElementSlotuMunduruPrzyMieszance()
+    {
+        var (dane, kalk) = Przygotuj();
+        var gorny = new Przedmiot { Nazwa = "Góra" };
+        var dol = new Przedmiot { Nazwa = "Dół" };
+        dane.Przedmioty.AddRange(new[] { gorny, dol });
+        var zestaw = new Zestaw { Nazwa = "Z1" };
+        var slot = new SlotZestawu { Nazwa = "Mundur" };
+        slot.Warianty.Add(new WariantSlotu
+        {
+            Elementy =
+            {
+                new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = gorny.Id },
+                new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = dol.Id },
+            }
+        });
+        zestaw.Sloty.Add(slot);
+        dane.Zestawy.Add(zestaw);
+        var rekonstrukcja = new Rekonstrukcja { Nazwa = "R" };
+        rekonstrukcja.SzablonSlotow.Add(new SlotSzablonu { Nazwa = "Mundur", CzySlotMunduru = true });
+        dane.Rekonstrukcje.Add(rekonstrukcja);
+
+        var wyprawa = new Wyprawa
+        {
+            Data = new DateOnly(2026, 3, 1),
+            ZestawId = zestaw.Id,
+            RekonstrukcjaId = rekonstrukcja.Id,
+            WybraneWarianty = new() { [slot.Id] = 0 },
+        };
+        var (mundurId, czyMieszanka) = kalk.MundurWyprawy(wyprawa);
+
+        Assert.Equal(gorny.Id, mundurId);
+        Assert.True(czyMieszanka);
+    }
+
+    [Fact]
+    public void BR13_KwotyZachowujaDokladnosc_DoGrosza()
+    {
+        // suma 0,1 + 0,2 w decimal daje dokładnie 0,3
+        var pozycje = new List<PozycjaKosztowa>
+        {
+            new() { Kwota = 0.1m },
+            new() { Kwota = 0.2m },
+        };
+        Assert.Equal(0.3m, Kalkulator.Koszty(pozycje).Calkowity);
+    }
+
+    [Fact]
+    public void BR14_Formaty_WalutaProcentData()
+    {
+        Assert.Equal("3 297,12 zł", Formatowanie.Waluta(3297.12m));
+        Assert.Equal("21,3%", Formatowanie.Procent(21.348314606741572881m));
+        Assert.Equal("01.09.2022", Formatowanie.Data(new DateOnly(2022, 9, 1)));
+        Assert.Equal("-100,00 zł", Formatowanie.Waluta(-100m));
+    }
+
+    [Fact]
+    public void BR15_DataPierwszejWyprawy_UstawienieLubNajwczesniejszaZapisana()
+    {
+        var (dane, kalk) = Przygotuj();
+        dane.Ustawienia.DataPierwszejWyprawy = new DateOnly(2022, 9, 1);
+        Assert.Equal(new DateOnly(2022, 9, 1), kalk.DataPierwszejWyprawy());
+
+        dane.Wyprawy.Add(new Wyprawa { Data = new DateOnly(2021, 5, 1) });
+        Assert.Equal(new DateOnly(2021, 5, 1), kalk.DataPierwszejWyprawy());
+    }
+
+    [Fact]
+    public void BR16_FiltrRekonstrukcji_ElementWspolnyBezPrzypisania()
+    {
+        Assert.True(Kalkulator.WidocznyDlaRekonstrukcji(new List<string>(), "r1"));
+        Assert.True(Kalkulator.WidocznyDlaRekonstrukcji(new List<string> { "r1" }, "r1"));
+        Assert.False(Kalkulator.WidocznyDlaRekonstrukcji(new List<string> { "r2" }, "r1"));
+        Assert.True(Kalkulator.WidocznyDlaRekonstrukcji(new List<string> { "r2" }, null));
+    }
+
+    [Fact]
+    public void Normalizacja_FormulyKosztu_ZMinusamiIUjemnymi()
+    {
+        Assert.Equal(new List<decimal> { 960m, 112m, 64m }, Normalizacja.ParsujFormuleKosztu("960+112+64"));
+        Assert.Equal(new List<decimal> { 626m, -100m, -35m, 76m, 252m, 257m }, Normalizacja.ParsujFormuleKosztu("626-100-35+76+252+257"));
+        Assert.Equal(new List<decimal> { 301.12m }, Normalizacja.ParsujFormuleKosztu("301.12"));
+        Assert.Null(Normalizacja.ParsujFormuleKosztu(""));
+        Assert.Null(Normalizacja.ParsujFormuleKosztu(null));
+        Assert.Null(Normalizacja.ParsujFormuleKosztu("brak"));
+    }
+
+    [Fact]
+    public void Normalizacja_Znaczniki_13_4_13_5()
+    {
+        Assert.True(Normalizacja.CzyZnacznikNieznane("??"));
+        Assert.True(Normalizacja.CzyZnacznikNieznane("???"));
+        Assert.False(Normalizacja.CzyZnacznikNieznane("brak"));
+        Assert.True(Normalizacja.CzyZnacznikNieDotyczy("Nie dotyczy HPA"));
+        Assert.True(Normalizacja.CzyWartoscBrak("brak"));
+        Assert.Equal("PKM", Normalizacja.Przytnij("PKM "));
+        Assert.Equal("Ideał", Normalizacja.Przytnij("Ideał "));
+    }
+}

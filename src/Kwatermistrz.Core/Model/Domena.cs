@@ -64,7 +64,6 @@ public class Replika
     public List<Pomiar> Pomiary { get; set; } = new();
     public List<Modyfikacja> Modyfikacje { get; set; } = new();
     public List<PozycjaKosztowa> Koszty { get; set; } = new();
-    public List<Zadanie> Zadania { get; set; } = new();
     public bool ZnacznikZImportu { get; set; }
     public bool DoUzupelnienia { get; set; }
     public DateTime OstatniaZmiana { get; set; } = DateTime.Now;
@@ -131,6 +130,7 @@ public class Zadanie
     public StatusZadania Status { get; set; } = StatusZadania.Otwarte;
     public DateOnly DataUtworzenia { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public DateOnly? DataZamkniecia { get; set; }
+    public bool ZnacznikZImportu { get; set; }
 }
 
 /// <summary>Zestaw (rozdział 6.3, FR-701).</summary>
