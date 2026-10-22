@@ -300,10 +300,13 @@ public partial class ReplikiViewModel : ObservableObject
     {
         if (Wybrana == null)
             return;
+        var rodzajKosztu = _dane.Slowniki.RodzajeKosztow.FirstOrDefault();
         Wybrana.Replika.Koszty.Add(new PozycjaKosztowa
         {
             Data = DateOnly.FromDateTime(DateTime.Today),
-            RodzajId = _dane.Slowniki.RodzajeKosztow.FirstOrDefault()?.Id ?? "",
+            RodzajId = rodzajKosztu?.Id ?? "",
+            // semantyka z wybranego rodzaju (BR-04: cena oryginalna liczy się tylko z Zakupu)
+            Semantyka = Enum.TryParse<SemantykaKosztu>(rodzajKosztu?.Semantyka, out var sem) ? sem : SemantykaKosztu.Inne,
         });
         _magazyn.Zapisz(_dane);
         Odswiez();
@@ -370,11 +373,14 @@ public partial class ReplikiViewModel : ObservableObject
     {
         if (Wybrana == null)
             return;
+        var rodzajZadania = _dane.Slowniki.RodzajeZadan.FirstOrDefault();
         _dane.Zadania.Add(new Zadanie
         {
             DotyczyTyp = "Replika",
             DotyczyId = Wybrana.Id,
-            RodzajId = _dane.Slowniki.RodzajeZadan.FirstOrDefault()?.Id ?? "",
+            RodzajId = rodzajZadania?.Id ?? "",
+            // semantyka z wybranego rodzaju (raporty liczą awarie po Semantyce)
+            Semantyka = Enum.TryParse<SemantykaZadania>(rodzajZadania?.Semantyka, out var semZ) ? semZ : SemantykaZadania.DoZrobienia,
             DataUtworzenia = DateOnly.FromDateTime(DateTime.Today),
         });
         _magazyn.Zapisz(_dane);

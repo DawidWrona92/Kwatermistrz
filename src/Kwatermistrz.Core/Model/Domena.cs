@@ -187,11 +187,12 @@ public class Zestaw
     public bool CzySzkic { get; set; }
     public List<string> Zdjecia { get; set; } = new();
     public List<SlotZestawu> Sloty { get; set; } = new();
-    /// <summary>Ostatnio użyte warianty slotów na wyprawie (FR-704): klucz to Id slotu.</summary>
-    public Dictionary<string, int> OstatnieWarianty { get; set; } = new();
+    /// <summary>Ostatnio użyte warianty (FR-704): slotId → Id wariantu (od 1.0.1; wcześniej indeks, migrowane przy wczytaniu).</summary>
+    public Dictionary<string, string> OstatnieWarianty { get; set; } = new();
     /// <summary>Klucze elementów odhaczonych na liście pakowania (FR-707): „slotId|indeksWariantu|typ|elementId”.</summary>
     public List<string> SpakowaneKlucze { get; set; } = new();
-    public int? WariantDomyslnyNaSlot(string slotId) => OstatnieWarianty.TryGetValue(slotId, out var w) ? w : null;
+    /// <summary>Id ostatnio użytego wariantu slotu (FR-704) lub null.</summary>
+    public string? WariantDomyslnyNaSlot(string slotId) => OstatnieWarianty.TryGetValue(slotId, out var w) ? w : null;
     public bool ZnacznikZImportu { get; set; }
     public DateTime OstatniaZmiana { get; set; } = DateTime.Now;
 }
@@ -203,12 +204,15 @@ public class SlotZestawu
     public string Nazwa { get; set; } = "";
     public int Kolejnosc { get; set; }
     public List<WariantSlotu> Warianty { get; set; } = new();
-    public int? IndeksWariantuDomyslnego { get; set; }
+    /// <summary>Id wariantu domyślnego (FR-704; od 1.0.1 — wcześniej indeks, migrowany przy wczytaniu).</summary>
+    public string? WariantDomyslnyId { get; set; }
 }
 
 /// <summary>Wariant slotu: lista elementów połączonych „+” albo jawne „puste” (FR-703).</summary>
 public class WariantSlotu
 {
+    /// <summary>Id wariantu (FR-703). Wyprawy przechowują wybór po Id wariantu, nie po indeksie — edycja zestawu nie przepisuje historii.</summary>
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public List<ElementWariantu> Elementy { get; set; } = new();
     /// <summary>Prawda dla jawnego „puste” (odpowiednik PUSTE w arkuszu) — celowy brak elementu.</summary>
     public bool CzyPuste { get; set; }
@@ -232,8 +236,8 @@ public class Wyprawa
     public string? Miejsce { get; set; }
     public string? ReplikaGlownaId { get; set; }
     public string? ZestawId { get; set; }
-    /// <summary>Wybrane warianty slotów: klucz to Id slotu, wartość to indeks wariantu w zestawie.</summary>
-    public Dictionary<string, int> WybraneWarianty { get; set; } = new();
+    /// <summary>Wybrane warianty slotów: slotId → Id wariantu (FR-703; od 1.0.1 — wcześniej indeks, migrowany przy wczytaniu).</summary>
+    public Dictionary<string, string> WybraneWarianty { get; set; } = new();
     /// <summary>Elementy użyte ręcznie, gdy wyprawa jest bez zestawu (FR-804).</summary>
     public List<ElementWariantu> SkladReczny { get; set; } = new();
     public string? Komentarz { get; set; }

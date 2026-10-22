@@ -254,6 +254,18 @@ public class KonwerterRowneSlownik : IValueConverter
         => value is bool wiec && wiec ? parameter : Binding.DoNothing;
 }
 
+/// <summary>Id wariantu równe parametrowi (Id wariantu domyślnego slotu) → bool (RadioButton „Domyślny”, FR-704).</summary>
+public class KonwerterRowneIdWariantu : IValueConverter
+{
+    public static readonly KonwerterRowneIdWariantu Instance = new();
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => Equals(value?.ToString(), parameter?.ToString());
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool wiec && wiec ? parameter : Binding.DoNothing;
+}
+
 /// <summary>String równe parametrowi → Visibility (do przełączania sekcji, FR-1401).</summary>
 public class KonwerterRowneDoWidocznosci : IValueConverter
 {

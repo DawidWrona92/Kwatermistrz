@@ -261,7 +261,8 @@ public partial class ImporterKwatermistrz
                         if (w == 0)
                             indeksDomyslny = slot.Warianty.Count - 1;
                     }
-                    slot.IndeksWariantuDomyslnego = slot.Warianty.Count > 0 ? indeksDomyslny : null;
+                    if (slot.Warianty.Count > 0)
+                        slot.WariantDomyslnyId = slot.Warianty[indeksDomyslny].Id;
                 }
                 zestaw.Sloty.Add(slot);
             }

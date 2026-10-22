@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Kwatermistrz.Core.Model;
 
@@ -51,7 +52,7 @@ public class MagazynJson
             if (!File.Exists(_sciezka))
                 return NoweDane();
             var json = File.ReadAllText(_sciezka);
-            var dane = JsonSerializer.Deserialize<DaneAplikacji>(json, Opcje) ?? NoweDane();
+            var dane = DeserializujZMigracja(json) ?? NoweDane();
             Migruj(dane);
             return dane;
         }
@@ -70,7 +71,7 @@ public class MagazynJson
             try
             {
                 var json = File.ReadAllText(_sciezka);
-                var dane = JsonSerializer.Deserialize<DaneAplikacji>(json, Opcje) ?? throw new InvalidDataException("Pusty dokument");
+                var dane = DeserializujZMigracja(json) ?? throw new InvalidDataException("Pusty dokument");
                 Waliduj(dane);
                 Migruj(dane);
                 return (dane, new WynikKontroli { CzyPoprawne = true, Zrodlo = _sciezka });
@@ -84,7 +85,7 @@ public class MagazynJson
                     if (File.Exists(kopia))
                     {
                         var json = File.ReadAllText(kopia);
-                        var dane = JsonSerializer.Deserialize<DaneAplikacji>(json, Opcje);
+                        var dane = DeserializujZMigracja(json);
                         if (dane != null)
                         {
                             Waliduj(dane);
@@ -107,7 +108,7 @@ public class MagazynJson
     public static DaneAplikacji WczytajZPliku(string sciezka)
     {
         var json = File.ReadAllText(sciezka);
-        var dane = JsonSerializer.Deserialize<DaneAplikacji>(json, Opcje) ?? throw new InvalidDataException("Pusty dokument");
+        var dane = DeserializujZMigracja(json) ?? throw new InvalidDataException("Pusty dokument");
         if (dane.SchemaVersion > AktualnaWersjaSchematu)
             throw new InvalidDataException("Dane pochodzą z nowszej wersji aplikacji");
         Migruj(dane);
@@ -192,6 +193,93 @@ public class MagazynJson
         if (dane.SchemaVersion < 1)
             dane.SchemaVersion = 1;
         // kolejne migracje dopisywane tutaj; przed migracją wywołujący robi kopię (FR-1107)
+    }
+
+    /// <summary>Deserializuje dokument danych; przed deserializacją przepisuje stare indeksy wariantów (format 1.0.0) na Id.</summary>
+    private static DaneAplikacji? DeserializujZMigracja(string json)
+    {
+        var node = JsonNode.Parse(json);
+        if (node is JsonObject doc)
+            PrzepiszStareIndeksyWariantow(doc);
+        return JsonSerializer.Deserialize<DaneAplikacji>(node, Opcje);
+    }
+
+    /// <summary>Migracja 1.0.1: wyprawy i zestawy trzymały wybór wariantu jako INDEKS na liście wariantów slotu
+    /// (pola WybraneWarianty / OstatnieWarianty jako liczby, IndeksWariantuDomyslnego; warianty bez Id).
+    /// Edycja zestawu przepisywała wtedy historię wypraw. Indeksy przepisujemy na Id wariantu
+    /// w węłach JSON przed deserializacją — działa też dla plików 1.0.0, których warianty nie mają jeszcze Id.</summary>
+    private static void PrzepiszStareIndeksyWariantow(JsonObject doc)
+    {
+        if (doc["Zestawy"] is not JsonArray zestawy)
+            return;
+
+        // 1. wariantom bez Id przypisz nowe (pliki 1.0.0 nie mają Id wariantów)
+        foreach (var slot in Sloty(zestawy))
+        {
+            if (slot["Warianty"] is not JsonArray warianty)
+                continue;
+            foreach (var wariant in warianty.OfType<JsonObject>())
+            {
+                if (wariant["Id"] is not JsonValue idWartosc
+                    || !idWartosc.TryGetValue<string>(out var id)
+                    || string.IsNullOrEmpty(id))
+                    wariant["Id"] = Guid.NewGuid().ToString("N");
+            }
+        }
+
+        // 2. mapa slotId → Id wariantów (w kolejności) + stary indeks domyślnego → WariantDomyslnyId
+        var idyWgSlotu = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        foreach (var slot in Sloty(zestawy))
+        {
+            var slotId = slot["Id"]?.GetValue<string>();
+            if (slotId == null || slot["Warianty"] is not JsonArray warianty)
+                continue;
+            var idy = warianty.OfType<JsonObject>()
+                .Select(w => w["Id"]?.GetValue<string>() ?? "")
+                .ToList();
+            idyWgSlotu[slotId] = idy;
+
+            if (slot["IndeksWariantuDomyslnego"] is JsonValue indeksWartosc
+                && indeksWartosc.TryGetValue<int>(out var indeks)
+                && indeks >= 0 && indeks < idy.Count)
+            {
+                slot["WariantDomyslnyId"] = idy[indeks];
+                slot.Remove("IndeksWariantuDomyslnego");
+            }
+        }
+
+        // 3. słowniki slotId → wartość: liczby (stare indeksy) przepisz na Id wariantu
+        foreach (var zestaw in zestawy.OfType<JsonObject>())
+            PrzepiszSlownikNaId(zestaw, "OstatnieWarianty", idyWgSlotu);
+        if (doc["Wyprawy"] is JsonArray wyprawy)
+            foreach (var wyprawa in wyprawy.OfType<JsonObject>())
+                PrzepiszSlownikNaId(wyprawa, "WybraneWarianty", idyWgSlotu);
+    }
+
+    private static IEnumerable<JsonObject> Sloty(JsonArray zestawy)
+    {
+        foreach (var zestaw in zestawy.OfType<JsonObject>())
+            if (zestaw["Sloty"] is JsonArray sloty)
+                foreach (var slot in sloty.OfType<JsonObject>())
+                    yield return slot;
+    }
+
+    private static void PrzepiszSlownikNaId(JsonObject kontener, string nazwaPola, Dictionary<string, List<string>> idyWgSlotu)
+    {
+        if (kontener[nazwaPola] is not JsonObject slownik)
+            return;
+        var zmiany = new List<(string Klucz, string Wartosc)>();
+        foreach (var (klucz, wartosc) in slownik)
+        {
+            if (wartosc is JsonValue v
+                && v.TryGetValue<int>(out var indeks)
+                && klucz != null
+                && idyWgSlotu.TryGetValue(klucz, out var idy)
+                && indeks >= 0 && indeks < idy.Count)
+                zmiany.Add((klucz, idy[indeks]));
+        }
+        foreach (var (klucz, wartosc) in zmiany)
+            slownik[klucz] = wartosc;
     }
 
     private sealed class DateOnlyJsonConverter : JsonConverter<DateOnly>

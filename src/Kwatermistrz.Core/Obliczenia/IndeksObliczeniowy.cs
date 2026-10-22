@@ -28,26 +28,34 @@ public class IndeksObliczeniowy
                 _wyprawyWgRepliki.TryGetValue(wyprawa.ReplikaGlownaId, out var liczba);
                 _wyprawyWgRepliki[wyprawa.ReplikaGlownaId] = liczba + 1;
             }
-            // rozwinięcie składu wyprawy na konkretne przedmioty (BR-08, FR-208)
+            // rozwinięcie składu wyprawy na konkretne przedmioty (BR-08, FR-208).
+            // BR-08: przedmiot występujący kilka razy w jednej wyprawie (dwa sloty, komplet + część) liczy się RAZ — jak w Kalkulator.UzyciaPrzedmiotu
+            var przedmiotyWWyprawie = new HashSet<string>(StringComparer.Ordinal);
+            void Zbierz(IEnumerable<string> id)
+            {
+                foreach (var przedmiotId in id)
+                    przedmiotyWWyprawie.Add(przedmiotId);
+            }
             if (wyprawa.ZestawId != null)
             {
                 var zestaw = dane.Zestawy.FirstOrDefault(z => z.Id == wyprawa.ZestawId);
                 if (zestaw != null)
                 {
-                    foreach (var (slotId, indeks) in wyprawa.WybraneWarianty)
+                    foreach (var (slotId, wariantId) in wyprawa.WybraneWarianty)
                     {
                         var slot = zestaw.Sloty.FirstOrDefault(s => s.Id == slotId);
-                        if (slot == null || indeks < 0 || indeks >= slot.Warianty.Count)
+                        var wariant = slot?.Warianty.FirstOrDefault(w => w.Id == wariantId);
+                        if (wariant == null)
                             continue;
-                        foreach (var element in slot.Warianty[indeks].Elementy)
-                            foreach (var przedmiotId in kalk.RozwinNaPrzedmioty(element))
-                                DodajUzycie(przedmiotId);
+                        foreach (var element in wariant.Elementy)
+                            Zbierz(kalk.RozwinNaPrzedmioty(element));
                     }
                 }
             }
             foreach (var element in wyprawa.SkladReczny)
-                foreach (var przedmiotId in kalk.RozwinNaPrzedmioty(element))
-                    DodajUzycie(przedmiotId);
+                Zbierz(kalk.RozwinNaPrzedmioty(element));
+            foreach (var przedmiotId in przedmiotyWWyprawie)
+                DodajUzycie(przedmiotId);
         }
 
         LacznaLiczbaWypraw = dane.Repliki.Sum(r =>

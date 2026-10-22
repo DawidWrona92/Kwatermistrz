@@ -288,3 +288,199 @@ public class Naprawy101ScalanieTests
         Assert.Null(podglad[0].Przedmiot.Komentarz);
     }
 }
+
+public class Naprawy101LiczbyTests
+{
+    private static (DaneAplikacji dane, Kalkulator kalk) Przygotuj()
+    {
+        var dane = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        return (dane, new Kalkulator(dane));
+    }
+
+    [Fact]
+    public void Indeks_Uzycia_RazNaWyprawe_GdyPrzedmiotWDwochSlochach()
+    {
+        var (dane, kalk) = Przygotuj();
+        var p = new Przedmiot { Nazwa = "Pas" };
+        dane.Przedmioty.Add(p);
+        var zestaw = new Zestaw { Nazwa = "Z" };
+        var slotA = new SlotZestawu { Nazwa = "Pas 1" };
+        slotA.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = p.Id } } });
+        var slotB = new SlotZestawu { Nazwa = "Pas 2" };
+        slotB.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = p.Id } } });
+        zestaw.Sloty.AddRange(new[] { slotA, slotB });
+        dane.Zestawy.Add(zestaw);
+        // ta sama wyprawa: ten sam przedmiot w dwóch słotach (BR-08: liczy się raz)
+        dane.Wyprawy.Add(new Wyprawa
+        {
+            Data = new DateOnly(2026, 1, 1),
+            ZestawId = zestaw.Id,
+            WybraneWarianty = new Dictionary<string, string>
+            {
+                [slotA.Id] = slotA.Warianty[0].Id,
+                [slotB.Id] = slotB.Warianty[0].Id,
+            },
+        });
+
+        var indeks = new IndeksObliczeniowy(dane);
+        Assert.Equal(kalk.UzyciaPrzedmiotu(p), indeks.UzyciaPrzedmiotu(p));
+        Assert.Equal(1, indeks.UzyciaPrzedmiotu(p));
+    }
+
+    [Fact]
+    public void KosztZestawu_LiczyReplikiWLiściePakowania()
+    {
+        var (dane, kalk) = Przygotuj();
+        var replika = new Replika
+        {
+            ModelProducenta = "AK",
+            Koszty = new List<PozycjaKosztowa> { new() { Kwota = 500m, Semantyka = SemantykaKosztu.Zakup } },
+        };
+        dane.Repliki.Add(replika);
+        var zestaw = new Zestaw { Nazwa = "Z" };
+        var slot = new SlotZestawu { Nazwa = "Broń" };
+        slot.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Replika, ElementId = replika.Id } } });
+        zestaw.Sloty.Add(slot);
+        dane.Zestawy.Add(zestaw);
+
+        var lista = kalk.ElementyListyPakowania(zestaw);
+        Assert.Single(lista);
+        Assert.Equal(TypElementu.Replika, lista[0].Element.Typ);
+        Assert.Equal(500m, kalk.KosztZestawu(zestaw));
+    }
+
+    [Fact]
+    public void Migracja_WariantyIndeksy_PrzepisaneNaId()
+    {
+        var dane = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        var zestaw = new Zestaw { Nazwa = "Z" };
+        var slot = new SlotZestawu { Nazwa = "S" };
+        var w0 = new WariantSlotu();
+        var w1 = new WariantSlotu();
+        slot.Warianty.AddRange(new[] { w0, w1 });
+        zestaw.Sloty.Add(slot);
+        var wyprawa = new Wyprawa
+        {
+            Data = new DateOnly(2026, 1, 1),
+            ZestawId = zestaw.Id,
+        };
+        dane.Zestawy.Add(zestaw);
+        dane.Wyprawy.Add(wyprawa);
+
+        var katalog = Path.Combine(Path.GetTempPath(), "kw-test-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(katalog);
+        try
+        {
+            var magazyn = new MagazynJson(katalog);
+            // symulacja starego JSON (1.0.0): indeksy zamiast Id wariantów
+            var staryJson = $$"""
+            {
+              "SchemaVersion": 1,
+              "WersjaRegul": "1.0",
+              "Slowniki": {{ MagazynJsonTestHelpers.SerializujSlowniki(dane.Slowniki) }},
+              "Przedmioty": [],
+              "Repliki": [],
+              "Zestawy": [
+                {
+                  "Id": "{{zestaw.Id}}",
+                  "Nazwa": "Z",
+                  "RekonstrukcjaId": null,
+                  "StronaId": null,
+                  "Opis": null,
+                  "CzySzkic": false,
+                  "Zdjecia": [],
+                  "Sloty": [
+                    {
+                      "Id": "{{slot.Id}}",
+                      "Nazwa": "S",
+                      "Kolejnosc": 0,
+                      "Warianty": [
+                        { "Elementy": [], "CzyPuste": true },
+                        { "Elementy": [], "CzyPuste": true }
+                      ],
+                      "IndeksWariantuDomyslnego": 1
+                    }
+                  ],
+                  "OstatnieWarianty": { "{{slot.Id}}": 1 },
+                  "SpakowaneKlucze": [],
+                  "ZnacznikZImportu": false
+                }
+              ],
+              "Wyprawy": [
+                {
+                  "Id": "{{wyprawa.Id}}",
+                  "Data": "2026-01-01",
+                  "RekonstrukcjaId": null,
+                  "Miejsce": null,
+                  "ReplikaGlownaId": null,
+                  "ZestawId": "{{zestaw.Id}}",
+                  "WybraneWarianty": { "{{slot.Id}}": 1 },
+                  "SkladReczny": [],
+                  "Komentarz": null,
+                  "Zdjecia": [],
+                  "CzyUsunieta": false,
+                  "OstatniaZmiana": "2026-01-01T00:00:00"
+                }
+              ],
+              "Rekonstrukcje": [],
+              "SzablonyKart": [],
+              "Zadania": [],
+              "Ustawienia": {},
+              "CzyPierwszeUruchomienie": false
+            }
+            """;
+            File.WriteAllText(Path.Combine(katalog, "dane.json"), staryJson);
+
+            var wczytane = magazyn.Wczytaj();
+
+            var wczytanySlot = wczytane.Zestawy[0].Sloty[0];
+            var drugiWariantId = wczytanySlot.Warianty[1].Id;
+            Assert.Equal(drugiWariantId, wczytanySlot.WariantDomyslnyId);
+            Assert.Equal(drugiWariantId, wczytane.Zestawy[0].OstatnieWarianty[slot.Id]);
+            Assert.Equal(drugiWariantId, wczytane.Wyprawy[0].WybraneWarianty[slot.Id]);
+
+            // roundtrip: zapis nowym formatem nie zawiera starych pól ani duplikatów kluczy
+            magazyn.Zapisz(wczytane);
+            var json = File.ReadAllText(magazyn.SciezkaPliku);
+            Assert.DoesNotContain("IndeksWariantuDomyslnego", json);
+            Assert.Equal(1, json.Split("\"OstatnieWarianty\"").Length - 1);
+            Assert.Equal(1, json.Split("\"WybraneWarianty\"").Length - 1);
+            var ponownie = magazyn.Wczytaj();
+            Assert.Equal(drugiWariantId, ponownie.Zestawy[0].Sloty[0].WariantDomyslnyId);
+            Assert.Equal(drugiWariantId, ponownie.Zestawy[0].OstatnieWarianty[slot.Id]);
+            Assert.Equal(drugiWariantId, ponownie.Wyprawy[0].WybraneWarianty[slot.Id]);
+        }
+        finally
+        {
+            if (Directory.Exists(katalog))
+                Directory.Delete(katalog, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void UzyciaPrzedmiotu_KompletLiczonyRazDlaElementuIKontenera()
+    {
+        var (dane, kalk) = Przygotuj();
+        var komplet = new Przedmiot { Nazwa = "Komplet" };
+        var czesc = new Przedmiot { Nazwa = "Część", KompletId = komplet.Id };
+        dane.Przedmioty.AddRange(new[] { komplet, czesc });
+        var zestaw = new Zestaw { Nazwa = "Z" };
+        var slot = new SlotZestawu { Nazwa = "Mundur" };
+        slot.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Komplet, ElementId = komplet.Id } } });
+        zestaw.Sloty.Add(slot);
+        dane.Zestawy.Add(zestaw);
+        dane.Wyprawy.Add(new Wyprawa
+        {
+            Data = new DateOnly(2026, 1, 1),
+            ZestawId = zestaw.Id,
+            WybraneWarianty = new Dictionary<string, string> { [slot.Id] = slot.Warianty[0].Id },
+        });
+
+        // komplet rozwinięty daje oba przedmioty, ale wyprawa liczy się raz dla każdego (BR-08)
+        Assert.Equal(1, kalk.UzyciaPrzedmiotu(komplet));
+        Assert.Equal(1, kalk.UzyciaPrzedmiotu(czesc));
+        var indeks = new IndeksObliczeniowy(dane);
+        Assert.Equal(1, indeks.UzyciaPrzedmiotu(komplet));
+        Assert.Equal(1, indeks.UzyciaPrzedmiotu(czesc));
+    }
+}

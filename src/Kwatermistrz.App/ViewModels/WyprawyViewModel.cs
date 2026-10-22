@@ -130,21 +130,23 @@ public partial class WyprawyViewModel : ObservableObject
             Nowa.RekonstrukcjaId ??= zestaw.RekonstrukcjaId;
             foreach (var slot in zestaw.Sloty)
             {
-                // FR-704: wariant ostatnio użyty na wyprawie, potem domyślny, potem pierwszy
-                var indeks = zestaw.WariantDomyslnyNaSlot(slot.Id)
-                    ?? slot.IndeksWariantuDomyslnego
-                    ?? (slot.Warianty.Count > 0 ? 0 : null);
-                if (indeks != null)
-                    Nowa.WybraneWarianty[slot.Id] = indeks.Value;
+                // FR-704: wariant ostatnio użyty na wyprawie (po Id), potem domyślny (po Id), potem pierwszy
+                var wariantId = zestaw.WariantDomyslnyNaSlot(slot.Id) ?? slot.WariantDomyslnyId;
+                var wariant = slot.Warianty.FirstOrDefault(w => w.Id == wariantId) ?? slot.Warianty.FirstOrDefault();
+                if (wariant != null)
+                    Nowa.WybraneWarianty[slot.Id] = wariant.Id;
             }
             // podpowiedź repliki głównej: pierwszy wariant slotu broni głównej (FR-802)
             var rek = _dane.Rekonstrukcje.FirstOrDefault(r => r.Id == (zestaw.RekonstrukcjaId ?? _stan.AktywnaRekonstrukcjaId));
             var slotyBroni = rek?.SzablonSlotow.Where(s => s.CzySlotBroniGlownej).Select(s => s.Nazwa).ToHashSet() ?? new HashSet<string>();
             foreach (var slot in zestaw.Sloty.Where(s => slotyBroni.Contains(s.Nazwa)))
             {
-                if (!Nowa.WybraneWarianty.TryGetValue(slot.Id, out var indeks) || indeks < 0 || indeks >= slot.Warianty.Count)
+                if (!Nowa.WybraneWarianty.TryGetValue(slot.Id, out var wariantId))
                     continue;
-                var pierwszy = slot.Warianty[indeks].Elementy.FirstOrDefault(e => e.Typ == TypElementu.Replika);
+                var wariant = slot.Warianty.FirstOrDefault(w => w.Id == wariantId);
+                if (wariant == null)
+                    continue;
+                var pierwszy = wariant.Elementy.FirstOrDefault(e => e.Typ == TypElementu.Replika);
                 if (pierwszy != null && Nowa.ReplikaGlownaId == null)
                     Nowa.ReplikaGlownaId = pierwszy.ElementId;
             }
@@ -230,13 +232,13 @@ public partial class WyprawyViewModel : ObservableObject
         }
         _dane.Wyprawy.Add(Nowa);
         _magazyn.Zapisz(_dane);
-        // zapamiętaj warianty jako ostatnio użyte (FR-704)
+        // zapamiętaj warianty jako ostatnio użyte (FR-704) — po Id wariantu
         if (Nowa.ZestawId != null)
         {
             var zestaw = _dane.Zestawy.FirstOrDefault(z => z.Id == Nowa.ZestawId);
             if (zestaw != null)
-                foreach (var (slotId, indeks) in Nowa.WybraneWarianty)
-                    zestaw.OstatnieWarianty[slotId] = indeks;
+                foreach (var (slotId, wariantId) in Nowa.WybraneWarianty)
+                    zestaw.OstatnieWarianty[slotId] = wariantId;
         }
         Nowa = new Wyprawa { Data = DateOnly.FromDateTime(DateTime.Today), ZestawId = Nowa.ZestawId };
         OnPropertyChanged(nameof(Nowa));

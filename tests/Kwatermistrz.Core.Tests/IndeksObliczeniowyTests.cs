@@ -39,21 +39,21 @@ public class IndeksObliczeniowyTests
             Data = new DateOnly(2026, 1, 5),
             ReplikaGlownaId = replika.Id,
             ZestawId = zestaw.Id,
-            WybraneWarianty = new Dictionary<string, int> { [slot.Id] = 0 },
+            WybraneWarianty = new Dictionary<string, string> { [slot.Id] = zestaw.Sloty[0].Warianty[0].Id },
         });
         dane.Wyprawy.Add(new Wyprawa
         {
             Data = new DateOnly(2026, 2, 10),
             ReplikaGlownaId = replika.Id,
             ZestawId = zestaw.Id,
-            WybraneWarianty = new Dictionary<string, int> { [slot.Id] = 1 },
+            WybraneWarianty = new Dictionary<string, string> { [slot.Id] = zestaw.Sloty[0].Warianty[1].Id },
         });
         dane.Wyprawy.Add(new Wyprawa
         {
             Data = new DateOnly(2026, 3, 1),
             ReplikaGlownaId = replika.Id,
             ZestawId = zestaw.Id,
-            WybraneWarianty = new Dictionary<string, int> { [slot.Id] = 2 },
+            WybraneWarianty = new Dictionary<string, string> { [slot.Id] = zestaw.Sloty[0].Warianty[2].Id },
         });
         dane.Wyprawy.Add(new Wyprawa { Data = new DateOnly(2026, 3, 2) }); // bez repliki, bez zestawu
         dane.Wyprawy.Add(new Wyprawa { Data = new DateOnly(2020, 1, 1), CzyUsunieta = true, ReplikaGlownaId = replika.Id });

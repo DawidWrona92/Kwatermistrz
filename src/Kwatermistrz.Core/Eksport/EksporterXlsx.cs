@@ -166,7 +166,7 @@ public static class EksporterXlsx
                     arkusz.Wiersze.Add(new WierszEksportu(
                         s == 0 && w == 0 ? z.Nazwa : null,
                         slot.Nazwa,
-                        $"Wariant {w + 1}{(w == (slot.IndeksWariantuDomyslnego ?? 0) ? " (domyślny)" : "")}",
+                        $"Wariant {w + 1}{(slot.WariantDomyslnyId != null && slot.Warianty[w].Id == slot.WariantDomyslnyId ? " (domyślny)" : "")}",
                         elementy,
                         s == 0 && w == 0 ? Formatowanie.Waluta(kalk.KosztZestawu(z)) : null,
                         s == 0 && w == 0 ? ZakresTekst(kalk.ZakresKosztuZestawu(z)) : null));

@@ -136,7 +136,7 @@ public class RegulyBiznesoweTests
             Data = new DateOnly(2026, 3, 1),
             ZestawId = zestaw.Id,
             RekonstrukcjaId = rekonstrukcja.Id,
-            WybraneWarianty = new() { [slot.Id] = 0 },
+            WybraneWarianty = new() { [slot.Id] = zestaw.Sloty[0].Warianty[0].Id },
         });
 
         Assert.Equal(8, kalk.UzyciaPrzedmiotu(mundur));
@@ -171,7 +171,7 @@ public class RegulyBiznesoweTests
             Data = new DateOnly(2026, 3, 1),
             ZestawId = zestaw.Id,
             RekonstrukcjaId = rekonstrukcja.Id,
-            WybraneWarianty = new() { [slot.Id] = 0 },
+            WybraneWarianty = new() { [slot.Id] = zestaw.Sloty[0].Warianty[0].Id },
         };
         var (mundurId, czyMieszanka) = kalk.MundurWyprawy(wyprawa);
 
@@ -437,7 +437,7 @@ public class Fr707708Tests
         var slotMundur = new SlotZestawu { Nazwa = "Mundur" };
         slotMundur.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Komplet, ElementId = kompletId } } });
         slotMundur.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = gora.Id } } });
-        slotMundur.IndeksWariantuDomyslnego = 0;
+        slotMundur.WariantDomyslnyId = slotMundur.Warianty[0].Id;
         var slotBron = new SlotZestawu { Nazwa = "Broń" };
         slotBron.Warianty.Add(new WariantSlotu { CzyPuste = true });
         slotBron.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Replika, ElementId = replika.Id } } });
@@ -463,7 +463,7 @@ public class Fr707708Tests
         var slot = new SlotZestawu { Nazwa = "S" };
         slot.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = p1.Id } } });
         slot.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = p2.Id } } });
-        slot.IndeksWariantuDomyslnego = 1;
+        slot.WariantDomyslnyId = slot.Warianty[1].Id;
         zestaw.Sloty.Add(slot);
 
         Assert.Equal(100m, kalk.KosztZestawu(zestaw));

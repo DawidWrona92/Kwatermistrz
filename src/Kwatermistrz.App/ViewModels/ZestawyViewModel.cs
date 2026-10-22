@@ -199,15 +199,15 @@ public partial class ZestawyViewModel : ObservableObject
         _magazyn.Zapisz(_dane);
     }
 
-    /// <summary>Ustawia wariant domyślny slotu (FR-704).</summary>
+    /// <summary>Ustawia wariant domyślny slotu (FR-704) — po Id wariantu (nie po indeksie).</summary>
     [RelayCommand]
     private void UstawDomyslny(object? parametry)
     {
         if (Wybrany == null || parametry is not object[] { Length: 2 } tablica)
             return;
-        if (tablica[0] is SlotZestawu slot && tablica[1] is int indeks)
+        if (tablica[0] is SlotZestawu slot && tablica[1] is WariantSlotu wariant)
         {
-            slot.IndeksWariantuDomyslnego = indeks;
+            slot.WariantDomyslnyId = wariant.Id;
             _magazyn.Zapisz(_dane);
         }
     }

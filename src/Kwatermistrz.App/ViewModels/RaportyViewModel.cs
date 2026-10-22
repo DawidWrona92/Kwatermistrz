@@ -14,7 +14,8 @@ public class WierszRaportuBroni
 {
     public int Miejsce { get; set; }
     public string Nazwa { get; set; } = "";
-    public int Wyprawy { get; set; }
+    /// <summary>Liczba wypraw; w wierszu „Średnia” — średnia dziesiętna (BR-06).</summary>
+    public decimal Wyprawy { get; set; }
     public decimal Procent { get; set; }
     public string? TypMagazynka { get; set; }
     public string? Rola { get; set; }
@@ -274,7 +275,7 @@ public partial class RaportyViewModel : ObservableObject
             RaportBroni.Add(new WierszRaportuBroni
             {
                 Nazwa = "Średnia",
-                Wyprawy = posiadane.Sum(w => w.Wyprawy) / posiadane.Count,
+                Wyprawy = (decimal)posiadane.Sum(w => w.Wyprawy) / posiadane.Count,
                 Procent = posiadane.Average(w => w.ProcentWypraw),
                 Koszt = posiadane.Average(w => w.KosztCalkowity),
                 CenaOryginalna = posiadane.Average(w => w.CenaOryginalna),
@@ -306,22 +307,26 @@ public partial class RaportyViewModel : ObservableObject
             .Where(p => p.KategoriaId == kategoriaMundury.Id)
             .Where(p => _stan.AktywnaRekonstrukcjaId == null || p.RekonstrukcjeId.Count == 0 || p.RekonstrukcjeId.Contains(_stan.AktywnaRekonstrukcjaId))
             .ToList();
-        var grupy = new List<(string Nazwa, List<Przedmiot> Elementy, string? StronaId, string? WzorId)>();
-        foreach (var m in mundury.Where(m => m.KompletId == null))
-            grupy.Add((m.Nazwa, new List<Przedmiot> { m }, m.StronyId.FirstOrDefault(), m.WzorId));
-        foreach (var kompletId in mundury.Where(m => m.KompletId != null).Select(m => m.KompletId).Distinct())
+        var grupy = new List<(string Nazwa, Przedmiot Reprezentant, List<Przedmiot> Elementy, string? StronaId, string? WzorId)>();
+        // komplet: kontener (KompletId == null, na którego wskazują elementy) liczony raz, razem z elementami;
+        // kontener bez elementów w tej kategorii trafia jako samodzielny mundur
+        var kompletyId = mundury.Where(m => m.KompletId != null).Select(m => m.KompletId!).Distinct().ToList();
+        foreach (var m in mundury.Where(m => m.KompletId == null && !kompletyId.Contains(m.Id)))
+            grupy.Add((m.Nazwa, m, new List<Przedmiot> { m }, m.StronyId.FirstOrDefault(), m.WzorId));
+        foreach (var kompletId in kompletyId)
         {
             var elementy = mundury.Where(m => m.KompletId == kompletId || m.Id == kompletId).ToList();
             var komplet = elementy.FirstOrDefault(p => p.Id == kompletId) ?? elementy.First();
-            grupy.Add((komplet.Nazwa + " (komplet)", elementy, komplet.StronyId.FirstOrDefault(), komplet.WzorId));
+            grupy.Add((komplet.Nazwa + " (komplet)", komplet, elementy, komplet.StronyId.FirstOrDefault(), komplet.WzorId));
         }
         decimal sumaKoszt = 0;
         var liczba = 0;
-        foreach (var (nazwa, elementy, stronaId, wzorId) in grupy.OrderBy(g => g.Nazwa, StringComparer.CurrentCulture))
+        foreach (var (nazwa, reprezentant, elementy, stronaId, wzorId) in grupy.OrderBy(g => g.Nazwa, StringComparer.CurrentCulture))
         {
-            // uzycia kompletu = wspólne (BR-08); dla pojedynczego munduru — jego uzycia
-            var uzycia = elementy.Sum(e => kalk.UzyciaPrzedmiotu(e));
-            var koszt = elementy.Sum(e => kalk.KosztMunduru(e));
+            // użycia kompletu = wspólne (BR-08) — liczymy raz dla reprezentanta, nie sumujemy po elementach;
+            // koszt kompletu = koszt reprezentanta (KosztMunduru dla części zwraca koszt całego kompletu)
+            var uzycia = kalk.UzyciaPrzedmiotu(reprezentant);
+            var koszt = kalk.KosztMunduru(reprezentant);
             var wyprawy = uzycia; // dla munduru „użycia” = liczba wypraw (BR-08 przez skład)
             RaportUmundurowanie.Add(new WierszRaportuUmundurowania
             {
@@ -355,13 +360,17 @@ public partial class RaportyViewModel : ObservableObject
             .Distinct()
             .OrderBy(y => y);
         var suma = 0;
-        var miesiace = pierwsza != null
-            ? Math.Max(1, (DateOnly.FromDateTime(DateTime.Today).Year - pierwsza.Value.Year) * 12 + DateOnly.FromDateTime(DateTime.Today).Month - pierwsza.Value.Month + 1)
-            : 1;
+        var dzis = DateOnly.FromDateTime(DateTime.Today);
         foreach (var rok in lata)
         {
             var liczba = kalk.WyprawyWRoku(rok);
             suma += liczba;
+            // miesiące: od pierwszej wyprawy do końca danego roku (dla bieżącego roku — do dziś)
+            var miesiace = pierwsza != null
+                ? Math.Max(1, Math.Min(rok, dzis.Year) == rok && rok == dzis.Year
+                    ? (dzis.Year - pierwsza.Value.Year) * 12 + dzis.Month - pierwsza.Value.Month + 1
+                    : (rok - pierwsza.Value.Year) * 12 + 12 - pierwsza.Value.Month + 1)
+                : 1;
             RaportLata.Add(new WierszRaportuLat
             {
                 Rok = rok,

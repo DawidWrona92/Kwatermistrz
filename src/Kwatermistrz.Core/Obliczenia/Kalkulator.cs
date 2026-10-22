@@ -156,7 +156,7 @@ public class Kalkulator
         return false;
     }
 
-    /// <summary>Rozwinięcie elementu na konkretne Id przedmiotów (FR-208: konfiguracja nośnika → jej elementy; komplet → części; przedmiot → sam siebie).</summary>
+    /// <summary>Rozwinięcie elementu na konkretne Id przedmiotów (FR-208: konfiguracja nośnika → jej elementy; komplet → części; przedmiot → sam siebie). Replika nie jest przedmiotem — zwraca pustą listę (broń obsługują osobne ścieżki: KosztElementu, lista pakowania przez Typ).</summary>
     public List<string> RozwinNaPrzedmioty(ElementWariantu element)
     {
         switch (element.Typ)
@@ -184,12 +184,13 @@ public class Kalkulator
             var zestaw = _dane.Zestawy.FirstOrDefault(z => z.Id == wyprawa.ZestawId);
             if (zestaw == null)
                 return false;
-            foreach (var (slotId, indeks) in wyprawa.WybraneWarianty)
+            foreach (var (slotId, wariantId) in wyprawa.WybraneWarianty)
             {
                 var slot = zestaw.Sloty.FirstOrDefault(s => s.Id == slotId);
-                if (slot == null || indeks < 0 || indeks >= slot.Warianty.Count)
+                var wariant = slot?.Warianty.FirstOrDefault(w => w.Id == wariantId);
+                if (wariant == null)
                     continue;
-                if (CzyWElementach(slot.Warianty[indeks].Elementy))
+                if (CzyWElementach(wariant.Elementy))
                     return true;
             }
             return false;
@@ -221,12 +222,13 @@ public class Kalkulator
             return (null, false);
         var slotyMunduru = rekonstrukcja.SzablonSlotow.Where(s => s.CzySlotMunduru).Select(s => s.Nazwa).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var elementy = new List<ElementWariantu>();
-        foreach (var (slotId, indeks) in wyprawa.WybraneWarianty)
+        foreach (var (slotId, wariantId) in wyprawa.WybraneWarianty)
         {
             var slot = zestaw.Sloty.FirstOrDefault(s => s.Id == slotId);
-            if (slot == null || !slotyMunduru.Contains(slot.Nazwa) || indeks < 0 || indeks >= slot.Warianty.Count)
+            var wariant = slot?.Warianty.FirstOrDefault(w => w.Id == wariantId);
+            if (slot == null || wariant == null || !slotyMunduru.Contains(slot.Nazwa))
                 continue;
-            elementy.AddRange(slot.Warianty[indeks].Elementy);
+            elementy.AddRange(wariant.Elementy);
         }
         if (elementy.Count == 0)
             return (null, false);
@@ -250,48 +252,45 @@ public class Kalkulator
         };
     }
 
-    /// <summary>FR-707: elementy listy pakowania dla wariantów domyślnych zestawu (lub wskazanych indeksów), rozwinięte — elementy kompletu osobno. Zwraca (element, slot, indeksWariantu).</summary>
-    public List<(ElementWariantu Element, SlotZestawu Slot, int IndeksWariantu)> ElementyListyPakowania(Zestaw zestaw, IReadOnlyDictionary<string, int>? wybraneWarianty = null)
+    /// <summary>FR-707: elementy listy pakowania dla wariantów domyślnych zestawu (lub wskazanych Id wariantów).
+    /// Elementy kompletu rozwinięte osobno (jako Przedmiot); repliki i konfiguracje nośnika jako osobne elementy
+    /// (z oryginalnym Typ — lista pakowania pokazuje też broń, FR-707). Zwraca (element, slot, indeksWariantu w liście — tylko do wyświetlenia).</summary>
+    public List<(ElementWariantu Element, SlotZestawu Slot, int IndeksWariantu)> ElementyListyPakowania(Zestaw zestaw, IReadOnlyDictionary<string, string>? wybraneWarianty = null)
     {
         var wynik = new List<(ElementWariantu, SlotZestawu, int)>();
         foreach (var slot in zestaw.Sloty.OrderBy(s => s.Kolejnosc))
         {
-            var indeks = wybraneWarianty?.TryGetValue(slot.Id, out var w) == true && w >= 0 && w < slot.Warianty.Count
-                ? w
-                : slot.IndeksWariantuDomyslnego ?? 0;
-            if (indeks < 0 || indeks >= slot.Warianty.Count)
+            // wybór po Id wariantu; brak wyboru = wariant domyślny (po Id, potem pierwszy)
+            var wariant = wybraneWarianty != null && wybraneWarianty.TryGetValue(slot.Id, out var wariantId)
+                ? slot.Warianty.FirstOrDefault(w => w.Id == wariantId)
+                : null;
+            wariant ??= slot.Warianty.FirstOrDefault(w => w.Id == slot.WariantDomyslnyId) ?? slot.Warianty.FirstOrDefault();
+            if (wariant == null || wariant.CzyPuste)
                 continue;
-            var wariant = slot.Warianty[indeks];
-            if (wariant.CzyPuste)
-                continue;
+            var indeks = slot.Warianty.IndexOf(wariant);
             foreach (var element in wariant.Elementy)
             {
-                foreach (var przedmiotId in RozwinNaPrzedmioty(element))
-                    wynik.Add((new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = przedmiotId }, slot, indeks));
+                if (element.Typ == TypElementu.Komplet)
+                {
+                    foreach (var przedmiotId in RozwinNaPrzedmioty(element))
+                        wynik.Add((new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = przedmiotId }, slot, indeks));
+                }
+                else
+                {
+                    // Przedmiot, Replika, KonfiguracjaNosnika — jako oryginalny element (bez gubienia replik)
+                    wynik.Add((element, slot, indeks));
+                }
             }
         }
         return wynik;
     }
 
-    /// <summary>FR-708: koszt zestawu — suma cen elementów (pozycje „Zakup”, BR-04) wariantów domyślnych. Zwraca koszt domyślny.</summary>
+    /// <summary>FR-708: koszt zestawu — suma cen elementów (pozycje „Zakup”, BR-04) wariantów domyślnych, w tym replik. Zwraca koszt domyślny.</summary>
     public decimal KosztZestawu(Zestaw zestaw)
     {
         decimal suma = 0;
         foreach (var (element, _, _) in ElementyListyPakowania(zestaw))
-        {
-            if (element.Typ == TypElementu.Przedmiot)
-            {
-                var p = _dane.Przedmioty.FirstOrDefault(x => x.Id == element.ElementId);
-                if (p != null)
-                    suma += Koszty(p.Koszty).Oryginalna;
-            }
-            else if (element.Typ == TypElementu.Replika)
-            {
-                var r = _dane.Repliki.FirstOrDefault(x => x.Id == element.ElementId);
-                if (r != null)
-                    suma += Koszty(r.Koszty).Oryginalna;
-            }
-        }
+            suma += KosztElementu(element);
         return suma;
     }
 
