@@ -134,6 +134,21 @@ public class KonwerterLicznikaKategorii : IMultiValueConverter
         => throw new NotSupportedException();
 }
 
+/// <summary>Ścieżka względna zdjęcia → miniatura (BitmapImage z katalogu danych, DecodePixelWidth=80). Zwraca null, gdy brak ścieżki lub pliku (FR-211 [S]).</summary>
+public class KonwerterMiniatury : IValueConverter
+{
+    public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not string sciezka || string.IsNullOrWhiteSpace(sciezka))
+            return null;
+        var pelna = Services.SerwisZdjec.PelnaSciezkaBezwzgledna(sciezka);
+        return pelna != null ? Services.SerwisZdjec.WczytajObraz(pelna, 80) : null;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
 /// <summary>Liczba równa parametrowi → Visibility.Visible, inaczej Collapsed.</summary>
 public class KonwerterRowneLiczbe : IValueConverter
 {

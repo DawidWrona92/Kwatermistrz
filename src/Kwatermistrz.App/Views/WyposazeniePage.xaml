@@ -6,6 +6,7 @@
       xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
       Title="Wyposażenie">
     <Page.Resources>
+        <conv:KonwerterMiniatury x:Key="KonwerterMiniatury" />
         <conv:KonwerterNazwySlownika x:Key="KonwerterNazwySlownika" />
         <conv:KonwerterNazwSlownikaWiele x:Key="KonwerterNazwSlownikaWiele" />
         <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
@@ -92,6 +93,15 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                     <DataGridTextColumn Header="Firma" Binding="{Binding Firma}" Width="120" />
+                    <DataGridTemplateColumn Header="Zdjęcie" Width="56">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <!-- Miniatura pierwszego zdjęcia (FR-211 [S]) -->
+                                <Image Height="40" Stretch="UniformToFill"
+                                       Source="{Binding ZdjecieMiniatury, Converter={StaticResource KonwerterMiniatury}}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
                     <DataGridTextColumn Header="Miejsce" Binding="{Binding MiejsceId}" Width="110" />
                     <DataGridTextColumn Header="Użycia" Binding="{Binding Uzycia}" Width="70" />

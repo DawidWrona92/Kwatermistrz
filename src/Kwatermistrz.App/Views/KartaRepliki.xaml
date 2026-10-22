@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
+             xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
              xmlns:model="clr-namespace:Kwatermistrz.Core.Model;assembly=Kwatermistrz.Core"
              xmlns:sys="clr-namespace:System;assembly=System.Runtime">
     <UserControl.Resources>
@@ -54,6 +55,13 @@
             <!-- Przegląd (FR-304) -->
             <StackPanel Visibility="{Binding Zakladka, Converter={StaticResource KonwerterRowne}, ConverterParameter=Przegląd, ConverterCulture=pl-PL}">
                 <TextBlock Text="{Binding NazwaPelna}" Style="{StaticResource NaglowekSekcji}" />
+
+                <!-- Zdjęcia (FR-211) -->
+                <TextBlock Text="Zdjęcia" Style="{StaticResource NaglowekSekcji}" Margin="0,12,0,4" />
+                <controls:GaleriaZdjec x:Name="Galeria"
+                                       Sciezki="{Binding Replika.Zdjecia}"
+                                       Serwis="{Binding DataContext.DataContext.SerwisZdjec, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                       WlascicielNazwa="{Binding NazwaPelna}" />
                 <TextBlock Margin="0,4,0,0">
                     <Run Text="Status: " /><Run Text="{Binding Status}" />
                 </TextBlock>

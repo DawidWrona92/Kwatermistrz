@@ -23,4 +23,15 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
+    <!-- Galeria zdjęć (FR-211): kontener miniatur, kontrolka sama buduje zawartość. -->
+    <Style TargetType="{x:Type controls:GaleriaZdjec}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type controls:GaleriaZdjec}">
+                    <WrapPanel x:Name="PART_Kontener" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

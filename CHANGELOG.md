@@ -4,6 +4,14 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 
 ## [Nieopublikowane]
 
+### Etap 5e — Zdjęcia (FR-211)
+
+#### Dodane
+- **Galeria zdjęć** na karcie przedmiotu i karcie repliki (FR-211 [M]): wiele zdjęć, miniatury, przycisk „+” (wybór wielu plików), powiększenie w osobnym oknie (Escape zamyka), menu kontekstowe: powiększ / ustaw jako główne / usuń. Pierwsze zdjęcie to **zdjęcie główne** (ramka).
+- Pliki kopiowane do katalogu `zdjecia/` w katalogu danych; ścieżki w modelu względne; kopia zapasowa obejmuje zdjęcia (FR-1107); zmiana zdjęć zapisuje dane natychmiast (FR-1203).
+- **Miniatura w liście wyposażenia** (FR-211 [S]) — pierwsze zdjęcie w kolumnie „Zdjęcie”.
+- `SerwisZdjec` (ścieżki, kopia do katalogu, miniatury z `DecodePixelWidth`), `GaleriaZdjec` (kontrolka), `PowiekszenieZdjeciaWindow`, `KonwerterMiniatury`.
+
 ### Etap 5h — Wykresy (FR-909)
 
 #### Dodane

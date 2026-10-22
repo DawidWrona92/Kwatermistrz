@@ -15,14 +15,22 @@ public partial class ReplikiViewModel : ObservableObject
     private readonly MagazynJson _magazyn;
     private readonly KalkulatorSerwis _kalkulator;
     private readonly StanAplikacji _stan;
+    private readonly SerwisZdjec _serwisZdjec;
 
-    public ReplikiViewModel(DaneAplikacji dane, MagazynJson magazyn, KalkulatorSerwis kalkulator, StanAplikacji stan)
+    /// <summary>Serwis zdjęć (FR-211) — dla galerii na karcie.</summary>
+    public SerwisZdjec SerwisZdjec => _serwisZdjec;
+
+    public ReplikiViewModel(DaneAplikacji dane, MagazynJson magazyn, KalkulatorSerwis kalkulator, StanAplikacji stan, SerwisZdjec serwisZdjec)
     {
         _dane = dane;
         _magazyn = magazyn;
         _kalkulator = kalkulator;
         _stan = stan;
+        _serwisZdjec = serwisZdjec;
     }
+
+    /// <summary>Zapisuje dane bez odświeżania listy — po zmianie samych zdjęć (FR-211, FR-1203).</summary>
+    public void ZapiszCicho() => _magazyn.Zapisz(_dane);
 
     /// <summary>Wiersze listy replik po filtrach (FR-301).</summary>
     public ObservableCollection<WierszRepliki> Wiersze { get; } = new();

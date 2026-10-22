@@ -13,15 +13,23 @@ public partial class WyposazenieViewModel : ObservableObject
     private readonly DaneAplikacji _dane;
     private readonly MagazynJson _magazyn;
     private readonly KalkulatorSerwis _kalkulator;
+    private readonly SerwisZdjec _serwisZdjec;
+
+    /// <summary>Serwis zdjęć (FR-211) — dla galerii na karcie.</summary>
+    public SerwisZdjec SerwisZdjec => _serwisZdjec;
     private readonly StanAplikacji _stan;
 
-    public WyposazenieViewModel(DaneAplikacji dane, MagazynJson magazyn, KalkulatorSerwis kalkulator, StanAplikacji stan)
+    public WyposazenieViewModel(DaneAplikacji dane, MagazynJson magazyn, KalkulatorSerwis kalkulator, StanAplikacji stan, SerwisZdjec serwisZdjec)
     {
         _dane = dane;
         _magazyn = magazyn;
         _kalkulator = kalkulator;
         _stan = stan;
+        _serwisZdjec = serwisZdjec;
     }
+
+    /// <summary>Zapisuje dane bez odświeżania listy — po zmianie samych zdjęć (FR-211, FR-1203).</summary>
+    public void ZapiszCicho() => _magazyn.Zapisz(_dane);
 
     /// <summary>Wszystkie kategorie z licznikami (FR-201).</summary>
     public IReadOnlyList<Kategoria> Kategorie => _dane.Slowniki.Kategorie.OrderBy(k => k.Kolejnosc).ToList();

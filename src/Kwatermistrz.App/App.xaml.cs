@@ -40,6 +40,7 @@ public partial class App : Application
         services.AddSingleton(dane);
         services.AddSingleton(Magazyn);
         services.AddSingleton<KalkulatorSerwis>();
+        services.AddSingleton<SerwisZdjec>();
         services.AddSingleton<StanAplikacji>();
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<PulpitViewModel>();
