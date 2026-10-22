@@ -4,6 +4,24 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 
 ## [Nieopublikowane]
 
+### Etap 2 — Repliki (FR-301–305, FR-401–405, FR-408–409, FR-501–505, FR-601–602, FR-604)
+
+#### Dodane
+- Ekran **Broń** (FR-301): gęsta tabela replik — miejsce w rankingu wg wypraw, nazwa „model (prototyp)”, strona, rola, typ magazynka, napęd, stan, wyprawy, % wypraw, koszt całkowity/cena oryginalna/dodatki/koszt na wyprawę, ostatni test, oznaczenie otwartej awarii. Filtry: tekst, strona, stan, „tylko awaria”, „pokaż sprzedane/wycofane” (FR-305), aktywna rekonstrukcja (FR-1303).
+- **Karta repliki** (FR-302) w panelu po prawej z zakładkami:
+  - **Przegląd** (FR-304): stan, wyprawy i %, koszty z podziałem, koszt na wyprawę, ostatni pomiar z „na maksimum”, data ostatniego testu, otwarte zadania, ostatnie 3 wyprawy + pola podstawowe (FR-303).
+  - **Karta techniczna** (FR-401, FR-404): parametry wg szablonu przypisanego do repliki (FR-1307), każde pole z wyborem stanu (wypełnione/nieznane/nie dotyczy/nie uzupełnione).
+  - **Pomiary** (FR-408): data, energia, ROF, zasięg, wynik testu, „na maksimum”.
+  - **Modyfikacje i koszty** (FR-501, FR-504, FR-505): pozycje kosztowe (data, opis, kwota, rodzaj) i modyfikacje ze zmianami parametrów przed/po.
+  - **Zadania** (FR-601–602): dodawanie, zamykanie, usuwanie; lista zadań repliki.
+  - **Wyprawy**: lista wypraw repliki (BR-02).
+- `ReplikiViewModel`, `WierszRepliki` + `WierszReplikiObliczenia` (otwarta awaria, otwarte zadania, ostatnie wyprawy), `WierszParametruKarty`.
+- Konwerter `KonwerterBoolToVisibility`; poprawki bindingów kart (DataContext przez UserControl).
+
+#### Uwagi
+- FR-405 (podpowiedzi wartości pól) i FR-406/407 ([S]) — Etap 5.
+- FR-503: „cena zakupu” przedmiotu zostaje uproszczonym polem (pozycje kosztowe przedmiotu — Etap 5).
+
 ### Etap 1 — Wyposażenie (FR-201–207, FR-209, FR-216, FR-1110 część wyposażenia)
 
 #### Dodane

@@ -1,0 +1,122 @@
+<Page x:Class="Kwatermistrz.App.Views.BroniePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
+      Title="Broń">
+    <Page.Resources>
+        <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
+        <conv:KonwerterProcentu x:Key="KonwerterProcentu" />
+        <conv:KonwerterDaty x:Key="KonwerterDaty" />
+        <conv:KonwerterNazwySlownika x:Key="KonwerterNazwySlownika" />
+        <conv:KonwerterNazwSlownikaWiele x:Key="KonwerterNazwSlownikaWiele" />
+    </Page.Resources>
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Pasek filtrów (FR-301) -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+            <ui:TextBox MinWidth="200" PlaceholderText="Filtr…"
+                        Text="{Binding FiltrTekst, UpdateSourceTrigger=PropertyChanged}" />
+            <ComboBox MinWidth="120" Margin="8,0,0,0" ItemsSource="{Binding Slowniki.Strony}"
+                      SelectedValue="{Binding FiltrStronaId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa"
+                      ToolTip="Strona" />
+            <ComboBox MinWidth="140" Margin="8,0,0,0" ItemsSource="{Binding Slowniki.StanyReplik}"
+                      SelectedValue="{Binding FiltrStanId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa"
+                      ToolTip="Stan" />
+            <CheckBox Content="Tylko z otwartą awarią" VerticalAlignment="Center" Margin="12,0,0,0"
+                      IsChecked="{Binding TylkoAwaria}" />
+            <CheckBox Content="Pokaż sprzedane i wycofane" VerticalAlignment="Center" Margin="12,0,0,0"
+                      IsChecked="{Binding PokazSprzedane}" />
+            <ui:Button Content="Dodaj replikę" Appearance="Primary" Margin="12,0,0,0"
+                       Command="{Binding DodajCommand}" />
+        </StackPanel>
+
+        <!-- Lista replik (FR-301) -->
+        <ui:DataGrid Grid.Row="1"
+                     ItemsSource="{Binding Wiersze}"
+                     AutoGenerateColumns="False"
+                     CanUserAddRows="False"
+                     IsReadOnly="True"
+                     SelectionMode="Single"
+                     SelectedItem="{Binding Wybrana}"
+                     HeadersVisibility="Column">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="#" Binding="{Binding MiejsceWRankingu}" Width="36" />
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding NazwaPelna}" Width="*" />
+                <DataGridTextColumn Header="Strona" Width="90">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="StronyId" Converter="{StaticResource KonwerterNazwSlownikaWiele}"
+                                 ConverterParameter="{Binding DataContext.Slowniki.Strony, RelativeSource={RelativeSource AncestorType=Page}}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Rola" Width="110">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="RoleId" Converter="{StaticResource KonwerterNazwSlownikaWiele}"
+                                 ConverterParameter="{Binding DataContext.Slowniki.Role, RelativeSource={RelativeSource AncestorType=Page}}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Magazynek" Width="90">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="TypMagazynkaId" Converter="{StaticResource KonwerterNazwySlownika}"
+                                 ConverterParameter="{Binding DataContext.Slowniki.TypyMagazynkow, RelativeSource={RelativeSource AncestorType=Page}}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Napęd" Width="80">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="NapedId" Converter="{StaticResource KonwerterNazwySlownika}"
+                                 ConverterParameter="{Binding DataContext.Slowniki.Napedy, RelativeSource={RelativeSource AncestorType=Page}}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Stan" Width="90">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="StanId" Converter="{StaticResource KonwerterNazwySlownika}"
+                                 ConverterParameter="{Binding DataContext.Slowniki.StanyReplik, RelativeSource={RelativeSource AncestorType=Page}}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="70" />
+                <DataGridTextColumn Header="%" Width="60">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="ProcentWypraw" Converter="{StaticResource KonwerterProcentu}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Koszt całk." Width="90">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="KosztCalkowity" Converter="{StaticResource KonwerterWaluty}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Cena oryg." Width="90">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="CenaOryginalna" Converter="{StaticResource KonwerterWaluty}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Dodatki" Width="80">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="KosztDodatkow" Converter="{StaticResource KonwerterWaluty}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Koszt/wyp." Width="80">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="KosztNaWyprawe" Converter="{StaticResource KonwerterWaluty}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Ostatni test" Width="90">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="DataOstatniegoTestu" Converter="{StaticResource KonwerterDaty}" />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTemplateColumn Header="Awaria" Width="50">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="⚠" Visibility="{Binding CzyOtwartaAwaria, Converter={x:Static conv:KonwerterBoolToVisibility.Instance}}"
+                                       Foreground="{DynamicResource SystemFillColorCriticalBrush}" ToolTip="Otwarta awaria" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </ui:DataGrid>
+    </Grid>
+</Page>

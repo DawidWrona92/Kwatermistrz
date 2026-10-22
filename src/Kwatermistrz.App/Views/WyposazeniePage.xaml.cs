@@ -11,7 +11,15 @@ public partial class WyposazeniePage : Page
         Loaded += (_, _) =>
         {
             if (DataContext is ViewModels.WyposazenieViewModel vm)
+            {
                 vm.Odswiez();
+                vm.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName == nameof(vm.Wybrany) &&
+                        System.Windows.Window.GetWindow(this) is MainWindow okno)
+                        okno.OdswiezKarte();
+                };
+            }
         };
     }
 }

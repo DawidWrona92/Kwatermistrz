@@ -133,3 +133,15 @@ public class KonwerterLicznikaKategorii : IMultiValueConverter
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         => throw new NotSupportedException();
 }
+
+/// <summary>Bool → Visibility (do oznaczeń awarii itp.).</summary>
+public class KonwerterBoolToVisibility : IValueConverter
+{
+    public static readonly KonwerterBoolToVisibility Instance = new();
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool b && b ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is Visibility v && v == Visibility.Visible;
+}

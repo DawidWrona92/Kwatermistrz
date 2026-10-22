@@ -48,22 +48,22 @@
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Kategoria" VerticalAlignment="Center" Margin="0,4,0,0" />
                 <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,4,0,0"
-                          ItemsSource="{Binding DataContext.Slowniki.Kategorie, RelativeSource={RelativeSource AncestorType=Page}}"
+                          ItemsSource="{Binding DataContext.DataContext.Slowniki.Kategorie, RelativeSource={RelativeSource AncestorType=UserControl}}"
                           SelectedValue="{Binding Przedmiot.KategoriaId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
 
                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Wzór" VerticalAlignment="Center" Margin="0,4,0,0" />
                 <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,4,0,0"
-                          ItemsSource="{Binding DataContext.Slowniki.Wzory, RelativeSource={RelativeSource AncestorType=Page}}"
+                          ItemsSource="{Binding DataContext.DataContext.Slowniki.Wzory, RelativeSource={RelativeSource AncestorType=UserControl}}"
                           SelectedValue="{Binding Przedmiot.WzorId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
 
                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Miejsce" VerticalAlignment="Center" Margin="0,4,0,0" />
                 <ComboBox Grid.Row="4" Grid.Column="1" Margin="0,4,0,0"
-                          ItemsSource="{Binding DataContext.Slowniki.Miejsca, RelativeSource={RelativeSource AncestorType=Page}}"
+                          ItemsSource="{Binding DataContext.DataContext.Slowniki.Miejsca, RelativeSource={RelativeSource AncestorType=UserControl}}"
                           SelectedValue="{Binding Przedmiot.MiejsceId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
 
                 <TextBlock Grid.Row="5" Grid.Column="0" Text="Pochodzenie" VerticalAlignment="Center" Margin="0,4,0,0" />
                 <ComboBox Grid.Row="5" Grid.Column="1" Margin="0,4,0,0"
-                          ItemsSource="{Binding DataContext.Slowniki.Pochodzenie, RelativeSource={RelativeSource AncestorType=Page}}"
+                          ItemsSource="{Binding DataContext.DataContext.Slowniki.Pochodzenie, RelativeSource={RelativeSource AncestorType=UserControl}}"
                           SelectedValue="{Binding Przedmiot.PochodzenieId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
 
                 <TextBlock Grid.Row="6" Grid.Column="0" Text="Status" VerticalAlignment="Center" Margin="0,4,0,0" />
@@ -87,29 +87,29 @@
             <TextBlock Visibility="{Binding CzyWKomplecie, Converter={x:Static conv:KonwerterNieRowneNull.Instance}}"
                        Text="Element kompletu" Opacity="0.7" />
             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                <ui:Button Content="Dołącz do kompletu…" Command="{Binding DataContext.DolaczDoKompletuCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                           CommandParameter="{Binding DataContext.Wybrany, RelativeSource={RelativeSource AncestorType=Page}}" />
+                <ui:Button Content="Dołącz do kompletu…" Command="{Binding DataContext.DataContext.DolaczDoKompletuCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           CommandParameter="{Binding DataContext.DataContext.Wybrany, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                 <ui:Button Content="Odepnij od kompletu" Margin="8,0,0,0"
-                           Command="{Binding DataContext.OdlaczZKompletuCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
+                           Command="{Binding DataContext.DataContext.OdlaczZKompletuCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
             </StackPanel>
 
             <!-- Montaż (FR-207) -->
             <TextBlock Text="Montaż na nośniku" Style="{StaticResource NaglowekSekcji}" Margin="0,16,0,4" />
             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                <ComboBox MinWidth="180" ItemsSource="{Binding DataContext.Nosniki, RelativeSource={RelativeSource AncestorType=Page}}"
+                <ComboBox MinWidth="180" ItemsSource="{Binding DataContext.DataContext.Nosniki, RelativeSource={RelativeSource AncestorType=UserControl}}"
                           SelectedValue="{Binding Przedmiot.ZamontowanyNaId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa"
                           ToolTip="Nośnik (puste = niezamontowany)" />
                 <ui:Button Content="Zdejmij" Margin="8,0,0,0"
-                           Command="{Binding DataContext.ZdejmijCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
+                           Command="{Binding DataContext.DataContext.ZdejmijCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
                 <ui:Button Content="Zapisz" Appearance="Primary"
-                           Command="{Binding DataContext.ZapiszKarteCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
+                           Command="{Binding DataContext.DataContext.ZapiszKarteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                 <ui:Button Content="Duplikuj" Margin="8,0,0,0"
-                           Command="{Binding DataContext.DuplikujCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
+                           Command="{Binding DataContext.DataContext.DuplikujCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                 <ui:Button Content="Usuń" Appearance="Danger" Margin="8,0,0,0"
-                           Command="{Binding DataContext.UsunCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                           Command="{Binding DataContext.DataContext.UsunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                            CommandParameter="{Binding}" />
             </StackPanel>
         </StackPanel>

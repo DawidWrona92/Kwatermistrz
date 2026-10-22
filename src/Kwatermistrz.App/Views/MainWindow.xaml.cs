@@ -46,7 +46,7 @@ public partial class MainWindow : FluentWindow
         _strony["Ustawienia"] = new UstawieniaPage { DataContext = vm.Ustawienia };
         _strony["Import"] = new ImportPage { DataContext = vm.Import };
         _strony["Wyprawy"] = new PlaceholderPage("Wyprawy", "Etap 3");
-        _strony["Bronie"] = new PlaceholderPage("Broń i repliki", "Etap 2");
+        _strony["Bronie"] = new BroniePage { DataContext = vm.Repliki };
         _strony["Wyposazenie"] = new WyposazeniePage { DataContext = vm.Wyposazenie };
         _strony["Zestawy"] = new PlaceholderPage("Zestawy", "Etap 3");
         _strony["Raporty"] = new PlaceholderPage("Raporty", "Etap 4");
@@ -63,9 +63,24 @@ public partial class MainWindow : FluentWindow
         ObszarZawartosci.Content = strona;
         if (ekran == "Pulpit" && ViewModel?.Pulpit != null)
             ViewModel.Pulpit.Odswiez();
-        // karta po prawej pokazuje wybrany przedmiot (FR-204, §10.4)
-        if (ekran == "Wyposazenie" && ViewModel?.Wyposazenie.Wybrany != null)
+        // karta po prawej pokazuje wybrany element (FR-204/FR-302, §10.4)
+        if (ViewModel == null)
+            return;
+        if (ekran == "Wyposazenie" && ViewModel.Wyposazenie.Wybrany != null)
             PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany });
+        if (ekran == "Bronie" && ViewModel.Repliki.Wybrana != null)
+            PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana });
+    }
+
+    /// <summary>Odświeża kartę po prawej po zmianie wyboru (FR-204, FR-302).</summary>
+    public void OdswiezKarte()
+    {
+        if (ViewModel == null)
+            return;
+        if (ViewModel.AktualnyEkran == "Wyposazenie" && ViewModel.Wyposazenie.Wybrany != null)
+            PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany });
+        else if (ViewModel.AktualnyEkran == "Bronie" && ViewModel.Repliki.Wybrana != null)
+            PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana });
     }
 
     private void ZaznaczNawigacje(string ekran)
@@ -100,6 +115,8 @@ public partial class MainWindow : FluentWindow
         // przy zmianie ekranu odświeżamy dane ekranu docelowego
         if (ekran == "Wyposazenie")
             ViewModel.Wyposazenie.Odswiez();
+        if (ekran == "Bronie")
+            ViewModel.Repliki.Odswiez();
     }
 
     private void ZamknijPanelKarty_Click(object sender, RoutedEventArgs e)
