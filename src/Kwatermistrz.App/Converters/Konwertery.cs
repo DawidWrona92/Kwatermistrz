@@ -134,6 +134,39 @@ public class KonwerterLicznikaKategorii : IMultiValueConverter
         => throw new NotSupportedException();
 }
 
+/// <summary>TypElementu równe parametrowi (int) → Visibility (dla selektora konfiguracji nośnika, FR-208).</summary>
+public class KonwerterRowneTyp : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is Kwatermistrz.Core.Model.TypElementu typ && parameter != null
+            && int.TryParse(parameter.ToString(), out var oczekiwany))
+            return (int)typ == oczekiwany ? Visibility.Visible : Visibility.Collapsed;
+        return Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
+/// <summary>Bool (czy różnica w porównaniu kart, FR-406) → tło wiersza: różnica = lekko czerwone, zgodność = przezroczyste.</summary>
+public class KonwerterRoznicyTlo : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is bool roznica && roznica)
+        {
+            var kolor = Application.Current?.TryFindResource("Sygnal") as System.Windows.Media.SolidColorBrush;
+            if (kolor != null)
+                return new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(30, kolor.Color.R, kolor.Color.G, kolor.Color.B));
+        }
+        return System.Windows.Media.Brushes.Transparent;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
 /// <summary>Ścieżka względna zdjęcia → miniatura (BitmapImage z katalogu danych, DecodePixelWidth=80). Zwraca null, gdy brak ścieżki lub pliku (FR-211 [S]).</summary>
 public class KonwerterMiniatury : IValueConverter
 {

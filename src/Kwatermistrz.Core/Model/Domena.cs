@@ -32,6 +32,8 @@ public class Przedmiot
     public string? ZamontowanyNaId { get; set; }
     /// <summary>Id kompletu, do którego należy przedmiot (FR-206); null gdy nie należy.</summary>
     public string? KompletId { get; set; }
+    /// <summary>Nazwane konfiguracje nośnika (FR-208): np. „Skanda Light” jako lista elementów zamontowanych na tym nośniku.</summary>
+    public List<KonfiguracjaNosnika> Konfiguracje { get; set; } = new();
     public List<PozycjaKosztowa> Koszty { get; set; } = new();
     public bool ZnacznikZImportu { get; set; }
     public bool DoUzupelnienia { get; set; }
@@ -68,6 +70,15 @@ public class Przedmiot
                 pozycjaZakupu.Data = DataZakupu.Value;
         }
     }
+}
+
+/// <summary>Nazwana konfiguracja nośnika (FR-208): lista elementów (przedmiotów) zamontowanych na nośniku w tej konfiguracji; może być użyta jako wariant slotu w zestawie.</summary>
+public class KonfiguracjaNosnika
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string Nazwa { get; set; } = "";
+    /// <summary>Id elementów (przedmiotów) w konfiguracji.</summary>
+    public List<string> ElementyId { get; set; } = new();
 }
 
 /// <summary>Replika ASG (rozdział 6.2).</summary>

@@ -187,6 +187,89 @@ public partial class ReplikiViewModel : ObservableObject
         Zakladka = "Przegląd";
     }
 
+    /// <summary>FR-407: „Kopiuj kartę z innej repliki” — kopiuje wartości karty technicznej (bez pomiarów, modyfikacji, kosztów i zadań) jako punkt wyjścia dla nowej repliki.</summary>
+    [RelayCommand]
+    private void KopiujKarteZInnej(WierszRepliki? zrodlo)
+    {
+        if (zrodlo == null)
+            return;
+        var replika = new Replika();
+        var z = zrodlo.Replika;
+        foreach (var (parametrId, wartosc) in z.KartaTechniczna)
+            replika.KartaTechniczna[parametrId] = new WartoscPolaKarty { Tekst = wartosc.Tekst, Stan = wartosc.Stan };
+        if (z.SzablonKartyId != null)
+            replika.SzablonKartyId = z.SzablonKartyId;
+        replika.NapedId = z.NapedId;
+        replika.TypMagazynkaId = z.TypMagazynkaId;
+        _dane.Repliki.Add(replika);
+        _magazyn.Zapisz(_dane);
+        Odswiez();
+        Wybrana = Wiersze.FirstOrDefault(w => w.Id == replika.Id);
+        Zakladka = "Karta";
+    }
+
+    /// <summary>FR-406: wiersze porównania kart — zaznaczone repliki + parametry ich kart.</summary>
+    public IReadOnlyList<WierszPorownaniaKart> PorownanieKart => BudujPorownanie();
+
+    /// <summary>FR-406: lista replik zaznaczonych do porównania (maks. 4).</summary>
+    public IReadOnlyList<WierszRepliki> ZaznaczoneDoPorownania =>
+        Wiersze.Where(w => w.ZaznaczonaDoPorownania).Take(4).ToList();
+
+    /// <summary>Czy pokazuje panel porównania (FR-406).</summary>
+    [ObservableProperty]
+    private bool _pokazPorownanie;
+
+    /// <summary>FR-406: przełącza panel porównania kart.</summary>
+    [RelayCommand]
+    private void PrzelaczPorownanie() => PokazPorownanie = !PokazPorownanie;
+
+    partial void OnPokazPorownanieChanged(bool value) => OnPropertyChanged(nameof(PorownanieKart));
+
+    private List<WierszPorownaniaKart> BudujPorownanie()
+    {
+        var wynik = new List<WierszPorownaniaKart>();
+        var wybrane = ZaznaczoneDoPorownania;
+        if (wybrane.Count < 2)
+            return wynik;
+        // parametry: unia nazw z szablonów, zachowując kolejność pierwszego szablonu
+        var parametry = new List<ParametrKarty>();
+        var widziane = new HashSet<string>();
+        foreach (var w in wybrane)
+        {
+            var szablon = SzablonDla(w.Replika);
+            if (szablon == null)
+                continue;
+            foreach (var p in szablon.Parametry.OrderBy(x => x.Kolejnosc))
+                if (widziane.Add(p.Id))
+                    parametry.Add(p);
+        }
+        foreach (var p in parametry)
+        {
+            var wartosci = wybrane.Select(w =>
+            {
+                w.Replika.KartaTechniczna.TryGetValue(p.Id, out var wartosc);
+                return wartosc?.Tekst;
+            }).ToList();
+            wynik.Add(new WierszPorownaniaKart
+            {
+                Parametr = p.Nazwa,
+                Wartosci = wartosci,
+                CzyRoznica = wartosci.Distinct().Count() > 1,
+            });
+        }
+        return wynik;
+    }
+
+    private SzablonKarty? SzablonDla(Replika r)
+    {
+        if (r.SzablonKartyId != null)
+            return _dane.SzablonyKart.FirstOrDefault(s => s.Id == r.SzablonKartyId);
+        if (r.NapedId != null)
+            return _dane.SzablonyKart.FirstOrDefault(s => s.NapedId == r.NapedId)
+                ?? _dane.SzablonyKart.FirstOrDefault(s => s.NapedId == null);
+        return _dane.SzablonyKart.FirstOrDefault(s => s.NapedId == null);
+    }
+
     /// <summary>Zapisuje kartę repliki po zatwierdzeniu (FR-1203).</summary>
     [RelayCommand]
     private void ZapiszKarte()
@@ -400,4 +483,13 @@ public class WierszParametruKarty
     public bool Ukryty => Parametr.Ukryty;
     /// <summary>Podpowiedzi wartości dla tego parametra (FR-405) — wcześniejsze wartości u innych replik.</summary>
     public IReadOnlyList<string> Podpowiedzi { get; }
+}
+
+/// <summary>Wiersz porównania kart (FR-406): jeden parametr, wartości kolejnych replik, czy są różnice.</summary>
+public class WierszPorownaniaKart
+{
+    public string Parametr { get; set; } = "";
+    public List<string?> Wartosci { get; set; } = new();
+    /// <summary>Prawda, gdy wartości się różnią — wiersz podświetlony.</summary>
+    public bool CzyRoznica { get; set; }
 }

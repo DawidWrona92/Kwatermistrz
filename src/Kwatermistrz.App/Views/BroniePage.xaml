@@ -10,6 +10,8 @@
         <conv:KonwerterDaty x:Key="KonwerterDaty" />
         <conv:KonwerterNazwySlownika x:Key="KonwerterNazwySlownika" />
         <conv:KonwerterNazwSlownikaWiele x:Key="KonwerterNazwSlownikaWiele" />
+        <conv:KonwerterBoolToVisibility x:Key="KonwerterBoolToVisibility" />
+        <conv:KonwerterRoznicyTlo x:Key="KonwerterRoznicyTlo" />
     </Page.Resources>
     <Grid Margin="8">
         <Grid.RowDefinitions>
@@ -35,7 +37,49 @@
                       IsChecked="{Binding PokazSprzedane}" />
             <ui:Button Content="Dodaj replikę" Appearance="Primary" Margin="12,0,0,0"
                        Command="{Binding DodajCommand}" />
+            <ui:Button Content="Porównaj zaznaczone (FR-406)" Margin="12,0,0,0"
+                       Command="{Binding PrzelaczPorownanieCommand}"
+                       ToolTip="Porównanie kart zaznaczonych replik (zaznacz checkboxem w pierwszej kolumnie)" />
         </StackPanel>
+
+        <!-- Panel porównania kart (FR-406) -->
+        <Border Grid.Row="0" Style="{StaticResource Karta}" Padding="8" Margin="0,40,0,8"
+                Visibility="{Binding PokazPorownanie, Converter={StaticResource KonwerterBoolToVisibility}}">
+            <StackPanel>
+                <TextBlock Text="Porównanie kart (FR-406) — różnice podświetlone" FontWeight="SemiBold" />
+                <ItemsControl ItemsSource="{Binding PorownanieKart}" Margin="0,4,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="4" Margin="0,1" CornerRadius="4"
+                                    Background="{Binding CzyRoznica, Converter={StaticResource KonwerterRoznicyTlo}}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="160" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Parametr}" VerticalAlignment="Center" />
+                                    <ItemsControl Grid.Column="1" ItemsSource="{Binding Wartosci}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Columns="4" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderThickness="0,0,1,0" Padding="4"
+                                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                                                    <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
 
         <!-- Lista replik (FR-301) -->
         <ui:DataGrid Grid.Row="1"
@@ -47,6 +91,8 @@
                      SelectedItem="{Binding Wybrana}"
                      HeadersVisibility="Column">
             <DataGrid.Columns>
+                <DataGridCheckBoxColumn Header="Por." Width="36"
+                                         Binding="{Binding ZaznaczonaDoPorownania, Mode=TwoWay}" />
                 <DataGridTextColumn Header="#" Binding="{Binding MiejsceWRankingu}" Width="36" />
                 <DataGridTextColumn Header="Nazwa" Binding="{Binding NazwaPelna}" Width="*" />
                 <DataGridTextColumn Header="Strona" Width="90">
@@ -115,6 +161,25 @@
                         <DataTemplate>
                             <TextBlock Text="⚠" Visibility="{Binding CzyOtwartaAwaria, Converter={x:Static conv:KonwerterBoolToVisibility.Instance}}"
                                        Foreground="{DynamicResource SystemFillColorCriticalBrush}" ToolTip="Otwarta awaria" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Akcje" Width="90">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <!-- FR-407: kopiuj kartę z tej repliki jako punkt wyjścia dla nowej -->
+                                <ui:Button Padding="4,2" ToolTip="Kopiuj kartę z tej repliki do nowej (FR-407)"
+                                           Command="{Binding DataContext.KopiujKarteZInnejCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                           CommandParameter="{Binding}">
+                                    <ui:SymbolIcon Symbol="Copy24" />
+                                </ui:Button>
+                                <ui:Button Padding="4,2" Margin="4,0,0,0" Appearance="Danger" ToolTip="Usuń replikę"
+                                           Command="{Binding DataContext.UsunCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                           CommandParameter="{Binding}">
+                                    <ui:SymbolIcon Symbol="Dismiss24" />
+                                </ui:Button>
+                            </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

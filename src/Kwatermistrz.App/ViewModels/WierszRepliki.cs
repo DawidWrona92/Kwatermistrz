@@ -16,6 +16,10 @@ public partial class WierszRepliki : ObservableObject
         _wiersz = wiersz;
     }
 
+    /// <summary>Zaznaczona do porównania kart (FR-406).</summary>
+    [ObservableProperty]
+    private bool _zaznaczonaDoPorownania;
+
     /// <summary>Model repliki.</summary>
     public Replika Replika => _replika;
 

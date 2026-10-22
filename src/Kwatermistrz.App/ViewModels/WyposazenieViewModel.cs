@@ -31,6 +31,59 @@ public partial class WyposazenieViewModel : ObservableObject
     /// <summary>Zapisuje dane bez odświeżania listy — po zmianie samych zdjęć (FR-211, FR-1203).</summary>
     public void ZapiszCicho() => _magazyn.Zapisz(_dane);
 
+    // ---- Konfiguracje nośnika (FR-208) ----
+
+    /// <summary>Dodaje pustą konfigurację do wybranego nośnika (FR-208).</summary>
+    [RelayCommand]
+    private void DodajKonfiguracje()
+    {
+        if (Wybrany == null)
+            return;
+        Wybrany.Przedmiot.Konfiguracje.Add(new KonfiguracjaNosnika { Nazwa = "Nowa konfiguracja" });
+        _magazyn.Zapisz(_dane);
+    }
+
+    /// <summary>Usuwa konfigurację nośnika (FR-208).</summary>
+    [RelayCommand]
+    private void UsunKonfiguracje(KonfiguracjaNosnika? konfiguracja)
+    {
+        if (Wybrany == null || konfiguracja == null)
+            return;
+        Wybrany.Przedmiot.Konfiguracje.Remove(konfiguracja);
+        _magazyn.Zapisz(_dane);
+    }
+
+    /// <summary>„Zapisz jako konfigurację” — z aktualnie zamontowanych elementów nośnika (FR-208).</summary>
+    [RelayCommand]
+    private void ZapiszKonfiguracje()
+    {
+        if (Wybrany == null)
+            return;
+        var zamontowane = _dane.Przedmioty.Where(p => p.ZamontowanyNaId == Wybrany.Id).Select(p => p.Id).ToList();
+        Wybrany.Przedmiot.Konfiguracje.Add(new KonfiguracjaNosnika
+        {
+            Nazwa = $"Konfiguracja {Wybrany.Przedmiot.Konfiguracje.Count + 1}",
+            ElementyId = zamontowane,
+        });
+        _magazyn.Zapisz(_dane);
+    }
+
+    /// <summary>„Zastosuj konfigurację” — montuje elementy konfiguracji na nośniku; pozostałe montaże na nośniku zostają (FR-208).</summary>
+    [RelayCommand]
+    private void ZastosujKonfiguracje(KonfiguracjaNosnika? konfiguracja)
+    {
+        if (Wybrany == null || konfiguracja == null)
+            return;
+        foreach (var elementId in konfiguracja.ElementyId)
+        {
+            var element = _dane.Przedmioty.FirstOrDefault(p => p.Id == elementId);
+            if (element != null)
+                element.ZamontowanyNaId = Wybrany.Id;
+        }
+        _magazyn.Zapisz(_dane);
+        Odswiez();
+    }
+
     /// <summary>Wszystkie kategorie z licznikami (FR-201).</summary>
     public IReadOnlyList<Kategoria> Kategorie => _dane.Slowniki.Kategorie.OrderBy(k => k.Kolejnosc).ToList();
 
@@ -96,8 +149,12 @@ public partial class WyposazenieViewModel : ObservableObject
         if (TylkoBezUzycia)
             zapytanie = zapytanie.Where(p => kalk.UzyciaPrzedmiotu(p) == 0);
         Wiersze.Clear();
+        var kategorie = _dane.Slowniki.Kategorie.ToDictionary(k => k.Id, k => k.CzyNosnik);
         foreach (var p in zapytanie.OrderBy(p => p.Nazwa, StringComparer.CurrentCulture))
-            Wiersze.Add(new WierszPrzedmiotu(p, kalk.UzyciaPrzedmiotu(p)));
+            Wiersze.Add(new WierszPrzedmiotu(p, kalk.UzyciaPrzedmiotu(p))
+            {
+                CzyNosnik = kategorie.TryGetValue(p.KategoriaId, out var nosnik) && nosnik,
+            });
         OnPropertyChanged(nameof(LiczbaWierszy));
         OnPropertyChanged(nameof(LiczbaZaznaczonych));
     }

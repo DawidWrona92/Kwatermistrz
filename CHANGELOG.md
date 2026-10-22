@@ -4,6 +4,14 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 
 ## [Nieopublikowane]
 
+### Etap 5i — Porównanie i kopiowanie kart (FR-406, FR-407), konfiguracje nośnika (FR-208)
+
+#### Dodane
+- **Porównanie kart replik** (FR-406): checkbox „Por.” w liście broni, przycisk „Porównaj zaznaczone” (maks. 4 repliki), panel z wierszami parametrów karty — wartości obok siebie, wiersze z różnicami podświetlone.
+- **Kopiowanie karty z innej repliki** (FR-407): przycisk w kolumnie „Akcje” tworzy nową replikę z wartościami karty technicznej, szablonem karty, napędem i typem magazynka źródłowej (bez pomiarów, modyfikacji, kosztów i zadań) i otwiera jej kartę do edycji.
+- **Konfiguracje nośnika** (FR-208): na karcie przedmiotu, którego kategoria jest oznaczona jako nośnik, sekcja „Konfiguracje nośnika” — nazwane listy elementów („Zapisz z zamontowanych”, „Dodaj pustą”, zastosuj, usuń). Konfigurację można dodać jako element wariantu slotu zestawu (typ „Konfiguracja”).
+- Kalkulator: `RozwinNaPrzedmioty` — rozwinięcie elementu na konkretne przedmioty (przedmiot / komplet / konfiguracja nośnika); lista pakowania, skład wyprawy i koszt zestawu uwzględniają konfiguracje nośnika.
+
 ### Etap 5e — Zdjęcia (FR-211)
 
 #### Dodane

@@ -11,6 +11,7 @@
         <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
         <conv:KonwerterDaty x:Key="KonwerterDaty" />
         <conv:KonwerterRowne x:Key="KonwerterRowne" />
+        <conv:KonwerterBoolToVisibility x:Key="KonwerterBoolToVisibility" />
         <ObjectDataProvider x:Key="Statusy" MethodName="GetValues" ObjectType="{x:Type sys:Enum}"
                             xmlns:sys="clr-namespace:System;assembly=System.Runtime">
             <ObjectDataProvider.MethodParameters>
@@ -133,6 +134,47 @@
                           ToolTip="Nośnik (puste = niezamontowany)" />
                 <ui:Button Content="Zdejmij" Margin="8,0,0,0"
                            Command="{Binding DataContext.DataContext.ZdejmijCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+            </StackPanel>
+
+            <!-- Konfiguracje nośnika (FR-208) — tylko gdy przedmiot jest nośnikiem -->
+            <StackPanel Visibility="{Binding CzyNosnik, Converter={StaticResource KonwerterBoolToVisibility}}">
+                <TextBlock Text="Konfiguracje nośnika" Style="{StaticResource NaglowekSekcji}" Margin="0,16,0,4"
+                           ToolTip="Nazwane konfiguracje (np. „Skanda Light”) — listy elementów; można ich użyć jako wariantu w zestawie (FR-208)" />
+                <ItemsControl ItemsSource="{Binding Przedmiot.Konfiguracje}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderThickness="0,0,0,1" Padding="4" Margin="0,2"
+                                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ui:TextBox Grid.Column="0" Text="{Binding Nazwa}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="8,0" Opacity="0.7"
+                                               Text="{Binding ElementyId.Count, StringFormat={}{0} elem.}" />
+                                    <ui:Button Grid.Column="2" Content="Zastosuj" Margin="4,0,0,0" Padding="6,2"
+                                               Command="{Binding DataContext.DataContext.DataContext.ZastosujKonfiguracjeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               CommandParameter="{Binding}" />
+                                    <ui:Button Grid.Column="3" Margin="4,0,0,0" Padding="6,2" Appearance="Danger"
+                                               Command="{Binding DataContext.DataContext.DataContext.UsunKonfiguracjeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               CommandParameter="{Binding}">
+                                        <ui:SymbolIcon Symbol="Dismiss24" />
+                                    </ui:Button>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                    <ui:Button Content="Zapisz z zamontowanych" Padding="6,2"
+                               Command="{Binding DataContext.DataContext.ZapiszKonfiguracjeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                               ToolTip="Tworzy konfigurację z elementów aktualnie zamontowanych na tym nośniku" />
+                    <ui:Button Content="Dodaj pustą" Margin="8,0,0,0" Padding="6,2"
+                               Command="{Binding DataContext.DataContext.DodajKonfiguracjeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                </StackPanel>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" Margin="0,16,0,0">

@@ -136,9 +136,29 @@ public class Kalkulator
         return licznik + wyprawyPrzedmiotu;
     }
 
-    /// <summary>Czy przedmiot jest w składzie wyprawy (przez wybrane warianty zestawu lub skład ręczny).</summary>
+    /// <summary>Rozwinięcie elementu na konkretne Id przedmiotów (FR-208: konfiguracja nośnika → jej elementy; komplet → części; przedmiot → sam siebie).</summary>
+    public List<string> RozwinNaPrzedmioty(ElementWariantu element)
+    {
+        switch (element.Typ)
+        {
+            case TypElementu.Przedmiot:
+                return new List<string> { element.ElementId };
+            case TypElementu.Komplet:
+                return _dane.Przedmioty.Where(p => p.KompletId == element.ElementId || p.Id == element.ElementId)
+                    .Select(p => p.Id).ToList();
+            case TypElementu.KonfiguracjaNosnika:
+                var konfiguracja = _dane.Przedmioty.SelectMany(p => p.Konfiguracje).FirstOrDefault(k => k.Id == element.ElementId);
+                return konfiguracja?.ElementyId.ToList() ?? new List<string>();
+            default:
+                return new List<string>();
+        }
+    }
+
+    /// <summary>Czy przedmiot jest w składzie wyprawy (przez wybrane warianty zestawu lub skład ręczny; FR-208: konfiguracja nośnika liczy się przez swoje elementy).</summary>
     public bool CzyWnaSkładzie(Wyprawa wyprawa, string przedmiotId)
     {
+        bool CzyWElementach(IEnumerable<ElementWariantu> elementy) =>
+            elementy.Any(e => RozwinNaPrzedmioty(e).Contains(przedmiotId));
         if (wyprawa.ZestawId != null)
         {
             var zestaw = _dane.Zestawy.FirstOrDefault(z => z.Id == wyprawa.ZestawId);
@@ -149,16 +169,12 @@ public class Kalkulator
                 var slot = zestaw.Sloty.FirstOrDefault(s => s.Id == slotId);
                 if (slot == null || indeks < 0 || indeks >= slot.Warianty.Count)
                     continue;
-                if (slot.Warianty[indeks].Elementy.Any(e => e.Typ == TypElementu.Przedmiot && e.ElementId == przedmiotId))
-                    return true;
-                if (slot.Warianty[indeks].Elementy.Any(e => e.Typ == TypElementu.Komplet && CzyWKomplecie(e.ElementId, przedmiotId)))
+                if (CzyWElementach(slot.Warianty[indeks].Elementy))
                     return true;
             }
             return false;
         }
-        return wyprawa.SkladReczny.Any(e =>
-            (e.Typ == TypElementu.Przedmiot && e.ElementId == przedmiotId) ||
-            (e.Typ == TypElementu.Komplet && CzyWKomplecie(e.ElementId, przedmiotId)));
+        return CzyWElementach(wyprawa.SkladReczny);
     }
 
     /// <summary>Czy przedmiot należy do kompletu o podanym Id.</summary>
@@ -230,15 +246,8 @@ public class Kalkulator
                 continue;
             foreach (var element in wariant.Elementy)
             {
-                if (element.Typ == TypElementu.Komplet)
-                {
-                    foreach (var czesc in _dane.Przedmioty.Where(p => p.KompletId == element.ElementId || p.Id == element.ElementId))
-                        wynik.Add((new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = czesc.Id }, slot, indeks));
-                }
-                else
-                {
-                    wynik.Add((element, slot, indeks));
-                }
+                foreach (var przedmiotId in RozwinNaPrzedmioty(element))
+                    wynik.Add((new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = przedmiotId }, slot, indeks));
             }
         }
         return wynik;
@@ -298,6 +307,11 @@ public class Kalkulator
         if (element.Typ == TypElementu.Komplet)
             return _dane.Przedmioty.Where(p => p.KompletId == element.ElementId || p.Id == element.ElementId)
                 .Sum(p => Koszty(p.Koszty).Oryginalna);
+        if (element.Typ == TypElementu.KonfiguracjaNosnika)
+            return RozwinNaPrzedmioty(element)
+                .Select(id => _dane.Przedmioty.FirstOrDefault(p => p.Id == id))
+                .Where(p => p != null)
+                .Sum(p => Koszty(p!.Koszty).Oryginalna);
         return 0m;
     }
 

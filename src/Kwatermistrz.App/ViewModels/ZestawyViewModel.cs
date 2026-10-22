@@ -56,6 +56,13 @@ public partial class ZestawyViewModel : ObservableObject
         .OrderBy(r => r.ModelProducenta)
         .ToList();
 
+    /// <summary>Wiersz konfiguracji nośnika do wyboru w wariantach (FR-208): nośnik + nazwa konfiguracji.</summary>
+    public IReadOnlyList<WierszKonfiguracjiNosnika> KonfiguracjeNosnikow => _dane.Przedmioty
+        .Where(p => p.Konfiguracje.Count > 0)
+        .SelectMany(p => p.Konfiguracje.Select(k => new WierszKonfiguracjiNosnika(p, k)))
+        .OrderBy(w => w.NazwaPelna, StringComparer.CurrentCulture)
+        .ToList();
+
     /// <summary>Odświeża listę (FR-709, FR-1303).</summary>
     public void Odswiez()
     {
@@ -256,8 +263,18 @@ public partial class ZestawyViewModel : ObservableObject
             TypElementu.Przedmiot => _dane.Przedmioty.FirstOrDefault(p => p.Id == element.ElementId)?.Nazwa ?? "?",
             TypElementu.Replika => _dane.Repliki.FirstOrDefault(r => r.Id == element.ElementId)?.ModelProducenta ?? "?",
             TypElementu.Komplet => _dane.Przedmioty.FirstOrDefault(p => p.Id == element.ElementId)?.Nazwa ?? "?",
+            TypElementu.KonfiguracjaNosnika => NazwaKonfiguracji(element.ElementId),
             _ => "?",
         };
+    }
+
+    private string NazwaKonfiguracji(string konfiguracjaId)
+    {
+        var para = _dane.Przedmioty
+            .Where(p => p.Konfiguracje.Count > 0)
+            .SelectMany(p => p.Konfiguracje.Select(k => (Nosnik: p, Konfiguracja: k)))
+            .FirstOrDefault(x => x.Konfiguracja.Id == konfiguracjaId);
+        return para.Konfiguracja != null ? $"{para.Nosnik.Nazwa} — {para.Konfiguracja.Nazwa}" : "?";
     }
 
     // ---- Lista pakowania (FR-707) ----
@@ -413,4 +430,23 @@ public partial class ZestawyViewModel : ObservableObject
         var t = tekst ?? "";
         return t.Contains(';') || t.Contains('"') || t.Contains('\n') ? "\"" + t.Replace("\"", "\"\"") + "\"" : t;
     }
+}
+
+/// <summary>Wiersz konfiguracji nośnika w selektorze wariantu zestawu (FR-208): „nośnik — konfiguracja”.</summary>
+public class WierszKonfiguracjiNosnika
+{
+    private readonly Przedmiot _nosnik;
+    private readonly KonfiguracjaNosnika _konfiguracja;
+
+    public WierszKonfiguracjiNosnika(Przedmiot nosnik, KonfiguracjaNosnika konfiguracja)
+    {
+        _nosnik = nosnik;
+        _konfiguracja = konfiguracja;
+    }
+
+    /// <summary>Id konfiguracji (jako Id elementu wariantu).</summary>
+    public string Id => _konfiguracja.Id;
+    public string NazwaPelna => $"{_nosnik.Nazwa} — {_konfiguracja.Nazwa}";
+    public string NosnikId => _nosnik.Id;
+    public IReadOnlyList<string> ElementyId => _konfiguracja.ElementyId;
 }

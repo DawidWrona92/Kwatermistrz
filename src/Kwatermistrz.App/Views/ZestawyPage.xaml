@@ -12,6 +12,7 @@
         <conv:KonwerterNieRowneNull x:Key="KonwerterNieRowneNull" />
         <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
         <conv:KonwerterBoolToVisibility x:Key="KonwerterBoolToVisibility" />
+        <conv:KonwerterRowneTyp x:Key="KonwerterRowneTyp" />
     </Page.Resources>
     <Grid Margin="8">
         <Grid.ColumnDefinitions>
@@ -126,10 +127,16 @@
                                                                         <ComboBox MinWidth="110" SelectedValue="{Binding Typ}">
                                                                             <ComboBoxItem Content="Przedmiot" Tag="0" />
                                                                             <ComboBoxItem Content="Replika" Tag="1" />
+                                                                            <ComboBoxItem Content="Konfiguracja" Tag="3" ToolTip="Nazwana konfiguracja nośnika (FR-208)" />
                                                                         </ComboBox>
                                                                         <ComboBox MinWidth="220" Margin="8,0,0,0"
                                                                                   ItemsSource="{Binding DataContext.DataContext.DataContext.Przedmioty, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                                   SelectedValue="{Binding ElementId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
+                                                                        <!-- Konfiguracje nośnika jako element wariantu (FR-208) -->
+                                                                        <ComboBox MinWidth="220" Margin="8,0,0,0"
+                                                                                  ItemsSource="{Binding DataContext.DataContext.DataContext.KonfiguracjeNosnikow, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                                  SelectedValue="{Binding ElementId}" SelectedValuePath="Id" DisplayMemberPath="NazwaPelna"
+                                                                                  Visibility="{Binding Typ, Converter={StaticResource KonwerterRowneTyp}, ConverterParameter=3}" />
                                                                         <ui:Button Margin="4,0,0,0" Appearance="Danger"
                                                                                    Command="{Binding DataContext.DataContext.DataContext.UsunElementCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                                    CommandParameter="{Binding}">

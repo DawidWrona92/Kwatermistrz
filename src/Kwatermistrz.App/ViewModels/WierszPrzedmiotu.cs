@@ -33,6 +33,9 @@ public partial class WierszPrzedmiotu : ObservableObject
     /// <summary>Id kategorii.</summary>
     public string KategoriaId => _przedmiot.KategoriaId;
 
+    /// <summary>Prawda, gdy kategoria przedmiotu jest oznaczona jako nośnik (FR-208 — pokazuje konfiguracje).</summary>
+    public bool CzyNosnik { get; init; }
+
     /// <summary>Id wzoru kamuflażu.</summary>
     public string? WzorId => _przedmiot.WzorId;
 

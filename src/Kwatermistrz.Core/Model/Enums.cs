@@ -56,6 +56,8 @@ public enum TypElementu
     Przedmiot = 0,
     Replika = 1,
     Komplet = 2,
+    /// <summary>Nazwana konfiguracja nośnika (FR-208) — rozwinięcie na elementy nośnika.</summary>
+    KonfiguracjaNosnika = 3,
 }
 
 /// <summary>Motyw interfejsu (FR-1006).</summary>
