@@ -65,7 +65,16 @@ public static class EksportRekonstrukcji
             Rekonstrukcje = new List<Rekonstrukcja> { rekonstrukcja },
             SzablonyKart = dane.SzablonyKart,
             Zadania = zadania,
-            Ustawienia = new Ustawienia(),
+            // ustawienia z licznikami historycznymi wg rok (bez osobistych: motyw, okno, ostatnie filtry)
+            Ustawienia = new Ustawienia
+            {
+                DzienZerowy = dane.Ustawienia.DzienZerowy,
+                HistoryczneWyprawyWgRok = dane.Ustawienia.HistoryczneWyprawyWgRok,
+                DataPierwszejWyprawy = dane.Ustawienia.DataPierwszejWyprawy,
+                MaksymalnyBokZdjecia = dane.Ustawienia.MaksymalnyBokZdjecia,
+                ZachowajOryginalZdjecia = dane.Ustawienia.ZachowajOryginalZdjecia,
+                OstatniaRekonstrukcjaId = rekonstrukcja.Id,
+            },
             CzyPierwszeUruchomienie = false,
         };
 
@@ -131,15 +140,19 @@ public static class EksportRekonstrukcji
             .ToList();
     }
 
-    /// <summary>Wyodrębnia zdjęcia z eksportu do katalogu danych aplikacji (zwraca liczbę plików).</summary>
+    /// <summary>Wyodrębnia zdjęcia z eksportu do katalogu danych aplikacji (zwraca liczbę plików). Wpisy spoza katalogu danych („../”, ścieżki absolutne) są pomijane — plik .kwreko może pochodzić od innej osoby.</summary>
     public static int WyodrebnijZdjecia(string sciezka, string katalogDanych)
     {
         var liczba = 0;
+        var katalogPelny = Path.GetFullPath(katalogDanych);
         using var zip = ZipFile.OpenRead(sciezka);
         foreach (var wpis in zip.Entries.Where(e => e.FullName.StartsWith(KatalogZdjec, StringComparison.Ordinal)))
         {
             var wzgledna = wpis.FullName[KatalogZdjec.Length..];
-            var pelna = Path.Combine(katalogDanych, wzgledna.Replace('/', Path.DirectorySeparatorChar));
+            var pelna = Path.GetFullPath(Path.Combine(katalogPelny, wzgledna.Replace('/', Path.DirectorySeparatorChar)));
+            // strażnik zip-slip: plik musi leżeć w katalogu danych
+            if (!pelna.StartsWith(katalogPelny + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                continue;
             Directory.CreateDirectory(Path.GetDirectoryName(pelna)!);
             using var zrodlo = wpis.Open();
             using var docel = File.Create(pelna);

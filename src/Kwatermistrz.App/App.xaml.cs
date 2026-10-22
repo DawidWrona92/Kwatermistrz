@@ -14,6 +14,8 @@ namespace Kwatermistrz.App;
 /// <summary>Aplikacja WPF: rejestracja usług, motyw, start okna głównego lub kreatora (FR-1401).</summary>
 public partial class App : Application
 {
+    private const string NazwaMutexa = "Kwatermistrz.SingleInstance";
+    private static System.Threading.Mutex? _mutex;
     private ServiceProvider? _provider;
 
     /// <summary>Aktualne dane aplikacji (wstrzykiwane do widoków).</summary>
@@ -28,6 +30,27 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // jedna instancja na użytkownika — dwie instancje nadpisywałyby sobie dane (NFR-05)
+        _mutex = new System.Threading.Mutex(true, NazwaMutexa, out var czyNowa);
+        if (!czyNowa)
+        {
+            System.Windows.MessageBox.Show(
+                "Kwatermistrz jest już uruchomiony.", "Kwatermistrz",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            Shutdown();
+            return;
+        }
+
+        // globalna obsługa wyjątków: log + komunikat zamiast cichego zamknięcia (NFR-05)
+        DispatcherUnhandledException += (_, args) =>
+        {
+            args.Handled = true;
+            ZapiszLogWyjatku(args.Exception);
+            System.Windows.MessageBox.Show(
+                "Wystąpił nieoczekiwany błąd. Szczegóły zapisano w pliku error.log w katalogu danych.",
+                "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        };
 
         KatalogDanych = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Kwatermistrz");
@@ -86,13 +109,30 @@ public partial class App : Application
             kreator.ShowDialog();
         }
 
-        if (!kontrola.CzyPoprawne && kontrola.komunikat != null)
-            System.Windows.MessageBox.Show(kontrola.komunikat, "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+        if (!kontrola.CzyPoprawne && kontrola.Komunikat != null)
+            System.Windows.MessageBox.Show(kontrola.Komunikat, "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
         _provider?.Dispose();
+        _mutex?.ReleaseMutex();
+        _mutex?.Dispose();
+        _mutex = null;
         base.OnExit(e);
+    }
+
+    private static void ZapiszLogWyjatku(Exception ex)
+    {
+        try
+        {
+            var sciezka = Path.Combine(KatalogDanych, "error.log");
+            File.AppendAllText(sciezka,
+                $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}{ex.StackTrace}{Environment.NewLine}{Environment.NewLine}");
+        }
+        catch
+        {
+            // logowanie nie może być przyczyną kolejnego wyjątku
+        }
     }
 }

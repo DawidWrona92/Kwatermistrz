@@ -22,21 +22,23 @@ public class SerwisZdjec
     /// <summary>Katalog bezwzględny zdjęć.</summary>
     public string KatalogZdjec => Path.Combine(_magazyn.KatalogDanych, "zdjecia");
 
-    /// <summary>Pełna ścieżka bezwzględna dla ścieżki względnej z modelu; null, gdy brak lub plik nie istnieje.</summary>
+    /// <summary>Pełna ścieżka bezwzględna dla ścieżki względnej z modelu; null, gdy brak, plik nie istnieje lub ścieżka wychodzi poza katalog danych (dane z importu mogą zawierać „../”).</summary>
     public string? PelnaSciezka(string? sciezkaWzgledna)
-    {
-        if (string.IsNullOrWhiteSpace(sciezkaWzgledna))
-            return null;
-        var pelna = Path.GetFullPath(Path.Combine(_magazyn.KatalogDanych, sciezkaWzgledna));
-        return File.Exists(pelna) ? pelna : null;
-    }
+        => PelnaSciezkaWalidowana(sciezkaWzgledna, _magazyn.KatalogDanych);
 
     /// <summary>Wersja statyczna dla konwerterów: ścieżka względna względem katalogu danych aplikacji (App.KatalogDanych).</summary>
     public static string? PelnaSciezkaBezwzgledna(string sciezkaWzgledna)
+        => PelnaSciezkaWalidowana(sciezkaWzgledna, App.KatalogDanych);
+
+    private static string? PelnaSciezkaWalidowana(string? sciezkaWzgledna, string katalogDanych)
     {
         if (string.IsNullOrWhiteSpace(sciezkaWzgledna))
             return null;
-        var pelna = Path.GetFullPath(Path.Combine(App.KatalogDanych, sciezkaWzgledna));
+        var katalogPelny = Path.GetFullPath(katalogDanych);
+        var pelna = Path.GetFullPath(Path.Combine(katalogPelny, sciezkaWzgledna));
+        // strażnik: ścieżka spoza katalogu danych odrzucamy (nie czytamy, nie usuwamy)
+        if (!pelna.StartsWith(katalogPelny + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            return null;
         return File.Exists(pelna) ? pelna : null;
     }
 
@@ -69,7 +71,7 @@ public class SerwisZdjec
                 Directory.CreateDirectory(katalogOryginalow);
                 File.Copy(sciezkaZrodlowa, Path.Combine(katalogOryginalow, docelowa), overwrite: true);
             }
-            ZapiszZmniejszone(sciezkaZrodlowa, pelnaDocelowa, limit);
+            docelowa = ZapiszZmniejszone(sciezkaZrodlowa, pelnaDocelowa, limit);
         }
         else
         {
@@ -96,7 +98,8 @@ public class SerwisZdjec
         }
     }
 
-    private static void ZapiszZmniejszone(string sciezkaZrodlowa, string pelnaDocelowa, int maksymalnyBok)
+    /// <summary>Zapisuje zmniejszony obraz; zwraca nazwę pliku docelowego (przy nieznanym rozszerzeniu — .jpg).</summary>
+    private static string ZapiszZmniejszone(string sciezkaZrodlowa, string pelnaDocelowa, int maksymalnyBok)
     {
         using var strumien = File.OpenRead(sciezkaZrodlowa);
         var dekorator = new TransformedBitmap();
@@ -114,13 +117,19 @@ public class SerwisZdjec
         BitmapEncoder enkoder = Path.GetExtension(pelnaDocelowa).ToLowerInvariant() switch
         {
             ".png" => new PngBitmapEncoder(),
-            ".jpg" or ".jpeg" => new JpegBitmapEncoder { QualityLevel = 90 },
             ".bmp" => new BmpBitmapEncoder(),
             _ => new JpegBitmapEncoder { QualityLevel = 90 },
         };
         enkoder.Frames.Add(BitmapFrame.Create(dekorator));
+        // nieznane rozszerzenie (np. .webp, .gif) → zapisujemy jako JPEG i korygujemy nazwę pliku
+        if (enkoder is JpegBitmapEncoder && !pelnaDocelowa.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+            && !pelnaDocelowa.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
+        {
+            pelnaDocelowa = Path.ChangeExtension(pelnaDocelowa, ".jpg");
+        }
         using var wyjscie = File.Create(pelnaDocelowa);
         enkoder.Save(wyjscie);
+        return Path.GetFileName(pelnaDocelowa);
     }
 
     /// <summary>Wczytuje obraz jako zamrożony BitmapImage (do miniatur i podglądu).</summary>
@@ -146,13 +155,18 @@ public class SerwisZdjec
         }
     }
 
-    /// <summary>Usuwa plik zdjęcia z katalogu (po usunięciu z modelu). Brak pliku nie jest błędem.</summary>
+    /// <summary>Usuwa plik zdjęcia z katalogu (po usunięciu z modelu) — wraz z ewentualną kopią w podkatalogu oryginaly/ (NFR-11). Brak pliku nie jest błędem.</summary>
     public void UsunPlik(string? sciezkaWzgledna)
     {
         var pelna = PelnaSciezka(sciezkaWzgledna);
         if (pelna != null)
         {
             try { File.Delete(pelna); } catch (IOException) { /* plik zajęty — zostaje */ }
+            var oryginal = Path.Combine(KatalogZdjec, "oryginaly", Path.GetFileName(pelna));
+            if (File.Exists(oryginal))
+            {
+                try { File.Delete(oryginal); } catch (IOException) { /* plik zajęty — zostaje */ }
+            }
         }
     }
 }

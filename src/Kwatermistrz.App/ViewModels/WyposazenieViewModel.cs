@@ -281,6 +281,14 @@ public partial class WyposazenieViewModel : ObservableObject
     {
         if (Wybrany == null || komplet == null || komplet.Id == Wybrany.Id)
             return;
+        // strażnik cyklu: łączenie, które tworzyłoby cykl kompletów, psułoby liczniki użyć (StackOverflow przy starcie)
+        if (_kalkulator.Kalkulator().CzyTworzyCyklKompletu(Wybrany.Id, komplet.Id))
+        {
+            System.Windows.MessageBox.Show(
+                "Nie można połączyć — wybrany komplet należy już do tego kompletu (powstałby cykl).",
+                "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
         Wybrany.Przedmiot.KompletId = komplet.Id;
         _magazyn.Zapisz(_dane);
         Odswiez();

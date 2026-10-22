@@ -68,11 +68,16 @@ public class IndeksObliczeniowy
     /// <summary>BR-08: użycia przedmiotu = licznik historyczny + wyprawy ze składu (element kompletu dzieli licznik kompletu).</summary>
     public int UzyciaPrzedmiotu(Przedmiot przedmiot)
     {
-        // element kompletu ma wspólny licznik z kompletem (BR-08)
-        if (przedmiot.KompletId != null && przedmiot.KompletId != przedmiot.Id
-            && _przedmiotyWgId.TryGetValue(przedmiot.KompletId, out var komplet))
-            return UzyciaPrzedmiotu(komplet);
-        return przedmiot.LicznikHistoryczny + (_uzyciaWgPrzedmiotu.TryGetValue(przedmiot.Id, out var u) ? u : 0);
+        // element kompletu ma wspólny licznik z kompletem (BR-08); pętla zamiast rekurencji — dane mogą zawierać cykl kompletów (A↔B), który przy rekurencji dawałby StackOverflow
+        var aktualny = przedmiot;
+        var odwiedzone = new HashSet<string>(StringComparer.Ordinal);
+        while (aktualny.KompletId != null && aktualny.KompletId != aktualny.Id
+            && odwiedzone.Add(aktualny.Id)
+            && _przedmiotyWgId.TryGetValue(aktualny.KompletId, out var komplet))
+        {
+            aktualny = komplet;
+        }
+        return aktualny.LicznikHistoryczny + (_uzyciaWgPrzedmiotu.TryGetValue(aktualny.Id, out var u) ? u : 0);
     }
 
     /// <summary>BR-03: procent wypraw repliki względem łącznej liczby wypraw; przy zerze wynosi 0.</summary>

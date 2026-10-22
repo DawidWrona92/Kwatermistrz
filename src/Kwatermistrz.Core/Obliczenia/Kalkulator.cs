@@ -125,16 +125,35 @@ public class Kalkulator
     /// <summary>BR-08: użycia przedmiotu = licznik historyczny + wyprawy, w których przedmiot jest w składzie. Elementy kompletu mają wspólną liczbę użyć.</summary>
     public int UzyciaPrzedmiotu(Przedmiot przedmiot)
     {
-        // element kompletu ma wspólny licznik z kompletem (BR-08)
-        if (przedmiot.KompletId != null)
+        // element kompletu ma wspólny licznik z kompletem (BR-08); pętla zamiast rekurencji — dane mogą zawierać cykl kompletów (A↔B), który przy rekurencji dawałby StackOverflow
+        var aktualny = przedmiot;
+        var odwiedzone = new HashSet<string>(StringComparer.Ordinal);
+        while (aktualny.KompletId != null && aktualny.KompletId != aktualny.Id && odwiedzone.Add(aktualny.Id))
         {
-            var komplet = _dane.Przedmioty.FirstOrDefault(p => p.Id == przedmiot.KompletId);
-            if (komplet != null && komplet.Id != przedmiot.Id)
-                return UzyciaPrzedmiotu(komplet);
+            var komplet = _dane.Przedmioty.FirstOrDefault(p => p.Id == aktualny.KompletId);
+            if (komplet == null)
+                break;
+            aktualny = komplet;
         }
-        var wyprawyPrzedmiotu = _dane.Wyprawy.Count(w => !w.CzyUsunieta && CzyWnaSkładzie(w, przedmiot.Id));
-        var licznik = przedmiot.LicznikHistoryczny;
+        var wyprawyPrzedmiotu = _dane.Wyprawy.Count(w => !w.CzyUsunieta && CzyWnaSkładzie(w, aktualny.Id));
+        var licznik = aktualny.LicznikHistoryczny;
         return licznik + wyprawyPrzedmiotu;
+    }
+
+    /// <summary>Czy ustawienie kompletu dla przedmiotu utworzyłoby cykl (przedmiot byłby własnym przodkiem). Strażnik przy łączeniu w komplet (FR-206).</summary>
+    public bool CzyTworzyCyklKompletu(string przedmiotId, string nowyKompletId)
+    {
+        var odwiedzone = new HashSet<string>(StringComparer.Ordinal);
+        var aktualny = _dane.Przedmioty.FirstOrDefault(p => p.Id == nowyKompletId);
+        while (aktualny != null && odwiedzone.Add(aktualny.Id))
+        {
+            if (aktualny.Id == przedmiotId)
+                return true;
+            aktualny = aktualny.KompletId == null
+                ? null
+                : _dane.Przedmioty.FirstOrDefault(p => p.Id == aktualny.KompletId);
+        }
+        return false;
     }
 
     /// <summary>Rozwinięcie elementu na konkretne Id przedmiotów (FR-208: konfiguracja nośnika → jej elementy; komplet → części; przedmiot → sam siebie).</summary>

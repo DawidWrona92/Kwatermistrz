@@ -8,7 +8,7 @@ namespace Kwatermistrz.Core.Storage;
 public class WynikKontroli
 {
     public bool CzyPoprawne { get; set; }
-    public string? komunikat { get; set; }
+    public string? Komunikat { get; set; }
     /// <summary>Ścieżka pliku, z którego wczytano dane (może być kopią .bak, gdy główny plik był uszkodzony).</summary>
     public string? Zrodlo { get; set; }
 }
@@ -75,18 +75,30 @@ public class MagazynJson
                 Migruj(dane);
                 return (dane, new WynikKontroli { CzyPoprawne = true, Zrodlo = _sciezka });
             }
-            catch (Exception)
+            catch (Exception ex) when (ex is IOException or InvalidDataException or System.Text.Json.JsonException)
             {
-                var kopia = _sciezka + ".bak";
-                if (File.Exists(kopia))
+                // odczyt .bak też w try — uszkodzony główny i .bak nie mogą wywalić startu
+                try
                 {
-                    var json = File.ReadAllText(kopia);
-                    var dane = JsonSerializer.Deserialize<DaneAplikacji>(json, Opcje) ?? NoweDane();
-                    Migruj(dane);
-                    return (dane, new WynikKontroli { CzyPoprawne = false, komunikat = "Odczytano ostatnią kopię zapasową", Zrodlo = kopia });
+                    var kopia = _sciezka + ".bak";
+                    if (File.Exists(kopia))
+                    {
+                        var json = File.ReadAllText(kopia);
+                        var dane = JsonSerializer.Deserialize<DaneAplikacji>(json, Opcje);
+                        if (dane != null)
+                        {
+                            Waliduj(dane);
+                            Migruj(dane);
+                            return (dane, new WynikKontroli { CzyPoprawne = false, Komunikat = "Odczytano ostatnią kopię zapasową", Zrodlo = kopia });
+                        }
+                    }
+                }
+                catch (Exception exBak) when (exBak is IOException or InvalidDataException or System.Text.Json.JsonException)
+                {
+                    // oba pliki uszkodzone — pusty dokument + komunikat
                 }
                 var nowe = NoweDane();
-                return (nowe, new WynikKontroli { CzyPoprawne = false, komunikat = "Nie udało się odczytać danych; utworzono pusty dokument", Zrodlo = null });
+                return (nowe, new WynikKontroli { CzyPoprawne = false, Komunikat = "Nie udało się odczytać danych; utworzono pusty dokument", Zrodlo = null });
             }
         }
     }

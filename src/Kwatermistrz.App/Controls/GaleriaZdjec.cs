@@ -143,7 +143,7 @@ public class GaleriaZdjec : Control
         var dialog = new OpenFileDialog
         {
             Title = "Wybierz zdjęcia",
-            Filter = "Obrazy (*.jpg;*.jpeg;*.png;*.bmp;*.webp)|*.jpg;*.jpeg;*.png;*.bmp;*.webp|Wszystkie pliki (*.*)|*.*",
+            Filter = "Obrazy (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp|Wszystkie pliki (*.*)|*.*",
             Multiselect = true,
         };
         if (dialog.ShowDialog() != true || Serwis == null)
