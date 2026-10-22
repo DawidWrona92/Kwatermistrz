@@ -214,6 +214,93 @@ public class Kalkulator
         };
     }
 
+    /// <summary>FR-707: elementy listy pakowania dla wariantów domyślnych zestawu (lub wskazanych indeksów), rozwinięte — elementy kompletu osobno. Zwraca (element, slot, indeksWariantu).</summary>
+    public List<(ElementWariantu Element, SlotZestawu Slot, int IndeksWariantu)> ElementyListyPakowania(Zestaw zestaw, IReadOnlyDictionary<string, int>? wybraneWarianty = null)
+    {
+        var wynik = new List<(ElementWariantu, SlotZestawu, int)>();
+        foreach (var slot in zestaw.Sloty.OrderBy(s => s.Kolejnosc))
+        {
+            var indeks = wybraneWarianty?.TryGetValue(slot.Id, out var w) == true && w >= 0 && w < slot.Warianty.Count
+                ? w
+                : slot.IndeksWariantuDomyslnego ?? 0;
+            if (indeks < 0 || indeks >= slot.Warianty.Count)
+                continue;
+            var wariant = slot.Warianty[indeks];
+            if (wariant.CzyPuste)
+                continue;
+            foreach (var element in wariant.Elementy)
+            {
+                if (element.Typ == TypElementu.Komplet)
+                {
+                    foreach (var czesc in _dane.Przedmioty.Where(p => p.KompletId == element.ElementId || p.Id == element.ElementId))
+                        wynik.Add((new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = czesc.Id }, slot, indeks));
+                }
+                else
+                {
+                    wynik.Add((element, slot, indeks));
+                }
+            }
+        }
+        return wynik;
+    }
+
+    /// <summary>FR-708: koszt zestawu — suma cen elementów (pozycje „Zakup”, BR-04) wariantów domyślnych. Zwraca koszt domyślny.</summary>
+    public decimal KosztZestawu(Zestaw zestaw)
+    {
+        decimal suma = 0;
+        foreach (var (element, _, _) in ElementyListyPakowania(zestaw))
+        {
+            if (element.Typ == TypElementu.Przedmiot)
+            {
+                var p = _dane.Przedmioty.FirstOrDefault(x => x.Id == element.ElementId);
+                if (p != null)
+                    suma += Koszty(p.Koszty).Oryginalna;
+            }
+            else if (element.Typ == TypElementu.Replika)
+            {
+                var r = _dane.Repliki.FirstOrDefault(x => x.Id == element.ElementId);
+                if (r != null)
+                    suma += Koszty(r.Koszty).Oryginalna;
+            }
+        }
+        return suma;
+    }
+
+    /// <summary>FR-708 [C]: zakres kosztu zestawu — minimum i maksimum po wszystkich kombinacjach wariantów (każdy slot wybiera jeden wariant; wariant „puste” = 0). Dla dużych zestawów ogranicza liczbę kombinacji przez sumę min/max na slot.</summary>
+    public (decimal Minimum, decimal Maksimum) ZakresKosztuZestawu(Zestaw zestaw)
+    {
+        decimal min = 0, max = 0;
+        foreach (var slot in zestaw.Sloty)
+        {
+            var kosztyWariantow = slot.Warianty
+                .Select(w => w.CzyPuste ? 0m : w.Elementy.Sum(e => KosztElementu(e)))
+                .ToList();
+            if (kosztyWariantow.Count == 0)
+                continue;
+            min += kosztyWariantow.Min();
+            max += kosztyWariantow.Max();
+        }
+        return (min, max);
+    }
+
+    private decimal KosztElementu(ElementWariantu element)
+    {
+        if (element.Typ == TypElementu.Przedmiot)
+        {
+            var p = _dane.Przedmioty.FirstOrDefault(x => x.Id == element.ElementId);
+            return p != null ? Koszty(p.Koszty).Oryginalna : 0m;
+        }
+        if (element.Typ == TypElementu.Replika)
+        {
+            var r = _dane.Repliki.FirstOrDefault(x => x.Id == element.ElementId);
+            return r != null ? Koszty(r.Koszty).Oryginalna : 0m;
+        }
+        if (element.Typ == TypElementu.Komplet)
+            return _dane.Przedmioty.Where(p => p.KompletId == element.ElementId || p.Id == element.ElementId)
+                .Sum(p => Koszty(p.Koszty).Oryginalna);
+        return 0m;
+    }
+
     /// <summary>BR-10/FR-902: koszt munduru w raporcie = suma cen gór i dołów kompletu (pozycje „Zakup”), bez dodatków.</summary>
     public decimal KosztMunduru(Przedmiot mundur)
     {

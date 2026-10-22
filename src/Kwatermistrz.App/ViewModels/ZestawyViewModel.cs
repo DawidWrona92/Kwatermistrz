@@ -87,6 +87,7 @@ public partial class ZestawyViewModel : ObservableObject
     private void Wybierz(WierszZestawu? wiersz)
     {
         Wybrany = wiersz;
+        OdswiezPakowanie();
         if (wiersz != null)
         {
             wiersz.Zestaw.ZnacznikZImportu = false;
@@ -132,6 +133,7 @@ public partial class ZestawyViewModel : ObservableObject
         Wybrany.Zestaw.ZnacznikZImportu = false;
         _magazyn.Zapisz(_dane);
         Odswiez();
+        OdswiezPakowanie();
     }
 
     /// <summary>Usuwa zestaw (FR-1202).</summary>
@@ -256,5 +258,159 @@ public partial class ZestawyViewModel : ObservableObject
             TypElementu.Komplet => _dane.Przedmioty.FirstOrDefault(p => p.Id == element.ElementId)?.Nazwa ?? "?",
             _ => "?",
         };
+    }
+
+    // ---- Lista pakowania (FR-707) ----
+
+    /// <summary>Wiersz listy pakowania: element, miejsce przechowywania, czy spakowany, czy zamontowany na nośniku.</summary>
+    public partial class WierszPakowania : ObservableObject
+    {
+        public WierszPakowania(string klucz, ElementWariantu element, string nazwa, string? miejsceId, string? nosnikNazwa)
+        {
+            Klucz = klucz;
+            Element = element;
+            Nazwa = nazwa;
+            MiejsceId = miejsceId;
+            NosnikNazwa = nosnikNazwa;
+        }
+
+        public string Klucz { get; }
+        public ElementWariantu Element { get; }
+        public string Nazwa { get; }
+        public string? MiejsceId { get; }
+        public string? NosnikNazwa { get; }
+        /// <summary>Czy spakowany (odhaczenie na liście, FR-707) — zapisywane w zestawie.</summary>
+        [ObservableProperty]
+        private bool _spakowany;
+    }
+
+    /// <summary>Grupy listy pakowania wg miejsca przechowywania (FR-707).</summary>
+    public partial class GrupaPakowania : ObservableObject
+    {
+        public GrupaPakowania(string nazwaMiejsca)
+        {
+            NazwaMiejsca = nazwaMiejsca;
+        }
+
+        public string NazwaMiejsca { get; }
+        public ObservableCollection<WierszPakowania> Wiersze { get; } = new();
+        /// <summary>Liczba spakowanych / liczba wszystkich.</summary>
+        public string Postep => $"{Wiersze.Count(w => w.Spakowany)}/{Wiersze.Count}";
+
+        /// <summary>Powiadamia o zmianie postępu (spakowane/wсе).</summary>
+        public void OdswiezPostep() => OnPropertyChanged(nameof(Postep));
+    }
+
+    /// <summary>Grupy listy pakowania dla wybranego zestawu (warianty domyślne), pogrupowane wg miejsca przechowywania (FR-707).</summary>
+    public ObservableCollection<GrupaPakowania> GrupyPakowania { get; } = new();
+
+    /// <summary>Koszt zestawu (FR-708): warianty domyślne.</summary>
+    public decimal KosztZestawu { get; private set; }
+
+    /// <summary>Zakres kosztu zestawu min–max po wszystkich wariantach (FR-708 [C]).</summary>
+    public string ZakresKosztu { get; private set; } = "";
+
+    /// <summary>Buduje listę pakowania dla wybranego zestawu (FR-707) i koszty (FR-708). Wywoływane przy wyborze/zapisie.</summary>
+    public void OdswiezPakowanie()
+    {
+        GrupyPakowania.Clear();
+        KosztZestawu = 0;
+        ZakresKosztu = "";
+        if (Wybrany == null)
+        {
+            OnPropertyChanged(nameof(KosztZestawu));
+            OnPropertyChanged(nameof(ZakresKosztu));
+            return;
+        }
+        var kalk = _kalkulator.Kalkulator();
+        var elementy = kalk.ElementyListyPakowania(Wybrany.Zestaw);
+        KosztZestawu = kalk.KosztZestawu(Wybrany.Zestaw);
+        var (min, max) = kalk.ZakresKosztuZestawu(Wybrany.Zestaw);
+        ZakresKosztu = min == max ? "" : $" (zakres {min:0}–{max:0} zł)";
+
+        var grupy = new Dictionary<string, GrupaPakowania>(StringComparer.CurrentCulture);
+        foreach (var (element, slot, indeksWariantu) in elementy)
+        {
+            var przedmiot = element.Typ == TypElementu.Przedmiot || element.Typ == TypElementu.Komplet
+                ? _dane.Przedmioty.FirstOrDefault(p => p.Id == element.ElementId)
+                : null;
+            var replika = element.Typ == TypElementu.Replika
+                ? _dane.Repliki.FirstOrDefault(r => r.Id == element.ElementId)
+                : null;
+            var miejsceId = przedmiot?.MiejsceId;
+            var miejsceNazwa = miejsceId != null
+                ? _dane.Slowniki.Miejsca.FirstOrDefault(m => m.Id == miejsceId)?.Nazwa ?? "Bez miejsca"
+                : "Bez miejsca";
+            var nosnik = przedmiot?.ZamontowanyNaId != null
+                ? _dane.Przedmioty.FirstOrDefault(p => p.Id == przedmiot.ZamontowanyNaId)
+                : null;
+            var klucz = $"{slot.Id}|{indeksWariantu}|{(int)element.Typ}|{element.ElementId}";
+            var wiersz = new WierszPakowania(klucz, element, NazwaElementu(element), miejsceId, nosnik?.Nazwa)
+            {
+                Spakowany = Wybrany.Zestaw.SpakowaneKlucze.Contains(klucz),
+            };
+            if (!grupy.TryGetValue(miejsceNazwa, out var grupa))
+            {
+                grupa = new GrupaPakowania(miejsceNazwa);
+                grupy[miejsceNazwa] = grupa;
+                GrupyPakowania.Add(grupa);
+            }
+            grupa.Wiersze.Add(wiersz);
+        }
+        foreach (var g in GrupyPakowania)
+            g.Wiersze.CollectionChanged += (_, _) => g.OdswiezPostep();
+        OnPropertyChanged(nameof(KosztZestawu));
+        OnPropertyChanged(nameof(ZakresKosztu));
+    }
+
+    /// <summary>Odwraca „spakowany” na liście pakowania i zapisuje (FR-707).</summary>
+    [RelayCommand]
+    private void PrzelaczSpakowany(WierszPakowania? wiersz)
+    {
+        if (Wybrany == null || wiersz == null)
+            return;
+        if (wiersz.Spakowany)
+            Wybrany.Zestaw.SpakowaneKlucze.Add(wiersz.Klucz);
+        else
+            Wybrany.Zestaw.SpakowaneKlucze.Remove(wiersz.Klucz);
+        _magazyn.Zapisz(_dane);
+        foreach (var g in GrupyPakowania)
+            g.OdswiezPostep();
+    }
+
+    /// <summary>Eksportuje listę pakowania do CSV (FR-707).</summary>
+    [RelayCommand]
+    private void EksportujListePakowania()
+    {
+        if (Wybrany == null)
+            return;
+        try
+        {
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Filter = "CSV (*.csv)|*.csv",
+                FileName = (string.IsNullOrWhiteSpace(Wybrany.Zestaw.Nazwa) ? "lista-pakowania" : Wybrany.Zestaw.Nazwa) + ".csv",
+                DefaultExt = ".csv",
+            };
+            if (dialog.ShowDialog() != true)
+                return;
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Miejsce;Element;Spakowany");
+            foreach (var g in GrupyPakowania)
+                foreach (var w in g.Wiersze)
+                    sb.Append(Csv(g.NazwaMiejsca)).Append(';').Append(Csv(w.Nazwa)).Append(';')
+                      .AppendLine(w.Spakowany ? "tak" : "nie");
+            System.IO.File.WriteAllText(dialog.FileName, sb.ToString(), System.Text.Encoding.UTF8);
+        }
+        catch (Exception)
+        {
+            // eksport opcjonalny — błąd nie przerywa pracy
+        }
+    }
+
+    private static string Csv(string? tekst)
+    {
+        var t = tekst ?? "";
+        return t.Contains(';') || t.Contains('"') || t.Contains('\n') ? "\"" + t.Replace("\"", "\"\"") + "\"" : t;
     }
 }

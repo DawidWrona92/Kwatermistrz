@@ -4,6 +4,17 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 
 ## [Nieopublikowane]
 
+### Etap 5f — Lista pakowania (FR-707) i koszt zestawu (FR-708)
+
+#### Dodane
+- **Lista pakowania** na karcie zestawu (FR-707): elementy wariantów domyślnych (komplety rozwinięte na części, „puste” pominięte), pogrupowane wg miejsca przechowywania (Piwnica, Dom), z checkboxami „spakowane” zapamiętywanymi w zestawie; elementy zamontowane na nośniku oznaczone („na: …”); eksport listy do CSV.
+- **Koszt zestawu** (FR-708): suma cen elementów (pozycje „Zakup”, BR-04) wariantów domyślnych; zakres min–max po wszystkich wariantach [C].
+- Core `Kalkulator`: `ElementyListyPakowania`, `KosztZestawu`, `ZakresKosztuZestawu`; model `Zestaw.SpakowaneKlucze`.
+- 3 testy FR-707/708.
+
+#### Uwagi
+- Wydruk listy pakowania (FR-707) — do realizacji razem z wydrukami raportów.
+
 ### Etap 5c/5d — Podpowiedzi pól karty (FR-405) i cena zakupu przedmiotu (FR-503)
 
 #### Dodane

@@ -10,6 +10,8 @@
         <conv:KonwerterProcentu x:Key="KonwerterProcentu" />
         <conv:KonwerterNazwySlownika x:Key="KonwerterNazwySlownika" />
         <conv:KonwerterNieRowneNull x:Key="KonwerterNieRowneNull" />
+        <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
+        <conv:KonwerterBoolToVisibility x:Key="KonwerterBoolToVisibility" />
     </Page.Resources>
     <Grid Margin="8">
         <Grid.ColumnDefinitions>
@@ -149,6 +151,44 @@
                 </ItemsControl>
                 <ui:Button Content="Dodaj slot" Margin="0,8,0,0"
                            Command="{Binding DataContext.DodajSlotCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
+
+                <!-- Lista pakowania (FR-707) + koszt zestawu (FR-708) -->
+                <TextBlock Text="Lista pakowania (warianty domyślne)" Style="{StaticResource NaglowekSekcji}" Margin="0,16,0,4" />
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock VerticalAlignment="Center">
+                        <Run Text="Koszt zestawu: " />
+                        <Run Text="{Binding DataContext.KosztZestawu, RelativeSource={RelativeSource AncestorType=Page}, Converter={StaticResource KonwerterWaluty}}" />
+                        <Run Text="{Binding DataContext.ZakresKosztu, RelativeSource={RelativeSource AncestorType=Page}}" />
+                    </TextBlock>
+                    <ui:Button Content="Eksportuj listę (CSV)" Margin="16,0,0,0"
+                               Command="{Binding DataContext.EksportujListePakowaniaCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding DataContext.GrupyPakowania, RelativeSource={RelativeSource AncestorType=Page}}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource Karta}" Padding="8" Margin="0,4">
+                                <StackPanel>
+                                    <TextBlock FontWeight="SemiBold" Text="{Binding NazwaMiejsca}" />
+                                    <TextBlock Opacity="0.6" Text="{Binding Postep, StringFormat=spakowane: {0}}" />
+                                    <ItemsControl ItemsSource="{Binding Wiersze}" Margin="0,4,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <CheckBox IsChecked="{Binding Spakowany, Mode=TwoWay}"
+                                                              Checked="Spakowany_Changed" Unchecked="Spakowany_Changed" />
+                                                    <TextBlock Text="{Binding Nazwa}" VerticalAlignment="Center" Margin="4,0,0,0" />
+                                                    <TextBlock Text="{Binding NosnikNazwa, StringFormat={}(na: {0})}"
+                                                               VerticalAlignment="Center" Margin="8,0,0,0" Opacity="0.6"
+                                                               Visibility="{Binding NosnikNazwa, Converter={StaticResource KonwerterNieRowneNull}}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
                 <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
                     <ui:Button Content="Zapisz" Appearance="Primary"

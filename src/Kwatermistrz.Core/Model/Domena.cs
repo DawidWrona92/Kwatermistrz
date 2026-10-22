@@ -178,6 +178,8 @@ public class Zestaw
     public List<SlotZestawu> Sloty { get; set; } = new();
     /// <summary>Ostatnio użyte warianty slotów na wyprawie (FR-704): klucz to Id slotu.</summary>
     public Dictionary<string, int> OstatnieWarianty { get; set; } = new();
+    /// <summary>Klucze elementów odhaczonych na liście pakowania (FR-707): „slotId|indeksWariantu|typ|elementId”.</summary>
+    public List<string> SpakowaneKlucze { get; set; } = new();
     public int? WariantDomyslnyNaSlot(string slotId) => OstatnieWarianty.TryGetValue(slotId, out var w) ? w : null;
     public bool ZnacznikZImportu { get; set; }
     public DateTime OstatniaZmiana { get; set; } = DateTime.Now;

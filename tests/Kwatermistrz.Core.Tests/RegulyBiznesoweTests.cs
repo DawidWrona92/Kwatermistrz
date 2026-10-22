@@ -411,3 +411,81 @@ public class Fr503Tests
         Assert.Contains(p.Koszty, k => k.Opis == "Cena zakupu" && k.Kwota == 450m);
     }
 }
+
+/// <summary>Testy FR-707/FR-708: lista pakowania i koszt zestawu (min/max).</summary>
+public class Fr707708Tests
+{
+    private static (DaneAplikacji dane, Kalkulator kalk) Przygotuj()
+    {
+        var dane = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        return (dane, new Kalkulator(dane));
+    }
+
+    [Fact]
+    public void FR707_ListaPakowania_RozwijaKompletIWybieraWariantyDomyslne()
+    {
+        var (dane, kalk) = Przygotuj();
+        var gora = new Przedmiot { Nazwa = "Góra", Koszty = new() { new PozycjaKosztowa { Kwota = 300m, Semantyka = SemantykaKosztu.Zakup } } };
+        var dol = new Przedmiot { Nazwa = "Dół", Koszty = new() { new PozycjaKosztowa { Kwota = 200m, Semantyka = SemantykaKosztu.Zakup } } };
+        var kompletId = "komplet-1";
+        gora.KompletId = kompletId;
+        dol.KompletId = kompletId;
+        var replika = new Replika { ModelProducenta = "AK" };
+        dane.Przedmioty.AddRange(new[] { gora, dol });
+        dane.Repliki.Add(replika);
+        var zestaw = new Zestaw { Nazwa = "Zestaw" };
+        var slotMundur = new SlotZestawu { Nazwa = "Mundur" };
+        slotMundur.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Komplet, ElementId = kompletId } } });
+        slotMundur.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = gora.Id } } });
+        slotMundur.IndeksWariantuDomyslnego = 0;
+        var slotBron = new SlotZestawu { Nazwa = "Broń" };
+        slotBron.Warianty.Add(new WariantSlotu { CzyPuste = true });
+        slotBron.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Replika, ElementId = replika.Id } } });
+        zestaw.Sloty.AddRange(new[] { slotMundur, slotBron });
+        dane.Zestawy.Add(zestaw);
+
+        var lista = kalk.ElementyListyPakowania(zestaw);
+
+        // komplet rozwinięty na dwa elementy (góra+dół), slot broni domyślnie „puste” → pominięty
+        Assert.Equal(2, lista.Count);
+        Assert.Contains(lista, x => x.Element.ElementId == gora.Id);
+        Assert.Contains(lista, x => x.Element.ElementId == dol.Id);
+    }
+
+    [Fact]
+    public void FR708_KosztZestawu_SumujeCenyWariantowDomyslnych()
+    {
+        var (dane, kalk) = Przygotuj();
+        var p1 = new Przedmiot { Nazwa = "P1", Koszty = new() { new PozycjaKosztowa { Kwota = 300m, Semantyka = SemantykaKosztu.Zakup } } };
+        var p2 = new Przedmiot { Nazwa = "P2", Koszty = new() { new PozycjaKosztowa { Kwota = 100m, Semantyka = SemantykaKosztu.Zakup }, new PozycjaKosztowa { Kwota = 50m, Semantyka = SemantykaKosztu.Ulepszenie } } };
+        dane.Przedmioty.AddRange(new[] { p1, p2 });
+        var zestaw = new Zestaw { Nazwa = "Z" };
+        var slot = new SlotZestawu { Nazwa = "S" };
+        slot.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = p1.Id } } });
+        slot.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = p2.Id } } });
+        slot.IndeksWariantuDomyslnego = 1;
+        zestaw.Sloty.Add(slot);
+
+        Assert.Equal(100m, kalk.KosztZestawu(zestaw));
+    }
+
+    [Fact]
+    public void FR708_ZakresKosztu_MinMaxPoWariantach()
+    {
+        var (dane, kalk) = Przygotuj();
+        var p1 = new Przedmiot { Nazwa = "P1", Koszty = new() { new PozycjaKosztowa { Kwota = 300m, Semantyka = SemantykaKosztu.Zakup } } };
+        var p2 = new Przedmiot { Nazwa = "P2", Koszty = new() { new PozycjaKosztowa { Kwota = 100m, Semantyka = SemantykaKosztu.Zakup } } };
+        dane.Przedmioty.AddRange(new[] { p1, p2 });
+        var zestaw = new Zestaw { Nazwa = "Z" };
+        var slot = new SlotZestawu { Nazwa = "S" };
+        slot.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = p1.Id } } });
+        slot.Warianty.Add(new WariantSlotu { CzyPuste = true });
+        slot.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = p2.Id } } });
+        zestaw.Sloty.Add(slot);
+
+        var (min, max) = kalk.ZakresKosztuZestawu(zestaw);
+
+        Assert.Equal(0m, min);
+        Assert.Equal(300m, max);
+    }
+}
