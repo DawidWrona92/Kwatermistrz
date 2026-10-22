@@ -52,6 +52,9 @@ public partial class App : Application
         services.AddSingleton<ReplikiViewModel>();
         services.AddSingleton<ZestawyViewModel>();
         services.AddSingleton<WyprawyViewModel>();
+        services.AddSingleton<RaportyViewModel>();
+        services.AddSingleton<DoUzupelnieniaViewModel>();
+        services.AddSingleton<SzukanieViewModel>();
         _provider = services.BuildServiceProvider();
 
         // motyw z ustawień (FR-1006)

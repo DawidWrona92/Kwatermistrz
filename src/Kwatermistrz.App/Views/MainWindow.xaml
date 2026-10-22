@@ -28,10 +28,34 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <ui:TextBox Grid.Column="0" x:Name="PoleSzukania"
-                            PlaceholderText="Szukaj… (Ctrl+F)"
-                            Text="{Binding SzukajTekst, UpdateSourceTrigger=PropertyChanged}"
-                            Icon="{ui:SymbolIcon Symbol=Search24}" />
+                <Grid Grid.Column="0">
+                    <ui:TextBox x:Name="PoleSzukania"
+                                PlaceholderText="Szukaj… (Ctrl+F)"
+                                Text="{Binding SzukajTekst, UpdateSourceTrigger=PropertyChanged}"
+                                Icon="{ui:SymbolIcon Symbol=Search24}" />
+                    <!-- Wyniki globalnego wyszukiwania (FR-1201) -->
+                    <Popup x:Name="PopupWyniki" PlacementTarget="{Binding ElementName=PoleSzukania}"
+                           Placement="Bottom" StaysOpen="False" Width="420">
+                        <Border Style="{StaticResource Karta}" Padding="4" MaxHeight="400">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl x:Name="ListaWyniki" ItemsSource="{Binding Szukanie.Wyniki}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Background="Transparent" BorderThickness="0"
+                                                    HorizontalContentAlignment="Left" Padding="8,4"
+                                                    Click="WynikSzukania_Click" Tag="{Binding}">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Nazwa}" />
+                                                    <TextBlock Text="{Binding Typ}" FontSize="11" Opacity="0.6" />
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                    </Popup>
+                </Grid>
                 <ComboBox Grid.Column="1" MinWidth="180" Margin="12,0,0,0"
                           ItemsSource="{Binding RekonstrukcjeLista}"
                           SelectedValue="{Binding AktywnaRekonstrukcjaId}"

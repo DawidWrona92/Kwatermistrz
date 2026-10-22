@@ -23,7 +23,10 @@ public partial class MainWindowViewModel : ObservableObject
         KategorieViewModel kategorie,
         ReplikiViewModel repliki,
         ZestawyViewModel zestawy,
-        WyprawyViewModel wyprawy)
+        WyprawyViewModel wyprawy,
+        RaportyViewModel raporty,
+        DoUzupelnieniaViewModel doUzupelnienia,
+        SzukanieViewModel szukanie)
     {
         _dane = dane;
         _stan = stan;
@@ -37,6 +40,9 @@ public partial class MainWindowViewModel : ObservableObject
         Repliki = repliki;
         Zestawy = zestawy;
         Wyprawy = wyprawy;
+        Raporty = raporty;
+        DoUzupelnienia = doUzupelnienia;
+        Szukanie = szukanie;
         _stan.AktywnaRekonstrukcjaId = dane.Ustawienia.OstatniaRekonstrukcjaId;
         if (!string.IsNullOrEmpty(dane.Ustawienia.OstatniEkran))
             _stan.AktualnyEkran = dane.Ustawienia.OstatniEkran;
@@ -71,6 +77,15 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>ViewModel wypraw (FR-801–809).</summary>
     public WyprawyViewModel Wyprawy { get; }
+
+    /// <summary>ViewModel raportów (FR-901–911).</summary>
+    public RaportyViewModel Raporty { get; }
+
+    /// <summary>ViewModel „Do uzupełnienia” (FR-1204).</summary>
+    public DoUzupelnieniaViewModel DoUzupelnienia { get; }
+
+    /// <summary>ViewModel globalnego wyszukiwania (FR-1201).</summary>
+    public SzukanieViewModel Szukanie { get; }
 
     /// <summary>Wszystkie rekonstrukcje do przełącznika.</summary>
     public IReadOnlyList<Rekonstrukcja> RekonstrukcjeLista => _dane.Rekonstrukcje;

@@ -23,6 +23,24 @@ public partial class MainWindow : FluentWindow
             return;
         if (DataContext is MainWindowViewModel vm && vm.Pulpit != null)
             vm.Pulpit.Odswiez();
+        // globalne wyszukiwanie (FR-1201): wyniki pod polem, Enter otwiera pierwszy
+        PoleSzukania.TextChanged += (_, _) =>
+        {
+            if (ViewModel == null)
+                return;
+            ViewModel.Szukanie.Szukaj(ViewModel.SzukajTekst);
+            PopupWyniki.IsOpen = ViewModel.Szukanie.Wyniki.Count > 0 && !string.IsNullOrWhiteSpace(ViewModel.SzukajTekst);
+        };
+        PoleSzukania.PreviewKeyDown += (_, args) =>
+        {
+            if (args.Key == System.Windows.Input.Key.Enter && ViewModel?.Szukanie.Wyniki.Count > 0)
+            {
+                OtworzWynik(ViewModel.Szukanie.Wyniki[0]);
+                args.Handled = true;
+            }
+            if (args.Key == System.Windows.Input.Key.Escape)
+                PopupWyniki.IsOpen = false;
+        };
 
         // rozmiar okna z ustawień (NFR-12)
         var u = App.Dane.Ustawienia;
@@ -49,8 +67,8 @@ public partial class MainWindow : FluentWindow
         _strony["Bronie"] = new BroniePage { DataContext = vm.Repliki };
         _strony["Wyposazenie"] = new WyposazeniePage { DataContext = vm.Wyposazenie };
         _strony["Zestawy"] = new ZestawyPage { DataContext = vm.Zestawy };
-        _strony["Raporty"] = new PlaceholderPage("Raporty", "Etap 4");
-        _strony["DoUzupelnienia"] = new PlaceholderPage("Do uzupełnienia", "Etap 4");
+        _strony["Raporty"] = new RaportyPage { DataContext = vm.Raporty };
+        _strony["DoUzupelnienia"] = new DoUzupelnieniaPage { DataContext = vm.DoUzupelnienia };
         // rekonstrukcje edytujemy w panelu karty po prawej stronie
         _strony["Rekonstrukcje"] = new RekonstrukcjePage { DataContext = vm.Rekonstrukcje };
     }
@@ -121,11 +139,53 @@ public partial class MainWindow : FluentWindow
             ViewModel.Wyprawy.Odswiez();
         if (ekran == "Zestawy")
             ViewModel.Zestawy.Odswiez();
+        if (ekran == "Raporty")
+            ViewModel.Raporty.Odswiez();
+        if (ekran == "DoUzupelnienia")
+            ViewModel.DoUzupelnienia.Odswiez();
     }
 
     private void ZamknijPanelKarty_Click(object sender, RoutedEventArgs e)
     {
         PanelKarty.Visibility = Visibility.Collapsed;
+    }
+
+    private void WynikSzukania_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.Tag is ViewModels.WynikSzukania wynik)
+            OtworzWynik(wynik);
+    }
+
+    private void OtworzWynik(ViewModels.WynikSzukania wynik)
+    {
+        PopupWyniki.IsOpen = false;
+        if (wynik.Ekran == null || ViewModel == null)
+            return;
+        PokazEkran(wynik.Ekran);
+        ZaznaczNawigacje(wynik.Ekran);
+        ViewModel.AktualnyEkran = wynik.Ekran;
+        // wybór rekordu na ekranie docelowym
+        if (wynik.Ekran == "Wyposazenie" && wynik.RekordId != null)
+        {
+            ViewModel.Wyposazenie.Odswiez();
+            ViewModel.Wyposazenie.Wybrany = ViewModel.Wyposazenie.Wiersze.FirstOrDefault(w => w.Id == wynik.RekordId);
+        }
+        if (wynik.Ekran == "Bronie" && wynik.RekordId != null)
+        {
+            ViewModel.Repliki.Odswiez();
+            ViewModel.Repliki.Wybrana = ViewModel.Repliki.Wiersze.FirstOrDefault(w => w.Id == wynik.RekordId);
+        }
+        if (wynik.Ekran == "Zestawy" && wynik.RekordId != null)
+        {
+            ViewModel.Zestawy.Odswiez();
+            ViewModel.Zestawy.Wybrany = ViewModel.Zestawy.Wiersze.FirstOrDefault(w => w.Id == wynik.RekordId);
+        }
+        if (wynik.Ekran == "Wyprawy" && wynik.RekordId != null)
+        {
+            ViewModel.Wyprawy.Odswiez();
+            ViewModel.Wyprawy.Wybrana = ViewModel.Wyprawy.Wiersze.FirstOrDefault(w => w.Id == wynik.RekordId);
+        }
+        OdswiezKarte();
     }
 
     /// <summary>Otwiera panel karty po prawej (§10.4).</summary>

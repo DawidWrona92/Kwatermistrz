@@ -4,6 +4,25 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 
 ## [Nieopublikowane]
 
+### Etap 4 — Raporty (FR-901–904, FR-908 CSV, FR-910, FR-911, FR-1106 CSV, FR-1201, FR-1204)
+
+#### Dodane
+- Ekran **Raporty** z wyborem raportu:
+  - **Broń** (FR-901): miejsce, nazwa, wyprawy, %, typ magazynka, rola, strona, koszt/cena oryginalna/dodatki/koszt na wyprawę; wiersz średnich i wiersz sum dla replik posiadanych (BR-06); przełącznik „Uwzględnij sprzedane”.
+  - **Umundurowanie** (FR-902): mundur lub komplet, strona, wzór, wyprawy, %, koszt (BR-10: góra+dół kompletu bez dodatków), koszt na wyprawę; wiersz łączny.
+  - **Wyprawy wg lat** (FR-903): liczba wypraw w roku (liczniki historyczne + zapisane, BR-07), suma narastająca, średnia na miesiąc od pierwszej wyprawy (BR-15).
+  - **Użycie wyposażenia** (FR-904): przedmiot, kategoria, użycia (BR-08), cena, koszt na użycie; sortowanie — najpierw pozycje bez użyć.
+  - **Kontrola spójności** (FR-910): trzy sumy wg replik/lat/mundurów, różnice, liczba wypraw bez repliki/munduru.
+- „Jak liczymy” (FR-911) — opis definicji wskaźników pod wyborem raportu.
+- Eksport wybranego raportu do **CSV** (FR-908 część; Excel .xlsx — Etap 5).
+- Ekran **Do uzupełnienia** (FR-1204): jedna lista — przedmioty/repliki z importu (FR-1110), przedmioty „do uzupełnienia” (FR-706), pola karty „nieznane” (FR-404), pozycje kosztowe bez opisu (FR-508), liczniki historyczne do weryfikacji (FR-806); potwierdzenie usuwa znaczniki.
+- **Globalne wyszukiwanie** (FR-1201): wyniki pod polem w górnym pasku, pogrupowane wg typu (przedmioty, repliki, zestawy, wyprawy, zadania), Enter/click otwiera ekran i wybiera rekord.
+- `RaportyViewModel`, `DoUzupelnieniaViewModel`, `SzukanieViewModel` + wiersze raportów.
+
+#### Uwagi
+- FR-908 eksport do Excela (.xlsx), FR-1106 eksport całości, FR-905–907, FR-909 (wykresy) — Etap 5 ([S]).
+- Wszystkie ekrany nawigacji mają teraz realne strony (nie ma już placeholderów).
+
 ### Etap 3 — Wyprawy i zestawy (FR-701–705, FR-709, FR-801–805, FR-808–809, FR-101–103, FR-910 część)
 
 #### Dodane
