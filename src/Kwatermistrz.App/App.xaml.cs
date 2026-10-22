@@ -47,6 +47,7 @@ public partial class App : Application
         services.AddSingleton<RekonstrukcjeViewModel>();
         services.AddSingleton<UstawieniaViewModel>();
         services.AddSingleton<ImportViewModel>();
+        services.AddSingleton<PakietyViewModel>();
         services.AddSingleton<WyposazenieViewModel>();
         services.AddSingleton<KategorieViewModel>();
         services.AddSingleton<ReplikiViewModel>();

@@ -1,0 +1,85 @@
+<Page x:Class="Kwatermistrz.App.Views.PakietyPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+      Title="Pakiety konfiguracji">
+    <Page.Resources>
+        <x:Array x:Key="AkcjeWartosci" Type="sys:String">
+            <sys:String>Dodaj nową</sys:String>
+            <sys:String>Scal z istniejącą</sys:String>
+            <sys:String>Pomiń</sys:String>
+        </x:Array>
+        <x:Array x:Key="AkcjeRekonstrukcji" Type="sys:String">
+            <sys:String>Dodaj nową</sys:String>
+            <sys:String>Scal szablony</sys:String>
+            <sys:String>Pomiń</sys:String>
+        </x:Array>
+        <x:Array x:Key="AkcjeSzablonu" Type="sys:String">
+            <sys:String>Dodaj nowy</sys:String>
+            <sys:String>Pomiń</sys:String>
+        </x:Array>
+    </Page.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16" MaxWidth="900">
+            <TextBlock Text="Pakiety konfiguracji" Style="{StaticResource TytulEkranu}" />
+            <TextBlock TextWrapping="Wrap" Margin="0,4,0,0" Opacity="0.7">
+                Pakiet zawiera konfigurację (słowniki, wzory, kategorie, rekonstrukcje z szablonami slotów, szablony kart) — bez przedmiotów, replik, wypraw, zdjęć i cen. Służy do wymiany konfiguracji między instalacjami (FR-1404).
+            </TextBlock>
+
+            <TextBlock Text="Eksport" Style="{StaticResource NaglowekSekcji}" Margin="0,16,0,8" />
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Nazwa pakietu:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <ui:TextBox MinWidth="240" Text="{Binding NazwaPakietu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="np. Współczesna Rosja" />
+                <ui:Button Content="Eksportuj do pliku…" Appearance="Primary" Margin="12,0,0,0"
+                           Command="{Binding EksportujCommand}" />
+            </StackPanel>
+
+            <TextBlock Text="Import" Style="{StaticResource NaglowekSekcji}" Margin="0,20,0,8" />
+            <StackPanel Orientation="Horizontal">
+                <ui:Button Content="Wczytaj pakiet…" Command="{Binding WczytajPakietCommand}" />
+                <ui:Button Content="Zastosuj import" Appearance="Primary" Margin="8,0,0,0"
+                           Command="{Binding ZastosujCommand}" />
+            </StackPanel>
+            <TextBlock Text="{Binding SciezkaPakietu}" TextWrapping="Wrap" Margin="0,8,0,0" Opacity="0.7" />
+            <TextBlock Text="{Binding InfoPakietu}" TextWrapping="Wrap" Margin="0,4,0,0" />
+
+            <ui:DataGrid ItemsSource="{Binding Wiersze}" AutoGenerateColumns="False"
+                         Margin="0,12,0,0" MinHeight="120"
+                         HeadersVisibility="Column" IsReadOnly="True"
+                         Visibility="{Binding Wiersze.Count, Converter={x:Static conv:KonwerterWiekszeOdZera.Instance}, ConverterParameter=Visibility}"
+                         xmlns:conv="clr-namespace:Kwatermistrz.App.Converters">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Rodzaj" Binding="{Binding Rodzaj}" Width="140" />
+                    <DataGridTextColumn Header="Nazwa z pakietu" Binding="{Binding Nazwa}" Width="200" />
+                    <DataGridTextColumn Header="Szczegóły" Binding="{Binding Opis}" Width="180" />
+                    <DataGridTextColumn Header="Istniejąca" Binding="{Binding Istniejaca}" Width="140" />
+                    <DataGridTemplateColumn Header="Decyzja" Width="180">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox SelectedIndex="{Binding IndeksAkcji, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          SelectionChanged="Decyzja_SelectionChanged">
+                                    <ComboBox.Style>
+                                        <Style TargetType="ComboBox">
+                                            <Setter Property="ItemsSource" Value="{StaticResource AkcjeWartosci}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Rodzaj}" Value="Rekonstrukcja">
+                                                    <Setter Property="ItemsSource" Value="{StaticResource AkcjeRekonstrukcji}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Rodzaj}" Value="Szablon karty">
+                                                    <Setter Property="ItemsSource" Value="{StaticResource AkcjeSzablonu}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ComboBox.Style>
+                                </ComboBox>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </ui:DataGrid>
+
+            <TextBlock Text="{Binding Komunikat}" TextWrapping="Wrap" Margin="0,12,0,0" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

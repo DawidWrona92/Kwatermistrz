@@ -19,6 +19,7 @@ public partial class MainWindowViewModel : ObservableObject
         RekonstrukcjeViewModel rekonstrukcje,
         UstawieniaViewModel ustawienia,
         ImportViewModel import,
+        PakietyViewModel pakiety,
         WyposazenieViewModel wyposazenie,
         KategorieViewModel kategorie,
         ReplikiViewModel repliki,
@@ -35,6 +36,7 @@ public partial class MainWindowViewModel : ObservableObject
         Rekonstrukcje = rekonstrukcje;
         Ustawienia = ustawienia;
         Import = import;
+        Pakiety = pakiety;
         Wyposazenie = wyposazenie;
         Kategorie = kategorie;
         Repliki = repliki;
@@ -62,6 +64,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>ViewModel importu (FR-1101, FR-1102).</summary>
     public ImportViewModel Import { get; }
+
+    /// <summary>ViewModel pakietów konfiguracji (FR-1404).</summary>
+    public PakietyViewModel Pakiety { get; }
 
     /// <summary>ViewModel wyposażenia (FR-201–216).</summary>
     public WyposazenieViewModel Wyposazenie { get; }

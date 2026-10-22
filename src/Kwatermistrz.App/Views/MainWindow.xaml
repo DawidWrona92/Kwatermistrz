@@ -135,6 +135,11 @@
                             <ui:SymbolIcon Symbol="ArrowImport24" />
                         </ui:NavigationViewItem.Icon>
                     </ui:NavigationViewItem>
+                    <ui:NavigationViewItem Content="Pakiety" Tag="Pakiety" ToolTip="Pakiety konfiguracji (FR-1404)">
+                        <ui:NavigationViewItem.Icon>
+                            <ui:SymbolIcon Symbol="FolderZip24" />
+                        </ui:NavigationViewItem.Icon>
+                    </ui:NavigationViewItem>
                     <ui:NavigationViewItem Content="Ustawienia" Tag="Ustawienia">
                         <ui:NavigationViewItem.Icon>
                             <ui:SymbolIcon Symbol="Settings24" />

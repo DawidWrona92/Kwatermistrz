@@ -63,6 +63,7 @@ public partial class MainWindow : FluentWindow
         _strony["Slowniki"] = new SlownikiPage { DataContext = vm.Slowniki };
         _strony["Ustawienia"] = new UstawieniaPage { DataContext = vm.Ustawienia };
         _strony["Import"] = new ImportPage { DataContext = vm.Import };
+        _strony["Pakiety"] = new PakietyPage { DataContext = vm.Pakiety };
         _strony["Wyprawy"] = new WyprawyPage { DataContext = vm.Wyprawy };
         _strony["Bronie"] = new BroniePage { DataContext = vm.Repliki };
         _strony["Wyposazenie"] = new WyposazeniePage { DataContext = vm.Wyposazenie };

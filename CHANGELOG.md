@@ -4,6 +4,20 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 
 ## [Nieopublikowane]
 
+### Etap 5a — Pakiety konfiguracji (FR-1404, część FR-1003)
+
+#### Dodane
+- **Pakiet konfiguracji** `.kwpakiet` (JSON): eksport konfiguracji rekonstrukcji — słowniki (z aliasami i semantyką), wzory kamuflażu, kategorie (z oznaczeniem nośnika), rekonstrukcje z szablonami slotów, szablony kart technicznej. **Bez przedmiotów, replik, zestawów, wypraw, zdjęć i cen** (FR-1404, FR-1402).
+- **Import pakietu z podglądem** (FR-1102 w wersji pakietowej): lista wszystkich wartości/wzorów/kategorii/rekonstrukcji/szablonów z domyślnymi decyzjami — dodaj nową / scal z istniejącą / pomiń; przed zastosowaniem automatyczna kopia zapasowa (FR-1107).
+- **Scalanie słowników (FR-1003)**: nazwa i aliasy wartości z pakietu trafiają do aliasów istniejącej wartości lokalnej, dzięki czemu import rozpoznaje je w przyszłości; semantyka (rodzaje kosztów/zadań) uzupełniana, gdy lokalnie pusta.
+- Mapowanie Id przy imporcie: strona rekonstrukcji i napęd szablonu karty wskazują na lokalne wartości po scaleniu.
+- Idempotentność: powtórny import tego samego pakietu nie tworzy duplikatów.
+- Nowy ekran **Pakiety** w stopce nawigacji; `PakietyViewModel`, `WierszDecyzji`; Core: `PakietKonfiguracji`, `ImporterPakietuKonfiguracji`, `RodzajeSlownikow`.
+- Testy: 10 nowych (roundtrip eksport/import, brak danych o sprzęcie w pakiecie, domyślne scalanie, alias przy kolejnym imporcie, mapowanie napędu, scalanie szablonów slotów, idempotentność, błędny typ/nowsza wersja pakietu).
+
+#### Uwagi
+- FR-1406 (dołączone szablony konfiguracji) i FR-1405 (eksport całej rekonstrukcji) — pozostałe pozycje Etapu 5.
+
 ### Etap 4 — Raporty (FR-901–904, FR-908 CSV, FR-910, FR-911, FR-1106 CSV, FR-1201, FR-1204)
 
 #### Dodane
