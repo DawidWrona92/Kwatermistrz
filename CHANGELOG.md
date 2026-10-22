@@ -4,6 +4,22 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 
 ## [Nieopublikowane]
 
+### Etap 1 — Wyposażenie (FR-201–207, FR-209, FR-216, FR-1110 część wyposażenia)
+
+#### Dodane
+- Ekran **Wyposażenie**: lewa kolumna kategorii z licznikami (FR-201), gęsta tabela przedmiotów (firma, nazwa, miejsce, użycia, status, komentarz) z filtrem tekstowym i przełącznikiem „pokaż sprzedane/wycofane” (FR-203, FR-209), wybór kategorii filtruje listę, aktywna rekonstrukcja też (FR-1303).
+- **Karta przedmiotu** (FR-204) w panelu po prawej: nazwa, firma, kategoria, wzór, miejsce, pochodzenie, status, cena/data zakupu, komentarz; zapis po zatwierdzeniu (FR-1203).
+- **Komplety** (FR-206): dołącz/odepnij przedmiot do kompletu; wspólny licznik użyć liczony w Core (BR-08).
+- **Montaż** (FR-207): wybór nośnika z listy kategorii „nośnik”, zdejmij; nadpisuje poprzedni montaż.
+- **Duplikuj / Dodaj N takich samych** (FR-205) — osobne rekordy z własną historią.
+- **Edycja zbiorcza** (FR-216): zaznaczone pozycje zmieniają miejsce/wzór/pochodzenie/strony/status jednym poleceniem.
+- `WyposazenieViewModel` + `KategorieViewModel` (FR-202: dodaj/zmień nazwę/usuń tylko pustą kategorię, oznacz „nośnik”), wiersz `WierszPrzedmiotu`, konwerter `KonwerterLicznikaKategorii`.
+- Znacznik „z importu, do przeglądu” znika przy otwarciu karty lub zapisie (FR-1110).
+
+#### Uwagi
+- FR-208 (konfiguracje nośnika) i FR-211 (zdjęcia) — Etap 5 ([S]/rozszerzenia).
+- FR-210 (słownik pochodzenia) edytowalny już w ekranie Słowniki.
+
 ### Etap 0 — Fundament (aplikacja WPF, FR-1001–1003, FR-1006, FR-1107, FR-1202–1203, FR-1301–1306, FR-1401–1402, FR-1407, NFR-03/05/13–15)
 
 #### Dodane

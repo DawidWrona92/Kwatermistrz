@@ -18,7 +18,9 @@ public partial class MainWindowViewModel : ObservableObject
         SlownikiViewModel slowniki,
         RekonstrukcjeViewModel rekonstrukcje,
         UstawieniaViewModel ustawienia,
-        ImportViewModel import)
+        ImportViewModel import,
+        WyposazenieViewModel wyposazenie,
+        KategorieViewModel kategorie)
     {
         _dane = dane;
         _stan = stan;
@@ -27,6 +29,8 @@ public partial class MainWindowViewModel : ObservableObject
         Rekonstrukcje = rekonstrukcje;
         Ustawienia = ustawienia;
         Import = import;
+        Wyposazenie = wyposazenie;
+        Kategorie = kategorie;
         _stan.AktywnaRekonstrukcjaId = dane.Ustawienia.OstatniaRekonstrukcjaId;
         if (!string.IsNullOrEmpty(dane.Ustawienia.OstatniEkran))
             _stan.AktualnyEkran = dane.Ustawienia.OstatniEkran;
@@ -46,6 +50,12 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>ViewModel importu (FR-1101, FR-1102).</summary>
     public ImportViewModel Import { get; }
+
+    /// <summary>ViewModel wyposażenia (FR-201–216).</summary>
+    public WyposazenieViewModel Wyposazenie { get; }
+
+    /// <summary>ViewModel kategorii (FR-202).</summary>
+    public KategorieViewModel Kategorie { get; }
 
     /// <summary>Wszystkie rekonstrukcje do przełącznika.</summary>
     public IReadOnlyList<Rekonstrukcja> RekonstrukcjeLista => _dane.Rekonstrukcje;

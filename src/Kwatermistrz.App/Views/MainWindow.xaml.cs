@@ -47,7 +47,7 @@ public partial class MainWindow : FluentWindow
         _strony["Import"] = new ImportPage { DataContext = vm.Import };
         _strony["Wyprawy"] = new PlaceholderPage("Wyprawy", "Etap 3");
         _strony["Bronie"] = new PlaceholderPage("Broń i repliki", "Etap 2");
-        _strony["Wyposazenie"] = new PlaceholderPage("Wyposażenie", "Etap 1");
+        _strony["Wyposazenie"] = new WyposazeniePage { DataContext = vm.Wyposazenie };
         _strony["Zestawy"] = new PlaceholderPage("Zestawy", "Etap 3");
         _strony["Raporty"] = new PlaceholderPage("Raporty", "Etap 4");
         _strony["DoUzupelnienia"] = new PlaceholderPage("Do uzupełnienia", "Etap 4");
@@ -63,6 +63,9 @@ public partial class MainWindow : FluentWindow
         ObszarZawartosci.Content = strona;
         if (ekran == "Pulpit" && ViewModel?.Pulpit != null)
             ViewModel.Pulpit.Odswiez();
+        // karta po prawej pokazuje wybrany przedmiot (FR-204, §10.4)
+        if (ekran == "Wyposazenie" && ViewModel?.Wyposazenie.Wybrany != null)
+            PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany });
     }
 
     private void ZaznaczNawigacje(string ekran)
@@ -94,9 +97,9 @@ public partial class MainWindow : FluentWindow
             return;
         PokazEkran(ekran);
         ViewModel.AktualnyEkran = ekran;
-        // przełącznik rekonstrukcji dostępny z każdego ekranu (§10.4) — przełączamy kartę
-        if (ekran == "Rekonstrukcje")
-            return;
+        // przy zmianie ekranu odświeżamy dane ekranu docelowego
+        if (ekran == "Wyposazenie")
+            ViewModel.Wyposazenie.Odswiez();
     }
 
     private void ZamknijPanelKarty_Click(object sender, RoutedEventArgs e)

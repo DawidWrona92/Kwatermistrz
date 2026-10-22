@@ -47,6 +47,8 @@ public partial class App : Application
         services.AddSingleton<RekonstrukcjeViewModel>();
         services.AddSingleton<UstawieniaViewModel>();
         services.AddSingleton<ImportViewModel>();
+        services.AddSingleton<WyposazenieViewModel>();
+        services.AddSingleton<KategorieViewModel>();
         _provider = services.BuildServiceProvider();
 
         // motyw z ustawień (FR-1006)

@@ -117,3 +117,19 @@ public class KonwerterWiekszeOdZera : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => Binding.DoNothing;
 }
+
+/// <summary>Licznik przedmiotów w kategorii: parametr to Id kategorii, kontekst (DataContext strony) to ViewModel z metodą LiczbaPrzedmiotow.</summary>
+public class KonwerterLicznikaKategorii : IMultiValueConverter
+{
+    public static readonly KonwerterLicznikaKategorii Instance = new();
+
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values.Length >= 1 && values[0] is ViewModels.WyposazenieViewModel vm && parameter is string kategoriaId)
+            return vm.LiczbaPrzedmiotow(kategoriaId).ToString(CultureInfo.InvariantCulture);
+        return "";
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}

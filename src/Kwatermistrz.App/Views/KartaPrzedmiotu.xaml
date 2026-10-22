@@ -1,0 +1,117 @@
+<UserControl x:Class="Kwatermistrz.App.Views.KartaPrzedmiotu"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
+             xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
+             xmlns:model="clr-namespace:Kwatermistrz.Core.Model;assembly=Kwatermistrz.Core">
+    <UserControl.Resources>
+        <conv:KonwerterNazwySlownika x:Key="KonwerterNazwySlownika" />
+        <conv:KonwerterNazwSlownikaWiele x:Key="KonwerterNazwSlownikaWiele" />
+        <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
+        <conv:KonwerterDaty x:Key="KonwerterDaty" />
+        <ObjectDataProvider x:Key="Statusy" MethodName="GetValues" ObjectType="{x:Type sys:Enum}"
+                            xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="model:StatusWlasnosci" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+    </UserControl.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="4">
+            <TextBlock Text="Karta przedmiotu" Style="{StaticResource NaglowekSekcji}" />
+
+            <Grid Margin="0,8,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="110" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Nazwa" VerticalAlignment="Center" />
+                <ui:TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Przedmiot.Nazwa}" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Firma" VerticalAlignment="Center" Margin="0,4,0,0" />
+                <ui:TextBox Grid.Row="1" Grid.Column="1" Margin="0,4,0,0" Text="{Binding Przedmiot.Firma}" />
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Kategoria" VerticalAlignment="Center" Margin="0,4,0,0" />
+                <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,4,0,0"
+                          ItemsSource="{Binding DataContext.Slowniki.Kategorie, RelativeSource={RelativeSource AncestorType=Page}}"
+                          SelectedValue="{Binding Przedmiot.KategoriaId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Wzór" VerticalAlignment="Center" Margin="0,4,0,0" />
+                <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,4,0,0"
+                          ItemsSource="{Binding DataContext.Slowniki.Wzory, RelativeSource={RelativeSource AncestorType=Page}}"
+                          SelectedValue="{Binding Przedmiot.WzorId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
+
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="Miejsce" VerticalAlignment="Center" Margin="0,4,0,0" />
+                <ComboBox Grid.Row="4" Grid.Column="1" Margin="0,4,0,0"
+                          ItemsSource="{Binding DataContext.Slowniki.Miejsca, RelativeSource={RelativeSource AncestorType=Page}}"
+                          SelectedValue="{Binding Przedmiot.MiejsceId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
+
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="Pochodzenie" VerticalAlignment="Center" Margin="0,4,0,0" />
+                <ComboBox Grid.Row="5" Grid.Column="1" Margin="0,4,0,0"
+                          ItemsSource="{Binding DataContext.Slowniki.Pochodzenie, RelativeSource={RelativeSource AncestorType=Page}}"
+                          SelectedValue="{Binding Przedmiot.PochodzenieId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
+
+                <TextBlock Grid.Row="6" Grid.Column="0" Text="Status" VerticalAlignment="Center" Margin="0,4,0,0" />
+                <ComboBox Grid.Row="6" Grid.Column="1" Margin="0,4,0,0"
+                          ItemsSource="{Binding Source={StaticResource Statusy}}"
+                          SelectedItem="{Binding Przedmiot.Status}" />
+
+                <TextBlock Grid.Row="7" Grid.Column="0" Text="Cena zakupu" VerticalAlignment="Center" Margin="0,4,0,0" />
+                <ui:TextBox Grid.Row="7" Grid.Column="1" Margin="0,4,0,0" Text="{Binding Przedmiot.CenaZakupu}" />
+
+                <TextBlock Grid.Row="8" Grid.Column="0" Text="Data zakupu" VerticalAlignment="Center" Margin="0,4,0,0" />
+                <DatePicker Grid.Row="8" Grid.Column="1" Margin="0,4,0,0" SelectedDate="{Binding Przedmiot.DataZakupu}" />
+
+                <TextBlock Grid.Row="9" Grid.Column="0" Text="Komentarz" VerticalAlignment="Top" Margin="0,8,0,0" />
+                <ui:TextBox Grid.Row="9" Grid.Column="1" Margin="0,4,0,0" Text="{Binding Przedmiot.Komentarz}"
+                            TextWrapping="Wrap" AcceptsReturn="True" MinHeight="60" />
+            </Grid>
+
+            <!-- Komplet (FR-206) -->
+            <TextBlock Text="Komplet" Style="{StaticResource NaglowekSekcji}" Margin="0,16,0,4" />
+            <TextBlock Visibility="{Binding CzyWKomplecie, Converter={x:Static conv:KonwerterNieRowneNull.Instance}}"
+                       Text="Element kompletu" Opacity="0.7" />
+            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                <ui:Button Content="Dołącz do kompletu…" Command="{Binding DataContext.DolaczDoKompletuCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                           CommandParameter="{Binding DataContext.Wybrany, RelativeSource={RelativeSource AncestorType=Page}}" />
+                <ui:Button Content="Odepnij od kompletu" Margin="8,0,0,0"
+                           Command="{Binding DataContext.OdlaczZKompletuCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
+            </StackPanel>
+
+            <!-- Montaż (FR-207) -->
+            <TextBlock Text="Montaż na nośniku" Style="{StaticResource NaglowekSekcji}" Margin="0,16,0,4" />
+            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                <ComboBox MinWidth="180" ItemsSource="{Binding DataContext.Nosniki, RelativeSource={RelativeSource AncestorType=Page}}"
+                          SelectedValue="{Binding Przedmiot.ZamontowanyNaId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa"
+                          ToolTip="Nośnik (puste = niezamontowany)" />
+                <ui:Button Content="Zdejmij" Margin="8,0,0,0"
+                           Command="{Binding DataContext.ZdejmijCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                <ui:Button Content="Zapisz" Appearance="Primary"
+                           Command="{Binding DataContext.ZapiszKarteCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
+                <ui:Button Content="Duplikuj" Margin="8,0,0,0"
+                           Command="{Binding DataContext.DuplikujCommand, RelativeSource={RelativeSource AncestorType=Page}}" />
+                <ui:Button Content="Usuń" Appearance="Danger" Margin="8,0,0,0"
+                           Command="{Binding DataContext.UsunCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                           CommandParameter="{Binding}" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
