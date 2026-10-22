@@ -1,0 +1,68 @@
+<Page x:Class="Kwatermistrz.App.Views.RekonstrukcjePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
+      Title="Rekonstrukcje">
+    <Page.Resources>
+        <conv:KonwerterNazwySlownika x:Key="KonwerterNazwySlownika" />
+    </Page.Resources>
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Column="0">
+            <TextBlock Text="Rekonstrukcje" Style="{StaticResource TytulEkranu}" />
+            <ListBox Margin="0,12,0,0"
+                     ItemsSource="{Binding Rekonstrukcje}"
+                     SelectedItem="{Binding Wybrana}"
+                     DisplayMemberPath="Nazwa" Height="300" />
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                <ui:TextBox MinWidth="160" PlaceholderText="Nazwa nowej…"
+                            Text="{Binding NowaNazwa, UpdateSourceTrigger=PropertyChanged}" />
+                <ui:Button Content="Pusta" Margin="8,0,0,0" Command="{Binding DodajPustaCommand}" />
+                <ui:Button Content="Na wzór" Margin="8,0,0,0"
+                           Command="{Binding DodajNaWzorCommand}"
+                           CommandParameter="{Binding Wybrana}" />
+            </StackPanel>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Margin="16,0,0,0"
+                    Visibility="{Binding Wybrana, Converter={x:Static conv:KonwerterNieRowneNull.Instance}}">
+            <TextBlock Text="Szablon slotów zestawu" Style="{StaticResource NaglowekSekcji}" />
+            <ItemsControl ItemsSource="{Binding Wybrana.SzablonSlotow}" Margin="0,8,0,0">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderThickness="0,0,0,1" Padding="4"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding Nazwa}" VerticalAlignment="Center" />
+                                <CheckBox Grid.Column="1" Content="Mundur" IsChecked="{Binding CzySlotMunduru}" Margin="8,0" />
+                                <CheckBox Grid.Column="2" Content="Broń główna" IsChecked="{Binding CzySlotBroniGlownej}" Margin="8,0" />
+                                <ui:Button Grid.Column="3" Appearance="Danger"
+                                           Command="{Binding DataContext.UsunSlotCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                           CommandParameter="{Binding}">
+                                    <ui:SymbolIcon Symbol="Dismiss24" />
+                                </ui:Button>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                <ui:TextBox MinWidth="200" PlaceholderText="Nowy slot…"
+                            Text="{Binding NowaNazwa, UpdateSourceTrigger=PropertyChanged}" />
+                <ui:Button Content="Dodaj slot" Appearance="Primary" Margin="8,0,0,0"
+                           Command="{Binding DodajSlotCommand}" />
+            </StackPanel>
+            <ui:Button Content="Zapisz" Appearance="Primary" Margin="0,16,0,0"
+                       HorizontalAlignment="Left" Command="{Binding ZapiszWybranaCommand}" />
+        </StackPanel>
+    </Grid>
+</Page>

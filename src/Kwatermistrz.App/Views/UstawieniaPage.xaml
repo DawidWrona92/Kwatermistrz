@@ -1,0 +1,52 @@
+<Page x:Class="Kwatermistrz.App.Views.UstawieniaPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
+      Title="Ustawienia">
+    <Page.Resources>
+        <conv:KonwerterEnumIndeks x:Key="KonwerterEnumIndeks" />
+        <x:Array x:Key="Motywy" Type="sys:String"
+                 xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+            <sys:String>Systemowy</sys:String>
+            <sys:String>Jasny</sys:String>
+            <sys:String>Ciemny</sys:String>
+        </x:Array>
+    </Page.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16" MaxWidth="640">
+            <TextBlock Text="Ustawienia" Style="{StaticResource TytulEkranu}" />
+
+            <TextBlock Text="Wygląd" Style="{StaticResource NaglowekSekcji}" Margin="0,16,0,8" />
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Motyw:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <ComboBox MinWidth="160"
+                          ItemsSource="{StaticResource Motywy}"
+                          SelectedIndex="{Binding IndeksMotywu, Mode=TwoWay}" />
+            </StackPanel>
+
+            <TextBlock Text="Katalog danych" Style="{StaticResource NaglowekSekcji}" Margin="0,20,0,8" />
+            <TextBlock Text="{Binding KatalogDanych}" TextWrapping="Wrap" />
+
+            <TextBlock Text="Progi i reguły" Style="{StaticResource NaglowekSekcji}" Margin="0,20,0,8" />
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Próg „bez testu” (dni):" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <ui:NumberBox MinWidth="100" Minimum="1" Maximum="3650"
+                              Value="{Binding DniBezTestu, Mode=TwoWay}" />
+            </StackPanel>
+            <TextBlock Margin="0,8,0,0" Opacity="0.7">
+                <Run Text="Wersja reguł obliczeń: " />
+                <Run Text="{Binding WersjaRegul, Mode=OneWay}" />
+            </TextBlock>
+
+            <TextBlock Text="Kopia zapasowa" Style="{StaticResource NaglowekSekcji}" Margin="0,20,0,8" />
+            <StackPanel Orientation="Horizontal">
+                <ui:Button Content="Utwórz kopię zapasową" Appearance="Primary"
+                           Command="{Binding UtworzKopieCommand}" />
+                <ui:Button Content="Przywróć z kopii…" Margin="8,0,0,0"
+                           Command="{Binding PrzywrocCommand}" />
+            </StackPanel>
+            <TextBlock Text="{Binding Komunikat}" TextWrapping="Wrap" Margin="0,8,0,0" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

@@ -1,0 +1,56 @@
+<Page x:Class="Kwatermistrz.App.Views.PulpitPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
+      xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
+      Title="Pulpit">
+    <Page.Resources>
+        <conv:KonwerterDaty x:Key="KonwerterDaty" />
+    </Page.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16">
+            <TextBlock Text="Pulpit" Style="{StaticResource TytulEkranu}" />
+
+            <!-- Liczby ogólne (FR-101) -->
+            <WrapPanel Margin="0,12,0,0">
+                <Border Style="{StaticResource KartaLiczby}">
+                    <StackPanel>
+                        <TextBlock Text="Wyprawy łącznie" Style="{StaticResource EtykietaLiczby}" />
+                        <TextBlock Text="{Binding LacznaLiczbaWypraw}" Style="{StaticResource LiczbaPulpitu}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource KartaLiczby}">
+                    <StackPanel>
+                        <TextBlock Text="Wyprawy w tym roku" Style="{StaticResource EtykietaLiczby}" />
+                        <TextBlock Text="{Binding WyprawyWRoku}" Style="{StaticResource LiczbaPulpitu}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource KartaLiczby}">
+                    <StackPanel>
+                        <TextBlock Text="Pierwsza wyprawa" Style="{StaticResource EtykietaLiczby}" />
+                        <TextBlock Text="{Binding DataPierwszejWyprawy, Converter={StaticResource KonwerterDaty}}" Style="{StaticResource LiczbaPulpituMniejsza}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource KartaLiczby}">
+                    <StackPanel>
+                        <TextBlock Text="Ostatnia wyprawa" Style="{StaticResource EtykietaLiczby}" />
+                        <TextBlock Text="{Binding DataOstatniejWyprawy, Converter={StaticResource KonwerterDaty}}" Style="{StaticResource LiczbaPulpituMniejsza}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource KartaLiczby}">
+                    <StackPanel>
+                        <TextBlock Text="Dni od ostatniej" Style="{StaticResource EtykietaLiczby}" />
+                        <TextBlock Text="{Binding DniOdOstatniej}" Style="{StaticResource LiczbaPulpitu}" />
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+
+            <!-- Mozaika wypraw (FR-102) -->
+            <TextBlock Text="Mozaika wypraw" Style="{StaticResource NaglowekSekcji}" Margin="0,20,0,8" />
+            <Border Style="{StaticResource Karta}" Padding="12">
+                <controls:MozaikaWypraw Dane="{Binding Dane}" Kafelki="{Binding Kafelki}" />
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

@@ -1,0 +1,31 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Paleta Kwatermistrza (§10.2). Wartości jasne — motyw ciemny nadpisuje je przez
+         ApplicationThemeManager.Apply (WPF-UI dostarcza własne słowniki dark/light;
+         kluczowe kolory aplikacji definiujemy jako SolidColorBrush i podmieniamy w Ustawieniach). -->
+
+    <!-- Płótno / Karta / Tusz / Linia (jasny) -->
+    <SolidColorBrush x:Key="PlatnoJasny" Color="#ECEDEA" />
+    <SolidColorBrush x:Key="KartaJasny" Color="#F7F7F5" />
+    <SolidColorBrush x:Key="TuszJasny" Color="#222725" />
+    <SolidColorBrush x:Key="LiniaJasny" Color="#CDD0CA" />
+    <SolidColorBrush x:Key="StalJasny" Color="#2F4A6B" />
+    <SolidColorBrush x:Key="SygnalJasny" Color="#A83A2B" />
+    <SolidColorBrush x:Key="PoprawnyJasny" Color="#4A7A52" />
+    <SolidColorBrush x:Key="UwagaJasny" Color="#9A6B00" />
+
+    <!-- Płótno / Karta / Tusz / Linia (ciemny) -->
+    <SolidColorBrush x:Key="PlatnoCiemny" Color="#1E2221" />
+    <SolidColorBrush x:Key="KartaCiemny" Color="#272C2A" />
+    <SolidColorBrush x:Key="TuszCiemny" Color="#E4E7E3" />
+    <SolidColorBrush x:Key="LiniaCiemny" Color="#3A403D" />
+    <SolidColorBrush x:Key="StalCiemny" Color="#8DB0D8" />
+    <SolidColorBrush x:Key="SygnalCiemny" Color="#E08A7A" />
+    <SolidColorBrush x:Key="PoprawnyCiemny" Color="#8CC495" />
+    <SolidColorBrush x:Key="UwagaCiemny" Color="#E0B34A" />
+
+    <!-- Kolory neutralne kafelków mozaiki (FR-102) -->
+    <SolidColorBrush x:Key="KafelekNeutralny" Color="#ECEDEA" />
+
+</ResourceDictionary>

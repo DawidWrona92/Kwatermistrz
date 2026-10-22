@@ -1,0 +1,119 @@
+using System.Globalization;
+using System.Windows;
+using System.Windows.Data;
+using Kwatermistrz.Core.Model;
+using Kwatermistrz.Core.Obliczenia;
+
+namespace Kwatermistrz.App.Converters;
+
+/// <summary>Waluta „3 297,12 zł” (BR-14).</summary>
+public class KonwerterWaluty : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is decimal d ? Formatowanie.Waluta(d) : "";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
+/// <summary>Procent „21,3%” (BR-14).</summary>
+public class KonwerterProcentu : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is decimal d ? Formatowanie.Procent(d) : "";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
+/// <summary>Data „01.09.2022” (BR-14); puste dla null.</summary>
+public class KonwerterDaty : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is DateOnly d ? Formatowanie.Data(d) : "";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
+/// <summary>Nazwa wartości słownika po Id; puste dla null.</summary>
+public class KonwerterNazwySlownika : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not string id || parameter is not List<WartoscSlownika> slownik)
+            return "";
+        return slownik.FirstOrDefault(w => w.Id == id)?.Nazwa ?? "";
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
+/// <summary>Wiele Id → nazwy połączone przecinkiem.</summary>
+public class KonwerterNazwSlownikaWiele : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not List<string> ids || parameter is not List<WartoscSlownika> slownik)
+            return "";
+        return string.Join(", ", ids.Select(id => slownik.FirstOrDefault(w => w.Id == id)?.Nazwa).Where(n => n != null));
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
+/// <summary>Prawda, gdy wartość jest równa parametrowi (do zaznaczania w selektorach).</summary>
+public class KonwerterRowne : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => Equals(value?.ToString(), parameter?.ToString());
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
+/// <summary>Odwrotność — prawda, gdy wartość różni się od parametra.</summary>
+public class KonwerterNieRowne : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => !Equals(value?.ToString(), parameter?.ToString());
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
+/// <summary>Konwersja enum na indeks (dla selektorów).</summary>
+public class KonwerterEnumIndeks : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is Enum e ? System.Convert.ToInt32(e, CultureInfo.InvariantCulture) : 0;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is int i && parameter is Type t && t.IsEnum ? Enum.ToObject(t, i) : Binding.DoNothing;
+}
+
+/// <summary>Prawda, gdy wartość nie jest null (do widoczności formularza).</summary>
+public class KonwerterNieRowneNull : IValueConverter
+{
+    public static readonly KonwerterNieRowneNull Instance = new();
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value != null ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
+/// <summary>Prawda, gdy liczba kolekcji jest większa od zera (do widoczności selektora kandydatów).</summary>
+public class KonwerterWiekszeOdZera : IValueConverter
+{
+    public static readonly KonwerterWiekszeOdZera Instance = new();
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is int liczba && liczba > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}

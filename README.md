@@ -16,6 +16,9 @@ Pełna specyfikacja: [`docs/wymagania.md`](docs/wymagania.md). Decyzje technolog
 Wymagania: .NET 10 SDK, Windows (projekt WPF; `EnableWindowsTargeting` pozwala też kompilować na innych systemach).
 
 ```bash
+# całość (Core + App + testy)
+dotnet build Kwatermistrz.slnx
+
 # testy (Core, bez WPF)
 dotnet test tests/Kwatermistrz.Core.Tests/Kwatermistrz.Core.Tests.csproj
 
@@ -23,7 +26,9 @@ dotnet test tests/Kwatermistrz.Core.Tests/Kwatermistrz.Core.Tests.csproj
 dotnet run --project src/Kwatermistrz.App/Kwatermistrz.App.csproj
 ```
 
-Dane użytkownika: `%AppData%\Kwatermistrz\dane.json` (+ katalog `zdjecia/`). Przy pierwszym uruchomieniu aplikacja jest pusta — kreator prowadzi przez konfigurację, a dane autora można zaimportować z pliku xlsx przez podgląd importu.
+Dane użytkownika: `%AppData%\Kwatermistrz\dane.json` (+ katalog `zdjecia/`, kopie w `kopie/`). Przy pierwszym uruchomieniu kreator pyta o nazwę pierwszej rekonstrukcji i stronę; dane autora można zaimportować z pliku xlsx przez ekran **Import** (podgląd rekordów i konfliktów przed zatwierdzeniem).
+
+Interfejs: lewa szyna nawigacji, u góry wyszukiwanie (Ctrl+F), przełącznik rekonstrukcji i „Dodaj wyprawę” (Ctrl+N), po prawej panel karty. Motyw jasny/ciemny/systemowy w Ustawieniach.
 
 ## Struktura repozytorium
 

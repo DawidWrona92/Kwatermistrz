@@ -1,0 +1,18 @@
+<Application x:Class="Kwatermistrz.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- WPF-UI: kontrolki, ikony i domyślne motywy (jasny/ciemny) -->
+                <ui:ControlsDictionary />
+                <ui:ThemesDictionary Theme="Light" />
+
+                <!-- Paleta Kwatermistrza (§10.2) + typografia (§10.3) + style własne -->
+                <ResourceDictionary Source="Themes/Paleta.xaml" />
+                <ResourceDictionary Source="Themes/Style.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

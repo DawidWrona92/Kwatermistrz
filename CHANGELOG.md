@@ -4,6 +4,26 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 
 ## [Nieopublikowane]
 
+### Etap 0 — Fundament (aplikacja WPF, FR-1001–1003, FR-1006, FR-1107, FR-1202–1203, FR-1301–1306, FR-1401–1402, FR-1407, NFR-03/05/13–15)
+
+#### Dodane
+- Projekt `src/Kwatermistrz.App` (WPF, WPF-UI 4.0.3 + CommunityToolkit.Mvvm): okno główne `FluentWindow` z układem §10.4 — lewa szyna nawigacji (Pulpit, Wyprawy, Broń, Wyposażenie, Zestawy, Raporty, Do uzupełnienia; stopka: Słowniki, Import, Ustawienia), górny pasek (wyszukiwanie Ctrl+F, przełącznik rekonstrukcji FR-1303, przycisk „Dodaj wyprawę” Ctrl+N FR-103), środek, prawy panel karty ~420 px zamykany.
+- Ekrany: Pulpit (liczby FR-101 + mozaika wypraw FR-102 w kontrolce `MozaikaWypraw`), Słowniki (FR-1001 edycja wartości, FR-1002 zmiana nazwy, usuwanie tylko gdy nieużywana), Rekonstrukcje (FR-1301/1306: pusta/na wzór, edycja szablonu slotów), Ustawienia (FR-1006 motyw jasny/ciemny/systemowy przełączany na żywo, próg „bez testu”, katalog danych; FR-1107 kopia jednym poleceniem + przywracanie z pliku), Import (FR-1101/1102: wybór xlsx, podgląd rekordów i konfliktów z wyborem kandydata, zastosowanie z automatyczną kopią przed importem).
+- Kreator pierwszego uruchomienia (FR-1401) — w tym etapie tylko wariant „pusta aplikacja”: nazwa pierwszej rekonstrukcji + strona, startowe sloty z Załącznika B.
+- Motywy: słowniki `Themes/Paleta.xaml` (paleta §10.2 jasny/ciemny) i `Themes/Style.xaml` (typografia §10.3: Bahnschrift z zapasową Segoe UI, style tytułów/liczb/kart); `ApplicationThemeManager` przełącza motyw WPF-UI, a przycisk zmiany motywu działa od razu (FR-1006).
+- Kontrolki własne: `ProbkaKamuflazu` (siatka 2×2 kolorów wzoru, §10.5), `MozaikaWypraw` (wiersze kafelków 18×18 po latach, kolor = pierwszy kolor wzoru munduru, neutralne dla historycznych, klik otwiera wyprawę).
+- Serwisy: `StanAplikacji` (aktywna rekonstrukcja zapamiętywana w ustawieniach, ekran, wyszukiwanie), `KalkulatorSerwis`. DI przez `Microsoft.Extensions.DependencyInjection`.
+- Ikona aplikacji `Assets/app.ico` (4 rozmiary, kolor Stal).
+- `MagazynJson.WczytajZPliku` — wczytywanie danych z konkretnego pliku (przywracanie z kopii, FR-1107) + 2 testy (45 zielonych).
+- Projekt App dodany do `Kwatermistrz.slnx`.
+
+#### Zmienione
+- `MozaikaWypraw` dziedziczy po `ContentControl` (rysuje kafelki jako zawartość).
+
+#### Uwagi
+- Ekrany Wyprawy/Broń/Wyposażenie/Zestawy/Raporty/Do uzupełnienia to na razie strony zastępcze — powstaną w Etapach 1–4.
+- Kreator: warianty „szablon” i „import” zaplanowane na późniejszy etap (FR-1401 część).
+
 ### Etap 0 — Fundament (Core + import)
 
 #### Dodane

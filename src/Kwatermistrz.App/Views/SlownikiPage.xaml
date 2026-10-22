@@ -1,0 +1,51 @@
+<Page x:Class="Kwatermistrz.App.Views.SlownikiPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      Title="Słowniki">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="Słowniki" Style="{StaticResource TytulEkranu}" />
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,12,0,8">
+            <TextBlock Text="Słownik:" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <ComboBox MinWidth="220"
+                      ItemsSource="{Binding Slowniki}"
+                      SelectedItem="{Binding WybranySlownik}" />
+        </StackPanel>
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <ui:DataGrid Grid.Row="0"
+                         ItemsSource="{Binding Wartosci}"
+                         AutoGenerateColumns="False"
+                         CanUserAddRows="False"
+                         IsReadOnly="False"
+                         HeadersVisibility="Column">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
+                    <DataGridTemplateColumn Header="Akcje" Width="120">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ui:Button Content="Usuń" Appearance="Danger"
+                                           Command="{Binding DataContext.UsunCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                           CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </ui:DataGrid>
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
+                <ui:TextBox MinWidth="260" PlaceholderText="Nowa wartość…"
+                            Text="{Binding NowaNazwa, UpdateSourceTrigger=PropertyChanged}" />
+                <ui:Button Content="Dodaj" Appearance="Primary" Margin="8,0,0,0"
+                           Command="{Binding DodajCommand}" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Page>

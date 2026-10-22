@@ -91,6 +91,17 @@ public class MagazynJson
         }
     }
 
+    /// <summary>Wczytuje dane z konkretnego pliku (przywracanie z kopii, FR-1107). Przy błędzie rzuca wyjątek.</summary>
+    public static DaneAplikacji WczytajZPliku(string sciezka)
+    {
+        var json = File.ReadAllText(sciezka);
+        var dane = JsonSerializer.Deserialize<DaneAplikacji>(json, Opcje) ?? throw new InvalidDataException("Pusty dokument");
+        if (dane.SchemaVersion > AktualnaWersjaSchematu)
+            throw new InvalidDataException("Dane pochodzą z nowszej wersji aplikacji");
+        Migruj(dane);
+        return dane;
+    }
+
     /// <summary>Zapisuje dane atomowo: najpierw plik tymczasowy, potem zamiana. Po powrocie tej metody dane są na dysku (NFR-05).</summary>
     public void Zapisz(DaneAplikacji dane)
     {

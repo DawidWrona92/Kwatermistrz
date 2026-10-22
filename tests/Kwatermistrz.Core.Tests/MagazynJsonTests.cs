@@ -95,4 +95,25 @@ public class MagazynJsonTests : IDisposable
         Assert.True(File.Exists(Path.Combine(sciezkaKopii, "dane.json")));
         Assert.True(File.Exists(Path.Combine(sciezkaKopii, "zdjecia", "a.jpg")));
     }
+
+    [Fact]
+    public void WczytajZPliku_PoprawnyPlik_ZwracaDane()
+    {
+        var magazyn = new MagazynJson(_katalog);
+        var dane = magazyn.Wczytaj();
+        dane.Przedmioty.Add(new Przedmiot { Nazwa = "Przywraczany", Firma = "Test" });
+        magazyn.Zapisz(dane);
+
+        var wczytane = MagazynJson.WczytajZPliku(magazyn.SciezkaPliku);
+
+        Assert.Single(wczytane.Przedmioty);
+        Assert.Equal("Przywraczany", wczytane.Przedmioty[0].Nazwa);
+    }
+
+    [Fact]
+    public void WczytajZPliku_NieistniejacyPlik_RzucaWyjatek()
+    {
+        Assert.Throws<FileNotFoundException>(() =>
+            MagazynJson.WczytajZPliku(Path.Combine(_katalog, "nie-ma.json")));
+    }
 }

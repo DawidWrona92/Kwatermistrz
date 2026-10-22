@@ -218,8 +218,8 @@ public class ImportAkceptacyjnyTests
         var (podglad, _) = Importuj();
         var dane = podglad.Dane!;
         // każda nazwa występuje raz na liście replik
-        Assert.Single(dane.Repliki.Where(r => Normalizacja.TekstDoPorownania(r.ModelProducenta).Contains("sa j02")));
-        Assert.Single(dane.Repliki.Where(r => Normalizacja.TekstDoPorownania(r.ModelProducenta).Contains("rpks")));
+        Assert.Single(dane.Repliki, r => Normalizacja.TekstDoPorownania(r.ModelProducenta).Contains("sa j02"));
+        Assert.Single(dane.Repliki, r => Normalizacja.TekstDoPorownania(r.ModelProducenta).Contains("rpks"));
         // konflikty duplikatów są w podglądzie
         var duplikaty = podglad.Konflikty.Count(k => k.Rodzaj == RodzajKonfliktu.Duplikat);
         Assert.True(duplikaty >= 3, $"oczekiwano >= 3 konfliktów duplikatów, jest {duplikaty}");
