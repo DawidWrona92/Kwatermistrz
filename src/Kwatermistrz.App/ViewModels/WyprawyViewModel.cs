@@ -116,9 +116,15 @@ public partial class WyprawyViewModel : ObservableObject
     partial void OnFiltrZestawIdChanged(string? value) => Odswiez();
     partial void OnFiltrTekstChanged(string value) => Odswiez();
 
-    /// <summary>Wybiera wyprawę do edycji (FR-808).</summary>
+    /// <summary>Wybiera wyprawę do edycji (FR-808) — zapamiętuje wpływ na liczniki historyczne
+    /// sprzed edycji (do cofnięcia korekty FR-807 przy zapisie).</summary>
     [RelayCommand]
-    private void Wybierz(WierszWyprawy? wiersz) => Wybrana = wiersz;
+    private void Wybierz(WierszWyprawy? wiersz)
+    {
+        Wybrana = wiersz;
+        if (wiersz != null)
+            _wplywSprzedEdycji[wiersz.Wyprawa.Id] = _kalkulator.Kalkulator().WplywNaLicznikiHistoryczne(wiersz.Wyprawa);
+    }
 
     /// <summary>Ustawia zestaw nowej wyprawy i warianty domyślne/zapamiętane (FR-803, FR-704).</summary>
     public void UstawZestaw(Zestaw? zestaw)
@@ -176,34 +182,56 @@ public partial class WyprawyViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(CzyPrzedDniemZerowym));
         OnPropertyChanged(nameof(KandydaciOdejmowania));
+        // po dodaniu wyprawy formularz wraca z tym samym zestawem — wybierz warianty od razu,
+        // żeby kolejna wyprawa nie została z pustym składem (FR-704)
+        if (value.ZestawId != null)
+            UstawZestaw(_dane.Zestawy.FirstOrDefault(z => z.Id == value.ZestawId));
     }
 
-    /// <summary>FR-807: stosuje odpowiedź na monit — odlicza od liczników historycznych (replika, mundur, rok).</summary>
-    private void ZastosujOdejmowanie(Wyprawa wyprawa)
+    /// <summary>FR-807: korekta licznika historycznego jest odwracalna — usunięcie/przywrócenie
+    /// lub edycja daty wyprawy sprzed dnia zerowego cofa/powtarza odjęcie (delta +1/-1).</summary>
+    private void ZmienLicznikHistoryczny(string rodzaj, string id, int delta)
     {
-        if (!OdejmijOdLicznikow)
-            return;
-        foreach (var (rodzaj, id, _) in _kalkulator.Kalkulator().WplywNaLicznikiHistoryczne(wyprawa))
+        switch (rodzaj)
         {
-            switch (rodzaj)
-            {
-                case "Replika":
-                    var replika = _dane.Repliki.FirstOrDefault(r => r.Id == id);
-                    if (replika != null && replika.LicznikHistorycznyWypraw > 0)
-                        replika.LicznikHistorycznyWypraw--;
-                    break;
-                case "Mundur":
-                    var mundur = _dane.Przedmioty.FirstOrDefault(p => p.Id == id);
-                    if (mundur != null && mundur.LicznikHistoryczny > 0)
-                        mundur.LicznikHistoryczny--;
-                    break;
-                case "Rok":
-                    if (int.TryParse(id, out var rok) && _dane.Ustawienia.HistoryczneWyprawyWgRok.TryGetValue(rok, out var liczba) && liczba > 0)
-                        _dane.Ustawienia.HistoryczneWyprawyWgRok[rok] = liczba - 1;
-                    break;
-            }
+            case "Replika":
+                var replika = _dane.Repliki.FirstOrDefault(r => r.Id == id);
+                if (replika != null && replika.LicznikHistorycznyWypraw + delta >= 0)
+                    replika.LicznikHistorycznyWypraw += delta;
+                break;
+            case "Mundur":
+                var mundur = _dane.Przedmioty.FirstOrDefault(p => p.Id == id);
+                if (mundur != null && mundur.LicznikHistoryczny + delta >= 0)
+                    mundur.LicznikHistoryczny += delta;
+                break;
+            case "Rok":
+                if (int.TryParse(id, out var rok) && _dane.Ustawienia.HistoryczneWyprawyWgRok.TryGetValue(rok, out var liczba) && liczba + delta >= 0)
+                    _dane.Ustawienia.HistoryczneWyprawyWgRok[rok] = liczba + delta;
+                break;
         }
     }
+
+    /// <summary>FR-807: odlicza wyprawę od liczników historycznych i zaznacza korektę jako aktywną (flaga w danych).</summary>
+    private void OdliczOdLicznikow(Wyprawa wyprawa)
+    {
+        foreach (var (rodzaj, id, _) in _kalkulator.Kalkulator().WplywNaLicznikiHistoryczne(wyprawa))
+            ZmienLicznikHistoryczny(rodzaj, id, -1);
+        wyprawa.OdliczonaOdLicznikow = true;
+    }
+
+    /// <summary>FR-807: cofa korektę liczników historycznych (usunięcie/przywrócenie/edycja wyprawy).
+    /// <paramref name="wplyw"/> to wpływ sprzed zmiany — przy edycji bierące pola mogą być już zmienione przez binding.</summary>
+    private void CofnijOdliczenie(Wyprawa wyprawa, IReadOnlyList<(string Rodzaj, string Id, string Opis)>? wplyw = null)
+    {
+        if (!wyprawa.OdliczonaOdLicznikow)
+            return;
+        wyprawa.OdliczonaOdLicznikow = false;
+        foreach (var (rodzaj, id, _) in wplyw ?? _kalkulator.Kalkulator().WplywNaLicznikiHistoryczne(wyprawa))
+            ZmienLicznikHistoryczny(rodzaj, id, +1);
+    }
+
+    /// <summary>Migawka wpływu na liczniki historyczne przy otwarciu edycji wyprawy (FR-807).</summary>
+    private readonly Dictionary<string, List<(string Rodzaj, string Id, string Opis)>> _wplywSprzedEdycji = new(StringComparer.Ordinal);
 
     /// <summary>Szybkie dodanie wyprawy (FR-802): Enter, domyślna data dziś, zestaw ostatni (FR-803).</summary>
     [RelayCommand]
@@ -227,7 +255,8 @@ public partial class WyprawyViewModel : ObservableObject
             if (wynik == System.Windows.MessageBoxResult.Cancel)
                 return;
             OdejmijOdLicznikow = wynik == System.Windows.MessageBoxResult.Yes;
-            ZastosujOdejmowanie(Nowa);
+            if (OdejmijOdLicznikow)
+                OdliczOdLicznikow(Nowa);
             OdejmijOdLicznikow = true;
         }
         _dane.Wyprawy.Add(Nowa);
@@ -245,34 +274,52 @@ public partial class WyprawyViewModel : ObservableObject
         Odswiez();
     }
 
-    /// <summary>Zapisuje edycję wybranej wyprawy (FR-808, FR-809).</summary>
+    /// <summary>Zapisuje edycję wybranej wyprawy (FR-808, FR-809). Przy zmianie daty/repliki/zestawu
+    /// korekta liczników historycznych (FR-807) jest przeliczana: stary wpływ cofany, nowy stosowany.</summary>
     [RelayCommand]
     private void ZapiszWybrana()
     {
         if (Wybrana == null)
             return;
+        var wyprawa = Wybrana.Wyprawa;
+        // korekta sprzed edycji jest cofana po migawce z momentu otwarcia edycji (pola mogą być już zmienione)
+        _wplywSprzedEdycji.TryGetValue(wyprawa.Id, out var staryWplyw);
+        CofnijOdliczenie(wyprawa, staryWplyw);
+        if (CzyPrzedDniemZerowymDla(wyprawa))
+            OdliczOdLicznikow(wyprawa);
         _magazyn.Zapisz(_dane);
         Odswiez();
     }
 
-    /// <summary>Usuwa wyprawę (oznacza jako usuniętą; FR-808/809 — liczniki aktualizują się od razu).</summary>
+    private bool CzyPrzedDniemZerowymDla(Wyprawa wyprawa)
+    {
+        var dzienZerowy = _dane.Ustawienia.DzienZerowy;
+        return dzienZerowy != null && wyprawa.Data != default && wyprawa.Data <= dzienZerowy.Value
+            && !wyprawa.CzyUsunieta;
+    }
+
+    /// <summary>Usuwa wyprawę (oznacza jako usuniętą; FR-808/809 — liczniki aktualizują się od razu).
+    /// Korekta liczników historycznych (FR-807) jest cofana — przywrócenie wyprawy ją powtórzy.</summary>
     [RelayCommand]
     private void Usun(WierszWyprawy? wiersz)
     {
         if (wiersz == null)
             return;
         wiersz.Wyprawa.CzyUsunieta = true;
+        CofnijOdliczenie(wiersz.Wyprawa);
         _magazyn.Zapisz(_dane);
         Odswiez();
     }
 
-    /// <summary>Przywraca usuniętą wyprawę (cofnięcie, FR-808).</summary>
+    /// <summary>Przywraca usuniętą wyprawę (cofnięcie, FR-808) — powtarza korektę liczników historycznych.</summary>
     [RelayCommand]
     private void Przywroc(WierszWyprawy? wiersz)
     {
         if (wiersz == null || !wiersz.Wyprawa.CzyUsunieta)
             return;
         wiersz.Wyprawa.CzyUsunieta = false;
+        if (CzyPrzedDniemZerowymDla(wiersz.Wyprawa))
+            OdliczOdLicznikow(wiersz.Wyprawa);
         _magazyn.Zapisz(_dane);
         Odswiez();
     }

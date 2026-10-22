@@ -70,23 +70,23 @@ public static class StartoweSlowniki
             new WartoscSlownika { Nazwa = "Do kupienia", Semantyka = nameof(SemantykaZadania.DoKupienia) },
         });
 
-        s.Kategorie.AddRange(new (string Nazwa, bool Nosnik)[]
+        s.Kategorie.AddRange(new (string Nazwa, bool Nosnik, bool Mundur)[]
         {
-            ("Czapki", false),
-            ("Hełmy", false),
-            ("Szalokominiarki", false),
-            ("Mundury", false),
-            ("Kamizelki", true),
-            ("Pasoszelki i chest rigi", true),
-            ("Pasy", true),
-            ("Nakolanniki", false),
-            ("Plecaki", true),
-            ("Panele szturmowe", true),
-            ("Ładownice", false),
-            ("Rękawice", false),
-            ("Gogle", false),
-            ("Buty", false),
-        }.Select((k, i) => new Kategoria { Nazwa = k.Nazwa, CzyNosnik = k.Nosnik, Kolejnosc = i }));
+            ("Czapki", false, false),
+            ("Hełmy", false, false),
+            ("Szalokominiarki", false, false),
+            ("Mundury", false, true),
+            ("Kamizelki", true, false),
+            ("Pasoszelki i chest rigi", true, false),
+            ("Pasy", true, false),
+            ("Nakolanniki", false, false),
+            ("Plecaki", true, false),
+            ("Panele szturmowe", true, false),
+            ("Ładownice", false, false),
+            ("Rękawice", false, false),
+            ("Gogle", false, false),
+            ("Buty", false, false),
+        }.Select((k, i) => new Kategoria { Nazwa = k.Nazwa, CzyNosnik = k.Nosnik, CzyMundur = k.Mundur, Kolejnosc = i }));
 
         s.Wzory.AddRange(new (string Nazwa, string[] Kolory, string[]? Aliasy, bool Kolor)[]
         {

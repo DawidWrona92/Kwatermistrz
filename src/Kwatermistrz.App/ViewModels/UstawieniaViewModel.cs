@@ -1,3 +1,4 @@
+using System.IO;
 using System.Reflection;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -138,7 +139,8 @@ public partial class UstawieniaViewModel : ObservableObject
         Komunikat = $"Kopia zapasowa zapisana: {katalog}";
     }
 
-    /// <summary>Przywraca dane z wybranego pliku kopii (FR-1107).</summary>
+    /// <summary>Przywraca dane z wybranego pliku kopii (FR-1107): przed nadpisaniem wykonuje kopię
+    /// bieżących danych, kopiuje też zdjęcia z katalogu kopii i prosi o odświeżenie wszystkich ekranów.</summary>
     [RelayCommand]
     private void Przywroc()
     {
@@ -153,6 +155,9 @@ public partial class UstawieniaViewModel : ObservableObject
         try
         {
             var dane = MagazynJson.WczytajZPliku(dialog.FileName);
+            // przed nadpisaniem: kopia bieżących danych (FR-1107)
+            _magazyn.Zapisz(_dane);
+            _magazyn.UtworzKopieZapasowa();
             _dane.Slowniki = dane.Slowniki;
             _dane.Przedmioty = dane.Przedmioty;
             _dane.Repliki = dane.Repliki;
@@ -163,17 +168,33 @@ public partial class UstawieniaViewModel : ObservableObject
             _dane.Zadania = dane.Zadania;
             _dane.Ustawienia = dane.Ustawienia;
             _dane.CzyPierwszeUruchomienie = dane.CzyPierwszeUruchomienie;
+            // zdjęcia z katalogu kopii (obok wybranego dane.json) — nadpisują lokalne
+            var katalogKopii = Path.GetDirectoryName(dialog.FileName);
+            if (katalogKopii != null && Directory.Exists(Path.Combine(katalogKopii, "zdjecia")))
+            {
+                foreach (var plik in Directory.EnumerateFiles(Path.Combine(katalogKopii, "zdjecia"), "*", SearchOption.AllDirectories))
+                {
+                    var wzgledna = Path.GetRelativePath(Path.Combine(katalogKopii, "zdjecia"), plik);
+                    var docelowy = Path.Combine(_magazyn.KatalogDanych, "zdjecia", wzgledna);
+                    Directory.CreateDirectory(Path.GetDirectoryName(docelowy)!);
+                    File.Copy(plik, docelowy, overwrite: true);
+                }
+            }
             _magazyn.Zapisz(_dane);
             ZastosujMotyw();
-            Komunikat = "Przywrócono dane z kopii.";
+            Komunikat = "Przywrócono dane z kopii. Odśwież ekrany (F5 lub przełącz ponownie), aby zobaczyć przywrócone dane.";
             OnPropertyChanged(nameof(IndeksMotywu));
             OnPropertyChanged(nameof(DniBezTestu));
+            DanePrzywrocone?.Invoke();
         }
         catch (Exception ex)
         {
             Komunikat = $"Nie udało się przywrócić: {ex.Message}";
         }
     }
+
+    /// <summary>Wywoływane po przywróceniu danych z kopii — pozostałe ViewModele odświeżają listy.</summary>
+    public event Action? DanePrzywrocone;
 
     private void Zapisz() => _magazyn.Zapisz(_dane);
 }

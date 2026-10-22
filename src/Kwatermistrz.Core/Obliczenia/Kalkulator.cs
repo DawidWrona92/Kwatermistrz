@@ -400,13 +400,12 @@ public class Kalkulator
     /// <summary>FR-910: trzy sumy kontrolne — wg replik, wg lat, wg mundurów.</summary>
     public (int WgReplik, int WgLat, int WgMundur, int BezRepliki, int BezMunduru) KontrolaSpojnosci()
     {
-        var wgReplik = LacznaLiczbaWypraw();
         var lata = _dane.Ustawienia.HistoryczneWyprawyWgRok.Keys
             .Concat(_dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(w => w.Data.Year))
             .Distinct();
         var wgLat = lata.Sum(WyprawyWRoku);
         var bezRepliki = _dane.Wyprawy.Count(w => !w.CzyUsunieta && w.ReplikaGlownaId == null);
-        wgReplik = _dane.Repliki.Sum(r => WyprawyRepliki(r)) + bezRepliki;
+        var wgReplik = _dane.Repliki.Sum(r => WyprawyRepliki(r)) + bezRepliki;
         var bezMunduru = 0;
         var wgMundur = 0;
         foreach (var wyprawa in _dane.Wyprawy.Where(w => !w.CzyUsunieta))
@@ -417,10 +416,21 @@ public class Kalkulator
             else
                 wgMundur++;
         }
-        // historyczne liczniki mundurów: tylko przedmioty kategorii „Mundury” (tabela umundurowania, 13.2)
-        var kategoriaMundury = _dane.Slowniki.Kategorie.FirstOrDefault(k => k.CzyNosnik == false && Normalizacja.TekstDoPorownania(k.Nazwa).Contains("mundur"));
-        if (kategoriaMundury != null)
-            wgMundur += _dane.Przedmioty.Where(p => p.KategoriaId == kategoriaMundury.Id).Sum(p => p.LicznikHistoryczny);
+        // historyczne liczniki mundurów: kategoria oznaczona jako mundur w konfiguracji (tabela umundurowania 13.2).
+        // Jeśli żadna kategoria nie jest oznaczona, heurystyka po nazwie („mundur”) jako fallback.
+        var kategorieMunduru = _dane.Slowniki.Kategorie
+            .Where(k => k.CzyMundur)
+            .Select(k => k.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        if (kategorieMunduru.Count == 0)
+        {
+            var kategoriaNazwa = _dane.Slowniki.Kategorie.FirstOrDefault(k =>
+                k.CzyNosnik == false && Normalizacja.TekstDoPorownania(k.Nazwa).Contains("mundur"));
+            if (kategoriaNazwa != null)
+                kategorieMunduru.Add(kategoriaNazwa.Id);
+        }
+        if (kategorieMunduru.Count > 0)
+            wgMundur += _dane.Przedmioty.Where(p => kategorieMunduru.Contains(p.KategoriaId)).Sum(p => p.LicznikHistoryczny);
         return (wgReplik, wgLat, wgMundur, bezRepliki, bezMunduru);
     }
 

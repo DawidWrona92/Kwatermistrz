@@ -147,18 +147,50 @@ public class MagazynJson
         }
     }
 
-    /// <summary>Tworzy ręczną kopię zapasową całego katalogu danych (dane + zdjęcia) do podkatalogu kopie/ (FR-1107). Zwraca ścieżkę katalogu kopii.</summary>
+    /// <summary>Maksymalna liczba trzymanych kopii zapasowych (FR-1108); starsze są usuwane (najstarsze pierwsze).</summary>
+    public const int MaksymalnaLiczbaKopii = 20;
+
+    /// <summary>Tworzy ręczną kopię zapasową całego katalogu danych (dane + zdjęcia) do podkatalogu kopie/ (FR-1107).
+    /// Po kopii egzekwowana jest retencja (MaksymalnaLiczbaKopii). Zwraca ścieżkę katalogu kopii.</summary>
     public string UtworzKopieZapasowa()
     {
         lock (_blokada)
         {
-            var katalog = Path.Combine(KatalogDanych, "kopie", DateTime.Now.ToString("yyyy-MM-dd-HHmmss", System.Globalization.CultureInfo.InvariantCulture));
+            // nazwa z dokładnością do sekundy — dwie kopie w tej samej sekundzie dostają sufiks
+            var baza = DateTime.Now.ToString("yyyy-MM-dd-HHmmss", System.Globalization.CultureInfo.InvariantCulture);
+            var katalog = Path.Combine(KatalogDanych, "kopie", baza);
+            var i = 2;
+            while (Directory.Exists(katalog))
+                katalog = Path.Combine(KatalogDanych, "kopie", $"{baza}-{i++}");
             Directory.CreateDirectory(katalog);
             foreach (var plik in Directory.EnumerateFiles(KatalogDanych, "*", SearchOption.TopDirectoryOnly))
                 File.Copy(plik, Path.Combine(katalog, Path.GetFileName(plik)));
             if (Directory.Exists(Path.Combine(KatalogDanych, "zdjecia")))
                 KopiujKatalog(Path.Combine(KatalogDanych, "zdjecia"), Path.Combine(katalog, "zdjecia"));
+            UsunStareKopie();
             return katalog;
+        }
+    }
+
+    /// <summary>Usuwa najstarsze kopie ponad limit (FR-1108) — katalogi posortowane wg nazwy (data w nazwie).</summary>
+    private void UsunStareKopie()
+    {
+        var katalogKopii = Path.Combine(KatalogDanych, "kopie");
+        if (!Directory.Exists(katalogKopii))
+            return;
+        var kopie = Directory.EnumerateDirectories(katalogKopii)
+            .OrderBy(d => d, StringComparer.Ordinal)
+            .ToList();
+        foreach (var stara in kopie.Take(Math.Max(0, kopie.Count - MaksymalnaLiczbaKopii)))
+        {
+            try
+            {
+                Directory.Delete(stara, recursive: true);
+            }
+            catch (IOException)
+            {
+                // kopia w użyciu (druga instancja) — zostaje na następny raz
+            }
         }
     }
 

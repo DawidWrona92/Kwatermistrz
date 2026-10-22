@@ -17,8 +17,8 @@ public partial class RekonstrukcjeViewModel : ObservableObject
         _magazyn = magazyn;
     }
 
-    /// <summary>Lista rekonstrukcji.</summary>
-    public IReadOnlyList<Rekonstrukcja> Rekonstrukcje => _dane.Rekonstrukcje;
+    /// <summary>Lista rekonstrukcji (nowa instancja przy każdym odczycie — ItemsSource się odświeża po OnPropertyChanged).</summary>
+    public IReadOnlyList<Rekonstrukcja> Rekonstrukcje => _dane.Rekonstrukcje.ToList();
 
     /// <summary>Wybrana rekonstrukcja do edycji.</summary>
     [ObservableProperty]
@@ -164,6 +164,10 @@ public partial class RekonstrukcjeViewModel : ObservableObject
         if (!czyPusta)
             return;
         _dane.Rekonstrukcje.Remove(rekonstrukcja);
+        // usunięta rekonstrukcja nie może zostać aktywna — przełącznik wpadałby na „Wszystkie”
+        // z filtrem po nieistniejącym Id (puste listy mimo danych)
+        if (_dane.Ustawienia.OstatniaRekonstrukcjaId == rekonstrukcja.Id)
+            _dane.Ustawienia.OstatniaRekonstrukcjaId = null;
         _magazyn.Zapisz(_dane);
         OnPropertyChanged(nameof(Rekonstrukcje));
     }

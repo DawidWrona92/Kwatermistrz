@@ -174,13 +174,12 @@ public partial class WyposazenieViewModel : ObservableObject
         Wybrany = null;
     }
 
-    /// <summary>Wybiera przedmiot — otwiera kartę (FR-204).</summary>
+    /// <summary>Wybiera przedmiot — otwiera kartę (FR-204). Samo przeglądnięcie nie akceptuje znacznika
+    /// z importu (FR-1110) — znacznik zdejmuje dopiero „Zapisz kartę”.</summary>
     [RelayCommand]
     private void Wybierz(WierszPrzedmiotu? wiersz)
     {
         Wybrany = wiersz;
-        if (wiersz != null)
-            wiersz.Przedmiot.ZnacznikZImportu = false; // przeglądnięcie = akceptacja znacznika (FR-1110)
     }
 
     /// <summary>Tworzy nowy przedmiot w wybranej kategorii (FR-204; walidacja: kategoria + nazwa lub firma).</summary>
@@ -207,24 +206,32 @@ public partial class WyposazenieViewModel : ObservableObject
             return;
         var ile = Math.Max(1, IleKopii);
         for (var i = 0; i < ile; i++)
-        {
-            var kopia = new Przedmiot
-            {
-                KategoriaId = Wybrany.Przedmiot.KategoriaId,
-                Firma = Wybrany.Przedmiot.Firma,
-                Nazwa = Wybrany.Przedmiot.Nazwa,
-                WzorId = Wybrany.Przedmiot.WzorId,
-                StronyId = Wybrany.Przedmiot.StronyId.ToList(),
-                MiejsceId = Wybrany.Przedmiot.MiejsceId,
-                PochodzenieId = Wybrany.Przedmiot.PochodzenieId,
-                CenaZakupu = Wybrany.Przedmiot.CenaZakupu,
-                Komentarz = Wybrany.Przedmiot.Komentarz,
-            };
-            kopia.SynchronizujCenaZakupu(_dane.Slowniki, DateOnly.FromDateTime(DateTime.Today));
-            _dane.Przedmioty.Add(kopia);
-        }
+            _dane.Przedmioty.Add(KopiujKarte(Wybrany.Przedmiot));
         _magazyn.Zapisz(_dane);
         Odswiez();
+    }
+
+    /// <summary>Kopia karty przedmiotu (FR-205) — wszystkie pola opisowe oprócz Id, historii użycia,
+    /// daty zakupu i znaczników; cena zakupu synchronizuje się z dzisiejszą datą (FR-503).</summary>
+    private Przedmiot KopiujKarte(Przedmiot zrodlo)
+    {
+        var kopia = new Przedmiot
+        {
+            KategoriaId = zrodlo.KategoriaId,
+            Firma = zrodlo.Firma,
+            Nazwa = zrodlo.Nazwa,
+            WzorId = zrodlo.WzorId,
+            StronyId = zrodlo.StronyId.ToList(),
+            MiejsceId = zrodlo.MiejsceId,
+            PochodzenieId = zrodlo.PochodzenieId,
+            RekonstrukcjeId = zrodlo.RekonstrukcjeId.ToList(),
+            Status = zrodlo.Status,
+            CenaZakupu = zrodlo.CenaZakupu,
+            DataZakupu = zrodlo.DataZakupu,
+            Komentarz = zrodlo.Komentarz,
+        };
+        kopia.SynchronizujCenaZakupu(_dane.Slowniki, zrodlo.DataZakupu ?? DateOnly.FromDateTime(DateTime.Today));
+        return kopia;
     }
 
     /// <summary>„Duplikuj” (FR-205) — osobny rekord, własna historia użycia.</summary>
@@ -233,19 +240,7 @@ public partial class WyposazenieViewModel : ObservableObject
     {
         if (Wybrany == null)
             return;
-        var kopia = new Przedmiot
-        {
-            KategoriaId = Wybrany.Przedmiot.KategoriaId,
-            Firma = Wybrany.Przedmiot.Firma,
-            Nazwa = Wybrany.Przedmiot.Nazwa,
-            WzorId = Wybrany.Przedmiot.WzorId,
-            StronyId = Wybrany.Przedmiot.StronyId.ToList(),
-            MiejsceId = Wybrany.Przedmiot.MiejsceId,
-            PochodzenieId = Wybrany.Przedmiot.PochodzenieId,
-            CenaZakupu = Wybrany.Przedmiot.CenaZakupu,
-            Komentarz = Wybrany.Przedmiot.Komentarz,
-        };
-        kopia.SynchronizujCenaZakupu(_dane.Slowniki, DateOnly.FromDateTime(DateTime.Today));
+        var kopia = KopiujKarte(Wybrany.Przedmiot);
         _dane.Przedmioty.Add(kopia);
         _magazyn.Zapisz(_dane);
         Odswiez();
@@ -264,14 +259,24 @@ public partial class WyposazenieViewModel : ObservableObject
         Odswiez();
     }
 
-    /// <summary>Usuwa przedmiot (FR-1202 — cofnięcie; na razie trwałe usunięcie z listy).</summary>
+    /// <summary>Usuwa przedmiot (FR-1202) — z potwierdzeniem; czyści też wiszące referencje
+    /// (montaże, komplety, konfiguracje, sloty zestawów, zadania).</summary>
     [RelayCommand]
     private void Usun(WierszPrzedmiotu? wiersz)
     {
         if (wiersz == null)
             return;
+        var odpowiedz = System.Windows.MessageBox.Show(
+            $"Usunąć przedmiot „{wiersz.Przedmiot.Nazwa}”?\n\n" +
+            "Przedmiot zostanie odłączony od kompletu i nośnika oraz usunięty z konfiguracji i zestawów.",
+            "Kwatermistrz", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
+        if (odpowiedz != System.Windows.MessageBoxResult.Yes)
+            return;
+        CzyscicielReferencji.UsunReferencjePrzedmiotu(_dane, wiersz.Przedmiot.Id);
         _dane.Przedmioty.Remove(wiersz.Przedmiot);
         _magazyn.Zapisz(_dane);
+        if (Wybrany?.Id == wiersz.Id)
+            Wybrany = null;
         Odswiez();
     }
 

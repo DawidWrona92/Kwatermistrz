@@ -27,19 +27,19 @@ public partial class SlownikiViewModel : ObservableObject
         "Strony", "Miejsca", "Role", "TypyMagazynkow", "Napedy", "StanyReplik", "Pochodzenie", "RodzajeKosztow", "RodzajeZadan",
     };
 
-    /// <summary>Wartości wybranego słownika.</summary>
+    /// <summary>Wartości wybranego słownika (nowa instancja przy każdym odczycie — ItemsSource się odświeża po OnPropertyChanged).</summary>
     public IReadOnlyList<WartoscSlownika> Wartosci => Wybranego() switch
     {
-        "Strony" => _dane.Slowniki.Strony,
-        "Miejsca" => _dane.Slowniki.Miejsca,
-        "Role" => _dane.Slowniki.Role,
-        "TypyMagazynkow" => _dane.Slowniki.TypyMagazynkow,
-        "Napedy" => _dane.Slowniki.Napedy,
-        "StanyReplik" => _dane.Slowniki.StanyReplik,
-        "Pochodzenie" => _dane.Slowniki.Pochodzenie,
-        "RodzajeKosztow" => _dane.Slowniki.RodzajeKosztow,
-        "RodzajeZadan" => _dane.Slowniki.RodzajeZadan,
-        _ => _dane.Slowniki.Strony,
+        "Strony" => _dane.Slowniki.Strony.ToList(),
+        "Miejsca" => _dane.Slowniki.Miejsca.ToList(),
+        "Role" => _dane.Slowniki.Role.ToList(),
+        "TypyMagazynkow" => _dane.Slowniki.TypyMagazynkow.ToList(),
+        "Napedy" => _dane.Slowniki.Napedy.ToList(),
+        "StanyReplik" => _dane.Slowniki.StanyReplik.ToList(),
+        "Pochodzenie" => _dane.Slowniki.Pochodzenie.ToList(),
+        "RodzajeKosztow" => _dane.Slowniki.RodzajeKosztow.ToList(),
+        "RodzajeZadan" => _dane.Slowniki.RodzajeZadan.ToList(),
+        _ => _dane.Slowniki.Strony.ToList(),
     };
 
     /// <summary>Nowa wartość do dodania.</summary>

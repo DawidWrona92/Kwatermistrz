@@ -520,7 +520,7 @@ public partial class RaportyViewModel : ObservableObject
         if (wgReplik != wgMundur) roznice.Add($"wg replik {wgReplik} ≠ wg mundurów {wgMundur}");
         if (wgLat != wgMundur) roznice.Add($"wg lat {wgLat} ≠ wg mundurów {wgMundur}");
         KontrolaSpójnosci = roznice.Count == 0
-            ? $"OK — wszystkie trzy sumy wynoszą {wgReplik} (89 = 89 = 89 po imporcie). Wypraw bez repliki: {bezRepliki}, bez munduru: {bezMunduru}."
+            ? $"OK — wszystkie trzy sumy wynoszą {wgReplik}. Wypraw bez repliki: {bezRepliki}, bez munduru: {bezMunduru}."
             : $"Różnice: {string.Join("; ", roznice)}. Wypraw bez repliki: {bezRepliki}, bez munduru: {bezMunduru}.";
     }
 

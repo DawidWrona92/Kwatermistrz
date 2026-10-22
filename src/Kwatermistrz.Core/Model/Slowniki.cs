@@ -28,6 +28,9 @@ public class Kategoria
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Nazwa { get; set; } = "";
     public bool CzyNosnik { get; set; }
+    /// <summary>Prawda, gdy kategoria to mundur (BR-09; tabela umundurowania 13.2). Historyczne liczniki
+    /// mundurów w kontroli spójności liczymy tylko z takich kategorii — nazwa kategorii nie jest definicją.</summary>
+    public bool CzyMundur { get; set; }
     public int Kolejnosc { get; set; }
 }
 

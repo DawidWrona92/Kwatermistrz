@@ -51,7 +51,18 @@ public partial class SzukanieViewModel : ObservableObject
                     wyniki.Add(new WynikSzukania { Typ = "Wyprawa", Nazwa = $"{w.Data:dd.MM.yyyy} — {w.Miejsce}", Ekran = "Wyprawy", RekordId = w.Id });
             foreach (var z in _dane.Zadania.Where(z => z.Status == StatusZadania.Otwarte))
                 if (Normalizacja.TekstDoPorownania(z.Opis).Contains(szukane))
-                    wyniki.Add(new WynikSzukania { Typ = "Zadanie", Nazwa = z.Opis, Ekran = "Bronie", RekordId = z.Id });
+                {
+                    // wynik prowadzi do rekordu (repliki/przedmiotu), którego dotyczy zadanie — ekran go zaznacza
+                    var dotyczyRepliki = z.DotyczyId != null && _dane.Repliki.Any(r => r.Id == z.DotyczyId);
+                    var dotyczyPrzedmiotu = z.DotyczyId != null && _dane.Przedmioty.Any(p => p.Id == z.DotyczyId);
+                    wyniki.Add(new WynikSzukania
+                    {
+                        Typ = "Zadanie",
+                        Nazwa = z.Opis,
+                        Ekran = dotyczyRepliki ? "Bronie" : dotyczyPrzedmiotu ? "Wyposazenie" : null,
+                        RekordId = z.DotyczyId,
+                    });
+                }
         }
         Wyniki = wyniki;
         OnPropertyChanged(nameof(Wyniki));

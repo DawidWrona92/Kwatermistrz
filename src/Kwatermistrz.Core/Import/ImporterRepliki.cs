@@ -170,7 +170,9 @@ public partial class ImporterKwatermistrz
         }
 
         // walidacja formuły: suma składników musi równać się kolumnie „Koszt”
-        if (kosztCalkowity != null && skladniki.Sum() != kosztCalkowity.Value)
+        // liczby z Excela (double): porównanie z tolerancją, bo 110.49+49.51 = 160.00000000000003
+        const decimal tolerancja = 0.005m;
+        if (kosztCalkowity != null && Math.Abs(skladniki.Sum() - kosztCalkowity.Value) > tolerancja)
         {
             // formuła niezgodna z kolumną Koszt („J9+70” = 79 ≠ 1660) — jedna pozycja „Inne” z pełnym kosztem
             if (kosztCalkowity is > 0)

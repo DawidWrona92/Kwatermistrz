@@ -72,6 +72,9 @@ public static class MergerSlownikow
                 Normalizacja.TekstDoPorownania(k.Nazwa) == Normalizacja.TekstDoPorownania(kategoria.Nazwa));
             if (istniejaca != null)
             {
+                // oznaczenie „mundur” z szablonu przechodzi na istniejącą kategorię (definicja BR-09)
+                if (kategoria.CzyMundur)
+                    istniejaca.CzyMundur = true;
                 mapaKategorii[kategoria.Id] = istniejaca.Id;
                 continue;
             }
@@ -80,6 +83,7 @@ public static class MergerSlownikow
                 Id = kategoria.Id,
                 Nazwa = kategoria.Nazwa,
                 CzyNosnik = kategoria.CzyNosnik,
+                CzyMundur = kategoria.CzyMundur,
                 Kolejnosc = kategoria.Kolejnosc,
             });
             mapaKategorii[kategoria.Id] = kategoria.Id;

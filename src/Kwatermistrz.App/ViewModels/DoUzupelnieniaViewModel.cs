@@ -117,22 +117,31 @@ public partial class DoUzupelnieniaViewModel : ObservableObject
         OnPropertyChanged(nameof(Liczba));
     }
 
-    /// <summary>Potwierdza przegląd pozycji (znacznik znika, FR-1110).</summary>
+    /// <summary>Potwierdza przegląd pozycji (FR-1110) — czyści tylko flagę odpowiadającą rodzajowi pozycji;
+    /// potwierdzenie samego licznika nie zamyka też szkicu „do uzupełnienia” ani znacznika z importu.</summary>
     [RelayCommand]
     private void Potwierdz(PozycjaDoUzupelnienia? pozycja)
     {
         if (pozycja?.RekordId == null)
             return;
-        var przedmiot = _dane.Przedmioty.FirstOrDefault(p => p.Id == pozycja.RekordId);
-        if (przedmiot != null)
+        switch (pozycja.Rodzaj)
         {
-            przedmiot.ZnacznikZImportu = false;
-            przedmiot.LicznikHistorycznyDoWeryfikacji = false;
-            przedmiot.DoUzupelnienia = false;
+            case "Przedmiot z importu":
+            case "Replika z importu":
+                foreach (var p in _dane.Przedmioty.Where(p => p.Id == pozycja.RekordId))
+                    p.ZnacznikZImportu = false;
+                foreach (var r in _dane.Repliki.Where(r => r.Id == pozycja.RekordId))
+                    r.ZnacznikZImportu = false;
+                break;
+            case "Przedmiot do uzupełnienia":
+                foreach (var p in _dane.Przedmioty.Where(p => p.Id == pozycja.RekordId))
+                    p.DoUzupelnienia = false;
+                break;
+            case "Licznik do weryfikacji":
+                foreach (var p in _dane.Przedmioty.Where(p => p.Id == pozycja.RekordId))
+                    p.LicznikHistorycznyDoWeryfikacji = false;
+                break;
         }
-        var replika = _dane.Repliki.FirstOrDefault(r => r.Id == pozycja.RekordId);
-        if (replika != null)
-            replika.ZnacznikZImportu = false;
         _magazyn.Zapisz(_dane);
         Pozycje.Remove(pozycja!);
         OnPropertyChanged(nameof(Liczba));

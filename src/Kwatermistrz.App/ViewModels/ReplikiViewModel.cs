@@ -165,17 +165,13 @@ public partial class ReplikiViewModel : ObservableObject
         });
     }
 
-    /// <summary>Wybiera replikę — otwiera kartę (FR-302).</summary>
+    /// <summary>Wybiera replikę — otwiera kartę (FR-302). Samo przeglądnięcie nie akceptuje znacznika
+    /// z importu (FR-1110) ani nie zapisuje — znacznik zdejmuje dopiero „Zapisz kartę”.</summary>
     [RelayCommand]
     private void Wybierz(WierszRepliki? wiersz)
     {
         Wybrana = wiersz;
         Zakladka = "Przegląd";
-        if (wiersz != null)
-        {
-            wiersz.Replika.ZnacznikZImportu = false;
-            _magazyn.Zapisz(_dane);
-        }
     }
 
     /// <summary>Dodaje nową replikę (FR-303).</summary>
@@ -283,14 +279,24 @@ public partial class ReplikiViewModel : ObservableObject
         Odswiez();
     }
 
-    /// <summary>Usuwa replikę (FR-1202).</summary>
+    /// <summary>Usuwa replikę (FR-1202) — z potwierdzeniem; czyści też wiszące referencje
+    /// (wyprawy, sloty zestawów, zadania), żeby nie psuć sum i nie zostawiać otwartych „awarii”.</summary>
     [RelayCommand]
     private void Usun(WierszRepliki? wiersz)
     {
         if (wiersz == null)
             return;
+        var odpowiedz = System.Windows.MessageBox.Show(
+            $"Usunąć replikę „{wiersz.Replika.ModelProducenta}”?\n\n" +
+            "Wyprawy z tą repliką stracą oznaczenie repliki głównej, a jej zadania zostaną usunięte.",
+            "Kwatermistrz", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
+        if (odpowiedz != System.Windows.MessageBoxResult.Yes)
+            return;
+        CzyscicielReferencji.UsunReferencjeRepliki(_dane, wiersz.Replika.Id);
         _dane.Repliki.Remove(wiersz.Replika);
         _magazyn.Zapisz(_dane);
+        if (Wybrana?.Id == wiersz.Id)
+            Wybrana = null;
         Odswiez();
     }
 

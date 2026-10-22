@@ -33,6 +33,8 @@ public partial class ImporterKwatermistrz
         var kolStrona = Kolumna("strona");
 
         var kategoriaMundury = IdKategorii(k, "Mundury");
+        // kategoria „Mundury” to definicja mundurów (BR-09) — oznaczamy, żeby kontrola spójności nie zgadywała po nazwie
+        k.Dane.Slowniki.Kategorie.First(x => x.Id == kategoriaMundury).CzyMundur = true;
         // liczniki z arkusza Mundury są nieaktualne wg autora (13.2) — zerujemy; obowiązują tylko wartości z tabeli umundurowania poniżej
         foreach (var stary in k.Dane.Przedmioty.Where(p => p.KategoriaId == kategoriaMundury))
         {

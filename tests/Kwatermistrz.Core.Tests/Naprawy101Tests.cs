@@ -484,3 +484,115 @@ public class Naprawy101LiczbyTests
         Assert.Equal(1, indeks.UzyciaPrzedmiotu(czesc));
     }
 }
+
+/// <summary>Testy napraw 1.0.1 fala 4 (raport przeglądu): czyszczenie referencji, retencja kopii, kontrola spójności.</summary>
+public class Naprawy101CzyszczenieTests
+{
+    private static DaneAplikacji Przygotuj()
+        => new() { Slowniki = StartoweSlowniki.Utworz() };
+
+    [Fact]
+    public void UsunReferencjeRepliki_CzysciWyprawyElementyIZadania()
+    {
+        var dane = Przygotuj();
+        var replika = new Replika { ModelProducenta = "AK" };
+        var przedmiot = new Przedmiot { Nazwa = "Kamizelka" };
+        dane.Repliki.Add(replika);
+        dane.Przedmioty.Add(przedmiot);
+        var zestaw = new Zestaw { Nazwa = "Z" };
+        var slot = new SlotZestawu { Nazwa = "Broń" };
+        slot.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Replika, ElementId = replika.Id } } });
+        zestaw.Sloty.Add(slot);
+        dane.Zestawy.Add(zestaw);
+        dane.Wyprawy.Add(new Wyprawa { Data = new DateOnly(2026, 1, 1), ReplikaGlownaId = replika.Id });
+        dane.Wyprawy.Add(new Wyprawa
+        {
+            Data = new DateOnly(2026, 1, 2),
+            SkladReczny = new() { new ElementWariantu { Typ = TypElementu.Replika, ElementId = replika.Id } },
+        });
+        dane.Zadania.Add(new Zadanie { DotyczyTyp = "Replika", DotyczyId = replika.Id, Opis = "Awaria" });
+        dane.Zadania.Add(new Zadanie { DotyczyTyp = "Przedmiot", DotyczyId = przedmiot.Id, Opis = "Inne" });
+
+        CzyscicielReferencji.UsunReferencjeRepliki(dane, replika.Id);
+
+        Assert.Null(dane.Wyprawy[0].ReplikaGlownaId);
+        Assert.Equal("", zestaw.Sloty[0].Warianty[0].Elementy[0].ElementId);
+        Assert.Equal("", dane.Wyprawy[1].SkladReczny[0].ElementId);
+        // zadanie przedmiotu zostaje — usuwamy tylko zadania usuwanej repliki
+        var zostalo = Assert.Single(dane.Zadania);
+        Assert.Equal("Przedmiot", zostalo.DotyczyTyp);
+    }
+
+    [Fact]
+    public void UsunReferencjePrzedmiotu_CzysciMontazKompletKonfiguracjeIZadania()
+    {
+        var dane = Przygotuj();
+        var nosnik = new Przedmiot { Nazwa = "Plate carrier" };
+        var komplet = new Przedmiot { Nazwa = "Komplet mundurów" };
+        // część kompletu zamontowana na nośniku; osobna część w konfiguracji nośnika
+        var czesc = new Przedmiot { Nazwa = "Część", KompletId = komplet.Id, ZamontowanyNaId = nosnik.Id };
+        var ladownica = new Przedmiot { Nazwa = "Ładownica", ZamontowanyNaId = nosnik.Id };
+        nosnik.Konfiguracje.Add(new KonfiguracjaNosnika { Nazwa = "K1", ElementyId = new() { ladownica.Id, "inny" } });
+        var zestaw = new Zestaw { Nazwa = "Z" };
+        var slot = new SlotZestawu { Nazwa = "Mundur" };
+        slot.Warianty.Add(new WariantSlotu { Elementy = new() { new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = komplet.Id } } });
+        zestaw.Sloty.Add(slot);
+        dane.Przedmioty.AddRange(new[] { nosnik, komplet, czesc, ladownica });
+        dane.Zestawy.Add(zestaw);
+        dane.Zadania.Add(new Zadanie { DotyczyTyp = "Przedmiot", DotyczyId = komplet.Id, Opis = "Kup" });
+
+        CzyscicielReferencji.UsunReferencjePrzedmiotu(dane, komplet.Id);
+        CzyscicielReferencji.UsunReferencjePrzedmiotu(dane, nosnik.Id);
+
+        // część kompletu zostaje, ale bez kompletu; montaże na usuniętym nośniku też znikają
+        Assert.Null(czesc.KompletId);
+        Assert.Null(czesc.ZamontowanyNaId);
+        Assert.Null(ladownica.ZamontowanyNaId);
+        Assert.Equal(new[] { ladownica.Id, "inny" }, nosnik.Konfiguracje[0].ElementyId);
+        Assert.Equal("", zestaw.Sloty[0].Warianty[0].Elementy[0].ElementId);
+        Assert.Empty(dane.Zadania);
+    }
+
+    [Fact]
+    public void RetencjaKopii_TrzymaMaksymalnie20Kopii()
+    {
+        var katalog = Path.Combine(Path.GetTempPath(), "kw-test-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(katalog);
+        try
+        {
+            var magazyn = new MagazynJson(katalog);
+            var dane = Przygotuj();
+            magazyn.Zapisz(dane);
+            for (var i = 0; i < MagazynJson.MaksymalnaLiczbaKopii + 5; i++)
+            {
+                Directory.CreateDirectory(Path.Combine(katalog, "kopie", $"2020-01-01-0000{i:00}"));
+                magazyn.UtworzKopieZapasowa();
+            }
+            var kopie = Directory.GetDirectories(Path.Combine(katalog, "kopie"));
+            Assert.Equal(MagazynJson.MaksymalnaLiczbaKopii, kopie.Length);
+            // najstarsza (2020-01-01-000000) usunięta
+            Assert.DoesNotContain(kopie, k => k.EndsWith("2020-01-01-000000"));
+        }
+        finally
+        {
+            if (Directory.Exists(katalog))
+                Directory.Delete(katalog, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void KontrolaSpojnosci_WgReplikLiczoneRaz()
+    {
+        var dane = Przygotuj();
+        var replika = new Replika { ModelProducenta = "AK" };
+        dane.Repliki.Add(replika);
+        dane.Wyprawy.Add(new Wyprawa { Data = new DateOnly(2026, 1, 1), ReplikaGlownaId = replika.Id });
+        var kalk = new Kalkulator(dane);
+
+        var (wgReplik, wgLat, _, bezRepliki, _) = kalk.KontrolaSpojnosci();
+
+        Assert.Equal(1, wgReplik);
+        Assert.Equal(1, wgLat);
+        Assert.Equal(0, bezRepliki);
+    }
+}

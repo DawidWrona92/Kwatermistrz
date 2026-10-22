@@ -53,6 +53,22 @@ public partial class MainWindowViewModel : ObservableObject
         _stan.AktywnaRekonstrukcjaId = dane.Ustawienia.OstatniaRekonstrukcjaId;
         if (!string.IsNullOrEmpty(dane.Ustawienia.OstatniEkran))
             _stan.AktualnyEkran = dane.Ustawienia.OstatniEkran;
+        // po przywróceniu danych z kopii wszystkie ekrany odświeżają listy (FR-1107)
+        ustawienia.DanePrzywrocone += OdswiezWszystkieEkrany;
+    }
+
+    /// <summary>Odświeża wszystkie ekrany po przywróceniu danych z kopii (FR-1107).</summary>
+    private void OdswiezWszystkieEkrany()
+    {
+        Pulpit.Odswiez();
+        Wyposazenie.Odswiez();
+        Repliki.Odswiez();
+        Zestawy.Odswiez();
+        Wyprawy.Odswiez();
+        Raporty.Odswiez();
+        DoUzupelnienia.Odswiez();
+        OnPropertyChanged(nameof(RekonstrukcjeLista));
+        OnPropertyChanged(nameof(AktywnaRekonstrukcjaNazwa));
     }
 
     private readonly MagazynJson _magazyn;
@@ -199,8 +215,9 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>ViewModel globalnego wyszukiwania (FR-1201).</summary>
     public SzukanieViewModel Szukanie { get; }
 
-    /// <summary>Wszystkie rekonstrukcje do przełącznika.</summary>
-    public IReadOnlyList<Rekonstrukcja> RekonstrukcjeLista => _dane.Rekonstrukcje;
+    /// <summary>Wszystkie rekonstrukcje do przełącznika (nowa instancja przy każdym odczycie —
+    /// ItemsSource się odświeża po OnPropertyChanged).</summary>
+    public IReadOnlyList<Rekonstrukcja> RekonstrukcjeLista => _dane.Rekonstrukcje.ToList();
 
     /// <summary>Aktywna rekonstrukcja (null = „Wszystkie”).</summary>
     public string? AktywnaRekonstrukcjaId

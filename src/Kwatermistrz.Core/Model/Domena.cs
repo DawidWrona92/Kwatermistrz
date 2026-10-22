@@ -240,6 +240,9 @@ public class Wyprawa
     public Dictionary<string, string> WybraneWarianty { get; set; } = new();
     /// <summary>Elementy użyte ręcznie, gdy wyprawa jest bez zestawu (FR-804).</summary>
     public List<ElementWariantu> SkladReczny { get; set; } = new();
+    /// <summary>Prawda, gdy wyprawa została już odliczona od liczników historycznych (FR-807) —
+    /// korekta jest wtedy aktywna i odwracalna (usunięcie/przywrócenie/edycja ją cofa/powtarza).</summary>
+    public bool OdliczonaOdLicznikow { get; set; }
     public string? Komentarz { get; set; }
     public List<string> Zdjecia { get; set; } = new();
     public bool CzyUsunieta { get; set; }
