@@ -7,6 +7,8 @@ i nie wymaga dostępu administratora.
 PIERWSZA INSTALACJA
 -------------------
 1. Rozpakuj zip (prawy przycisk → "Wyodrębnij wszystko…").
+   W środku bêdzie folder Kwatermistrz — cała aplikacja to ten folder
+   (nie pojedynczy plik; wersje 1.0.1+ publikujemy jako katalog).
 2. Otwórz rozpakowany folder i uruchom Kwatermistrz.exe
    (przy pierwszym uruchomieniu Windows może zapytać o zgodę — kliknij "Więcej informacji"
    → "Uruchom mimo to"; to normalne dla aplikacji spoza Microsoft Store).
@@ -15,10 +17,12 @@ PIERWSZA INSTALACJA
 AKTUALIZACJA
 ------------
 1. Zamknij Kwatermistrza.
-2. W nowym zipie znajdziesz Kwatermistrz.exe — skopiuj go w miejsce starego (zastąp plik).
-3. Uruchom ponownie. Twoje dane są bezpieczne: mieszkają osobno,
+2. Rozpakuj nowy zip do osobnego folderu (np. na pulpicie).
+3. Skopiuj cały rozpakowany folder obok starego i zastąp pliki (lub usuń stary
+   folder i wklej nowy — ważne, żeby uruchamiać exe z NOWEGO folderu).
+4. Uruchom ponownie. Twoje dane są bezpieczne: mieszkają osobno,
    w folderze %AppData%\Kwatermistrz (wpisz %AppData%\Kwatermistrz w pasku adresu
-   Eksploratora, żeby go otworzyć). Podmiana exe nie rusza danych.
+   Eksploratora, żeby go otworzyć). Podmiana aplikacji nie rusza danych.
 
 TWOJE DANE
 ----------

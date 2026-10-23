@@ -32,11 +32,11 @@ Interfejs: lewa szyna nawigacji, u góry wyszukiwanie (Ctrl+F), przełącznik re
 
 ## Instalacja dla użytkowników (bez admina)
 
-Publikacja zgodnie z [decyzją 06](docs/decyzje/06-instalacja.md): self-contained, pojedynczy plik `Kwatermistrz.exe` w zipie z instrukcją — rozpakować i uruchomić, bez instalatora i bez uprawnień administratora (NFR-10). Aktualizacja = podmiana exe; dane w `%AppData%\Kwatermistrz` zostają (NFR-06).
+Publikacja zgodnie z [decyzją 06](docs/decyzje/06-instalacja.md): self-contained jako **katalog** w zipie z instrukcją — rozpakować i uruchomić `Kwatermistrz.exe`, bez instalatora i bez uprawnień administratora (NFR-10). Katalog, nie pojedynczy plik: wersja 1.0.0 single-file nie uruchamiała się na części maszyn (od 1.0.1 publikujemy folder). Aktualizacja = podmiana folderu aplikacji; dane w `%AppData%\Kwatermistrz` zostają (NFR-06).
 
 ```powershell
 # wydanie paczki dist\Kwatermistrz-<wersja>.zip (Windows, .NET 10 SDK)
-powershell -File scripts\publikuj.ps1 -Wersja 1.0.0
+powershell -File scripts\publikuj-katalog.ps1 -Wersja 1.0.1
 ```
 
 Paczka nie zawiera danych autora (NFR-15). Instrukcja dla kolegów: [`docs/instalacja/INSTRUKCJA.txt`](docs/instalacja/INSTRUKCJA.txt).
@@ -47,7 +47,8 @@ Paczka nie zawiera danych autora (NFR-15). Instrukcja dla kolegów: [`docs/insta
 src/Kwatermistrz.Core/    model domenowy, magazyn JSON, kalkulator BR, importer xlsx
 src/Kwatermistrz.App/     aplikacja WPF (interfejs)
 tests/Kwatermistrz.Core.Tests/  testy jednostkowe i akceptacyjne
-scripts/publikuj.ps1      wydanie paczki zip (NFR-10)
+scripts/publikuj-katalog.ps1  wydanie paczki zip — katalog (NFR-10, od 1.0.1)
+scripts/publikuj.ps1      wydanie paczki zip — single-file (1.0.0, niezalecane)
 docs/wymagania.md        specyfikacja (wersja 0.2)
 docs/dane-startowe/      plik źródłowy xlsx do importu
 docs/decyzje/            notatki decyzji technologicznych

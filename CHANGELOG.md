@@ -2,6 +2,64 @@
 
 Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie semantyczne.
 
+## [1.0.1] — naprawy po przeglądzie kodu (wszystkie 51 punktów raportu)
+
+Publikacja jako **folder** (nie pojedynczy plik) — wersja 1.0.0 single-file nie uruchamiała się na części maszyn. Zip zawiera cały katalog aplikacji + instrukcję; aktualizacja to rozpakowanie obok starej wersji (dane zostają w `%AppData%\Kwatermistrz`).
+
+### Wysokie — crash / utrata danych
+- Naprawiony crash przy starcie przy cyklu w kompletach (A→B→A) — wykrywanie cyklu przed dołączeniem i w kalkulatorze.
+- Uszkodzony plik `.bak` nie wywala już startu; odczyt kopi w osobnym `try`.
+- Jedna instancja aplikacji (mutex) — dwie instancje nie nadpisują sobie danych.
+- Globalna obsługa wyjątkęw (`DispatcherUnhandledException`) — log w `error.log` + komunikat zamiast cichego zamknięcia.
+- Import z arkusza respektuje decyzje o konfliktach; nie tworzy osieroconych Id słowników; drugi import nie dubluje rekordów ani rekonstrukcji.
+- Import `.kwreko` nie dubluje rekonstrukcji; ponowny import nie daje duplikatów Id (indeks odporny na duplikaty).
+- Zip-slip przy imporcie zdjęć — ścieżki z zip — walidacja (nic spoza katalogu danych).
+- Ścieżki zdjęć z importowanych danych walidowane przed odczytem/usunięciem (`..` odrzucone).
+- Zastosowanie szablonu konfiguracji nie niszczy słowników ani szablonów kart; scalanie zamiast podmiany.
+- Wyprawy trzymają Id wariantu (nie indeks) — edycja zestawu nie przepisuje historii; migracja starych indeksów przy wczytaniu.
+- Import ogólny: wiersz nagłówka nie jest importowany; niezmapowane pola nie czytają kolumny 0.
+- Raport „Umundurowanie": komplet nie jest liczony dwa razy; użycia i koszt nie są mnożone przez liczbę elementów.
+- Repliki trafiają na listę pakowania i do kosztu zestawu (FR-707).
+- Typ magazynka z arkusza „Repliki” ustawia się poprawnie.
+- Kreator nie dubluje szablonów kart.
+- Usuwanie replik/przedmiotów czyści wszystkie referencje (wyprawy, zestawy, zadania, komplety, konfiguracje) i prosi o potwierdzenie.
+
+### Średnie — złe wyniki, niespójności
+- `Semantyka` kosztu i zadania ustawiana z wybranego rodzaju (zakup repliki liczy się do „Ceny oryginalnej”; awarie spójne na pulpicie i liście).
+- Jeden sposób liczenia użyć (przez `IndeksObliczeniowy`) — ten sam przedmiot w dwóch slotach daje ten sam wynik wszędzie.
+- Odliczanie od liczników historycznych (FR-807) jest odwracalne — usunięcie/przywrócenie/edycja wyprawy cofa lub powtarza korektę.
+- „Średnia na miesiąc” w raporcie lat liczona od początku roku, nie „od pierwszej wyprawy do dziś”.
+- „Średnia” wypraw w raporcie Broń z ułamkiem (nie dzielenie całkowitoliczbowe).
+- Kopia zapasowa przy imporcie wykonywana **przed** importem (FR-1107).
+- Przywracanie z kopii: kopia przed nadpisaniem, wracają też zdjęcia, wszystkie ekrany się odświeżają.
+- Kopie zapasowe z retencją (maks. 20) i bez kolizji nazw w tej samej sekundzie.
+- Usunięcie rekonstrukcji czyści `OstatniaRekonstrukcjaId`.
+- Wyszukiwanie zadań otwiera ekran z zaznaczoną repliką/przedmiotem (RekordId = Id rekordu, nie zadania).
+- „Do uzupełnienia → Potwierdź” czyści tylko własną flagę pozycji (nie wszystkie naraz).
+- Samo kliknięcie rekordu nie zdejmuje znacznika „z importu” (tylko zapis karty).
+- Duplikowanie/kopiowanie przedmiotu kopiuje też rekonstrukcje, datę zakupu i status.
+- Eksport rekonstrukcji pakuje dokładnie jej dane (wspólne elementy raz, bez wypraw innych rekonstrukcji; wchodzą też ustawienia i liczniki historyczne).
+- Porównanie sum kosztów z tolerancją 0.005 (szum doubli z Excela).
+- Motyw „Systemowy” respektuje faktyczny motyw systemu; aliasy kolorów wykresów ustawiane też przy starcie.
+- Mapowanie kolumn w imporcie odświeża UI.
+- Listy (`Wartosci`, `Rekonstrukcje`, `RekonstrukcjeLista`) zwracają kopie albo są `ObservableCollection` — WPF odświeża.
+- Nowa wyprawa z wybranym zestawem od razu ma wybrane warianty (ustawiane przy dodaniu, nie tylko przy zmianie combo).
+- Kontrola spójności: komunikat OK bez sztywnych liczb, `wgReplik` liczone raz, mundury rozpoznawane po fladze kategorii (z fallbackiem nazwy).
+
+### Niskie — kruchość, drobiazgi
+- Dopasowanie importu po granicach słów („pas” ≠ „pasoszelki”, „m4” ≠ „m43”); usuwanie słów sezonowych też po granicach.
+- Importer wyposażenia: nieznane kategoria/strona/miejsce/klasa → konflikt (nie cicho); kolumna „klasa” po nagłówku; realna heurystyka szkicu.
+- `CzytnikXlsx`: `XSSFWorkbook` w `using`; daty z fallbackiem invariant-culture.
+- CSV: pełny parser RFC 4180 (pola wieloliniowe), wykrywanie kodowania UTF-8/Windows-1250; magazyn mapowań odporny na uszkodzony JSON.
+- Eksport CSV zabezpieczony przed formułami Excela; raport „Stan replik” pokazuje datę ostatniego testu.
+- Eksport listy pakowania nie połyka wyjątków — błąd widać na pasku stanu.
+- `SynchronizujCenaZakupu` aktualizuje pozycję z importu zamiast dodawać drugą.
+- Mundur wyprawy rozpoznawany po Id slotu szablonu, nie po nazwie.
+- Dialog zdjęć bez .webp (WPF go nie dekoduje); przy zmniejszaniu nieznane rozszerzenie → JPEG z korektą nazwy; usuwanie zdjęcia usuwa też oryginał.
+- Przejście z pulpitu ustawia flagi filtru jednym odświeżeniem; flagi czyszczone przy nawigacji menu.
+- Ranking: spójny remis po nazwie na pulpicie, liście Broń i w raporcie.
+- Kosmetyka: `Komunikat` wielką literą, usunięte martwe `_ = kalk;`, unikalność nazwy przy zmianie wartości słownika, `PoleImportu` jako string w JSON.
+
 ## [1.0.0] — pierwsza wersja do codziennego użytku
 
 Pełna specyfikacja: `docs/wymagania.md`. Wszystkie wymagania [M] i [S] z wyjątkiem odłożonych (patrz „Odłożone” na końcu sekcji Etap 6); wymagania [C] poza 1.0.
