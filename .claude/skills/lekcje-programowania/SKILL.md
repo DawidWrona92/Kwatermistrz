@@ -1,11 +1,11 @@
 ---
-name: programowanie-kwatermistrz
-description: Lekcje z pracy nad Kwatermistrzem (C#, WPF, .NET 10) — wzorce i pułapki, których trzeba unikać: migracje JSON, edycja plików skryptami, TreatWarningsAsErrors, import CSV/XLSX, publikacja WPF, testy przed wydaniem. Używaj przy każdej pracy nad tą aplikacją.
+name: lekcje-programowania
+description: Ogólne lekcje z programowania (C#/.NET/WPF, ale też uniwersalne) — wzorce i pułapki zebrane przy pracy nad aplikacjami desktopowymi: migracje JSON, edycja plików skryptami, traktowanie ostrzeżeń jak błędów, import CSV/XLSX, odświeżanie UI, publikacja aplikacji, testy przed wydaniem. Używaj przy każdej większej zmianie w projekcie.
 ---
 
-# Programowanie Kwatermistrza — lekcje i wzorce
+# Lekcje z programowania — wzorce i pułapki
 
-Zebrane podczas budowy aplikacji i naprawiania 51 błędów z raportu przeglądu kodu (wydanie 1.0.1). Czytaj przed większą zmianą; każda sekcja kończy się regułą „nie rób tak".
+Zebrane przy budowie aplikacji desktopowej C#/WPF (.NET 10, Kwatermistrz) i naprawianiu 51 błędów z raportu przeglądu kodu. Większość lekcji jest ogólna — nie tylko o WPF. Czytaj przed większą zmianą; każda sekcja kończy się regułą „nie rób tak".
 
 ## 1. Migracje danych JSON — pre-pass na `JsonNode`, nigdy shadow properties
 
