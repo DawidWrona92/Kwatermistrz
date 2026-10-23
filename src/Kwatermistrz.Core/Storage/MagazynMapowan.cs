@@ -13,6 +13,7 @@ public class MagazynMapowan
     {
         WriteIndented = true,
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
     };
 
     private readonly string _sciezka;
@@ -22,13 +23,21 @@ public class MagazynMapowan
         _sciezka = Path.Combine(katalogDanych, "mapowania-kolumn.json");
     }
 
-    /// <summary>Wczytuje zapisane mapowania; pusta lista, gdy pliku nie ma.</summary>
+    /// <summary>Wczytuje zapisane mapowania; pusta lista, gdy pliku nie ma lub jest uszkodzony
+    /// (uszkodzony plik nie może blokować importu — mapowania są tylko wygodą).</summary>
     public List<MapowanieKolumn> Wczytaj()
     {
         if (!File.Exists(_sciezka))
             return new List<MapowanieKolumn>();
-        var json = File.ReadAllText(_sciezka);
-        return JsonSerializer.Deserialize<List<MapowanieKolumn>>(json, Opcje) ?? new List<MapowanieKolumn>();
+        try
+        {
+            var json = File.ReadAllText(_sciezka);
+            return JsonSerializer.Deserialize<List<MapowanieKolumn>>(json, Opcje) ?? new List<MapowanieKolumn>();
+        }
+        catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or InvalidDataException)
+        {
+            return new List<MapowanieKolumn>();
+        }
     }
 
     /// <summary>Zapisuje listę mapowań (atomowo: plik tymczasowy + zamiana, NFR-05).</summary>

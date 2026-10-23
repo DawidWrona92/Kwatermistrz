@@ -143,6 +143,7 @@ public class GaleriaZdjec : Control
         var dialog = new OpenFileDialog
         {
             Title = "Wybierz zdjęcia",
+            // bez .webp/.gif — WPF nie dekoduje ich w miniaturach (wyświetla pusty kafelek)
             Filter = "Obrazy (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp|Wszystkie pliki (*.*)|*.*",
             Multiselect = true,
         };

@@ -220,11 +220,17 @@ public partial class ImporterKwatermistrz
                     zestaw.RekonstrukcjaId = rek.Id;
             }
 
-            // sloty: kolumny od „Mundur” w kolejności SlotyZestawow
+            // sloty: kolumny od „Mundur” w kolejności SlotyZestawow; SzablonSlotId wiąże slot
+            // z szablonem rekonstrukcji po nazwie (BR-09 rozpoznaje mundur po Id slotu szablonu)
+            var szablonSloty = zestaw.RekonstrukcjaId != null
+                ? k.Dane.Rekonstrukcje.FirstOrDefault(r => r.Id == zestaw.RekonstrukcjaId)?.SzablonSlotow
+                : null;
             for (var s = 0; s < SlotyZestawow.Length; s++)
             {
                 var komorka = Normalizacja.Przytnij(wiersz.Komorka(pierwszySlot + s));
-                var slot = new SlotZestawu { Nazwa = SlotyZestawow[s], Kolejnosc = s };
+                var szablonSlot = szablonSloty?.FirstOrDefault(x =>
+                    Normalizacja.TekstDoPorownania(x.Nazwa) == Normalizacja.TekstDoPorownania(SlotyZestawow[s]));
+                var slot = new SlotZestawu { Nazwa = SlotyZestawow[s], Kolejnosc = s, SzablonSlotId = szablonSlot?.Id };
                 if (komorka != null)
                 {
                     var warianty = komorka.Split('/', StringSplitOptions.RemoveEmptyEntries);
@@ -275,7 +281,12 @@ public partial class ImporterKwatermistrz
     }
 
     /// <summary>„Oldgen zimno/ciepło” bez innych slotów to szkice zawierające tylko pas (13.6).</summary>
-    private static bool NazwaJestSzkicem(string nazwa) => false; // nazwy są jawne w arkuszu; puste = szkic bez nazwy
+    /// <summary>Czy nazwa zestawu to szkic (FR-706): jawne znaczniki „?”/„TODO”/pusta nazwa po myślnikach.</summary>
+    private static bool NazwaJestSzkicem(string nazwa)
+    {
+        var t = Normalizacja.TekstDoPorownania(nazwa);
+        return t is "?" || t == "todo" || t == "tbd" || t.EndsWith('?');
+    }
 
     /// <summary>Tekst kandydata munduru do dopasowania (13.2): firma, nazwa (z aliasami w nawiasach, np. „6b46 „BNZ””), nazwa i aliasy wzoru.</summary>
     private static string TekstKandydataMunduru(KontekstImportu k, Przedmiot p)
@@ -293,6 +304,25 @@ public partial class ImporterKwatermistrz
     private static readonly HashSet<string> SlowaNeutralne = new(StringComparer.Ordinal)
         { "letni", "letnia", "zimny", "zimno", "zimowa", "ciepły", "ciepło", "ciepla", "lato", "zima" };
 
+    /// <summary>Usuwa wystąpienia słowa jako całych słów (granice słowa) — „lato” nie rusza „latawiec”.</summary>
+    private static string UsunSlowoNaGranicy(string tekst, string slowo)
+    {
+        var start = 0;
+        while ((start = tekst.IndexOf(slowo, start, StringComparison.OrdinalIgnoreCase)) >= 0)
+        {
+            var przedOk = start == 0 || !char.IsLetterOrDigit(tekst[start - 1]);
+            var poOk = start + slowo.Length >= tekst.Length || !char.IsLetterOrDigit(tekst[start + slowo.Length]);
+            if (przedOk && poOk)
+            {
+                tekst = tekst.Remove(start, slowo.Length).Insert(start, " ");
+                start++;
+            }
+            else
+                start += slowo.Length;
+        }
+        return tekst;
+    }
+
     /// <summary>Rozwiązuje nazwę elementu w komórce wariantu na element katalogu: replika albo przedmiot z kategorii slotu; brak = szkic (FR-706, 13.6). Dopasowanie po słowach kluczowych z tolerancją n-1 (jak przy mundurach); szkice nie są kandydatami.</summary>
     private static ElementWariantu? RozwiazElement(KontekstImportu k, string tekst, string nazwaSlotu, int numerWiersza)
     {
@@ -300,9 +330,9 @@ public partial class ImporterKwatermistrz
         var tekstDopasowany = tekst
             .Replace("ochraniacze", "nakolanniki", StringComparison.OrdinalIgnoreCase)
             .Replace("smiersz", "pas", StringComparison.OrdinalIgnoreCase);
-        // bez słów sezonowych
+        // bez słów sezonowych (na granicach słów — „letnia” nie rusza „letniej”, ale też usuwamy osobno)
         foreach (var slowo in SlowaNeutralne)
-            tekstDopasowany = tekstDopasowany.Replace(slowo, " ", StringComparison.OrdinalIgnoreCase);
+            tekstDopasowany = UsunSlowoNaGranicy(tekstDopasowany, slowo);
 
         // sloty broni → tylko repliki
         var kategoriaSlotu = KategoriaDlaSlotu(k, nazwaSlotu);

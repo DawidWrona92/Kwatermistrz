@@ -161,10 +161,24 @@ public partial class WyposazenieViewModel : ObservableObject
         OnPropertyChanged(nameof(LiczbaZaznaczonych));
     }
 
+    private int _zawieszoneOdswiezanie;
+
+    /// <summary>Wyłącza odświeżanie przy zmianach flag filtrów — stosował z WznowOdswiezanieFiltru.</summary>
+    public void ZawiesOdswiezanieFiltru() => _zawieszoneOdswiezanie++;
+
+    /// <summary>Wznawia odświeżanie i wykonuje jedno odświeżenie, gdy było zawieszone.</summary>
+    public void WznowOdswiezanieFiltru()
+    {
+        if (_zawieszoneOdswiezanie > 0)
+            _zawieszoneOdswiezanie--;
+        if (_zawieszoneOdswiezanie == 0)
+            Odswiez();
+    }
+
     partial void OnWybranaKategoriaChanged(Kategoria? value) => Odswiez();
     partial void OnFiltrTekstChanged(string value) => Odswiez();
     partial void OnPokazSprzedaneChanged(bool value) => Odswiez();
-    partial void OnTylkoBezUzyciaChanged(bool value) => Odswiez();
+    partial void OnTylkoBezUzyciaChanged(bool value) { if (_zawieszoneOdswiezanie == 0) Odswiez(); }
 
     /// <summary>Wybiera kategorię z nawigacji (FR-201).</summary>
     [RelayCommand]

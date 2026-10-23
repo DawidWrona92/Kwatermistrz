@@ -220,13 +220,14 @@ public class Kalkulator
             : _dane.Rekonstrukcje.FirstOrDefault(r => r.Id == zestaw.RekonstrukcjaId);
         if (rekonstrukcja == null)
             return (null, false);
-        var slotyMunduru = rekonstrukcja.SzablonSlotow.Where(s => s.CzySlotMunduru).Select(s => s.Nazwa).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var slotyMunduru = rekonstrukcja.SzablonSlotow.Where(s => s.CzySlotMunduru).Select(s => s.Id).ToHashSet(StringComparer.Ordinal);
         var elementy = new List<ElementWariantu>();
         foreach (var (slotId, wariantId) in wyprawa.WybraneWarianty)
         {
             var slot = zestaw.Sloty.FirstOrDefault(s => s.Id == slotId);
             var wariant = slot?.Warianty.FirstOrDefault(w => w.Id == wariantId);
-            if (slot == null || wariant == null || !slotyMunduru.Contains(slot.Nazwa))
+            // mundur po Id slotu szablonu (FR-702): zmiana nazwy slotu w szablonie nie odpina munduru
+            if (slot?.SzablonSlotId == null || wariant == null || !slotyMunduru.Contains(slot.SzablonSlotId))
                 continue;
             elementy.AddRange(wariant.Elementy);
         }

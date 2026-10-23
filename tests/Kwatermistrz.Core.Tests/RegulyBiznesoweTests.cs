@@ -151,7 +151,8 @@ public class RegulyBiznesoweTests
         var dol = new Przedmiot { Nazwa = "Dół" };
         dane.Przedmioty.AddRange(new[] { gorny, dol });
         var zestaw = new Zestaw { Nazwa = "Z1" };
-        var slot = new SlotZestawu { Nazwa = "Mundur" };
+        var szablonSlot = new SlotSzablonu { Nazwa = "Mundur", CzySlotMunduru = true };
+        var slot = new SlotZestawu { Nazwa = "Mundur", SzablonSlotId = szablonSlot.Id };
         slot.Warianty.Add(new WariantSlotu
         {
             Elementy =
@@ -163,7 +164,7 @@ public class RegulyBiznesoweTests
         zestaw.Sloty.Add(slot);
         dane.Zestawy.Add(zestaw);
         var rekonstrukcja = new Rekonstrukcja { Nazwa = "R" };
-        rekonstrukcja.SzablonSlotow.Add(new SlotSzablonu { Nazwa = "Mundur", CzySlotMunduru = true });
+        rekonstrukcja.SzablonSlotow.Add(szablonSlot);
         dane.Rekonstrukcje.Add(rekonstrukcja);
 
         var wyprawa = new Wyprawa
@@ -406,9 +407,33 @@ public class Fr503Tests
 
         p.SynchronizujCenaZakupu(slowniki, DateOnly.FromDateTime(DateTime.Today));
 
+        // ręczna pozycja zakupu zostaje; pole dopisuje własną (oznaczoną) — nie nadpisuje cudzej
         Assert.Equal(2, p.Koszty.Count);
         Assert.Contains(p.Koszty, k => k.Opis == "Zakup z faktury" && k.Kwota == 400m);
         Assert.Contains(p.Koszty, k => k.Opis == "Cena zakupu" && k.Kwota == 450m);
+    }
+
+    [Fact]
+    public void PozycjaZImportuZakup_JestAktualizowanaPrzezPole()
+    {
+        // zaimportowana pozycja zakupu bez opisu (raport #46): edycja ceny aktualizuje ją zamiast dokładać drugą
+        var (dane, slowniki) = Przygotuj();
+        var p = new Przedmiot { Nazwa = "Gorka", CenaZakupu = 450m };
+        p.Koszty.Add(new PozycjaKosztowa { Opis = "", Kwota = 400m, Semantyka = SemantykaKosztu.Zakup, Zrodlo = "import" });
+
+        p.SynchronizujCenaZakupu(slowniki, DateOnly.FromDateTime(DateTime.Today));
+
+        Assert.Single(p.Koszty);
+        Assert.Equal(450m, p.Koszty[0].Kwota);
+        // opis z importu zostaje pusty — pozycja rozpoznawana po semantyce + źródle
+        Assert.Equal("", p.Koszty[0].Opis);
+        Assert.Equal("import", p.Koszty[0].Zrodlo);
+
+        // druga edycja nadal aktualizuje tę samą pozycję (nie dokłada nowej)
+        p.CenaZakupu = 500m;
+        p.SynchronizujCenaZakupu(slowniki, DateOnly.FromDateTime(DateTime.Today));
+        Assert.Single(p.Koszty);
+        Assert.Equal(500m, p.Koszty[0].Kwota);
     }
 }
 

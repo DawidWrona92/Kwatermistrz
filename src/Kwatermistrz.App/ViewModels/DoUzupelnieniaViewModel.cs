@@ -161,5 +161,19 @@ public partial class DoUzupelnieniaViewModel : ObservableObject
 
     private bool CzyReplika(string id) => _dane.Repliki.Any(r => r.Id == id);
 
-    partial void OnTylkoZadaniaChanged(bool value) => Odswiez();
+    private int _zawieszoneOdswiezanie;
+
+    /// <summary>Wyłącza odświeżanie przy zmianach flag filtrów — stosował z WznowOdswiezanieFiltru.</summary>
+    public void ZawiesOdswiezanieFiltru() => _zawieszoneOdswiezanie++;
+
+    /// <summary>Wznawia odświeżanie i wykonuje jedno odświeżenie, gdy było zawieszone.</summary>
+    public void WznowOdswiezanieFiltru()
+    {
+        if (_zawieszoneOdswiezanie > 0)
+            _zawieszoneOdswiezanie--;
+        if (_zawieszoneOdswiezanie == 0)
+            Odswiez();
+    }
+
+    partial void OnTylkoZadaniaChanged(bool value) { if (_zawieszoneOdswiezanie == 0) Odswiez(); }
 }

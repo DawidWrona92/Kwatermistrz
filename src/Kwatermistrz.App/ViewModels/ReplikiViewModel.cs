@@ -125,12 +125,26 @@ public partial class ReplikiViewModel : ObservableObject
         OnPropertyChanged(nameof(LiczbaWierszy));
     }
 
+    private int _zawieszoneOdswiezanie;
+
+    /// <summary>Wyłącza odświeżanie przy zmianach flag filtrów (każda przebudowuje indeks) — stosował z WznowOdswiezanieFiltru.</summary>
+    public void ZawiesOdswiezanieFiltru() => _zawieszoneOdswiezanie++;
+
+    /// <summary>Wznawia odświeżanie i wykonuje jedno odświeżenie, gdy było zawieszone.</summary>
+    public void WznowOdswiezanieFiltru()
+    {
+        if (_zawieszoneOdswiezanie > 0)
+            _zawieszoneOdswiezanie--;
+        if (_zawieszoneOdswiezanie == 0)
+            Odswiez();
+    }
+
     partial void OnFiltrTekstChanged(string value) => Odswiez();
     partial void OnPokazSprzedaneChanged(bool value) => Odswiez();
     partial void OnFiltrStronaIdChanged(string? value) => Odswiez();
     partial void OnFiltrStanIdChanged(string? value) => Odswiez();
-    partial void OnTylkoAwariaChanged(bool value) => Odswiez();
-    partial void OnTylkoBezTestuChanged(bool value) => Odswiez();
+    partial void OnTylkoAwariaChanged(bool value) { if (_zawieszoneOdswiezanie == 0) Odswiez(); }
+    partial void OnTylkoBezTestuChanged(bool value) { if (_zawieszoneOdswiezanie == 0) Odswiez(); }
 
     private WierszRepliki BudujWiersz(IndeksObliczeniowy indeks, Replika r)
     {

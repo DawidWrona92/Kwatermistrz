@@ -83,7 +83,13 @@ public partial class SlownikiViewModel : ObservableObject
             return;
         var nazwa = Normalizacja.Przytnij(NowaNazwa);
         if (nazwa != null)
+        {
+            // jak w Dodaj: nazwa musi być unikalna w słowniku (porównanie bez rozróżniania wielkości liter)
+            var lista = Wartosci.ToList();
+            if (lista.Any(w => w.Id != wartosc.Id && Normalizacja.TekstDoPorownania(w.Nazwa) == Normalizacja.TekstDoPorownania(nazwa)))
+                return;
             wartosc.Nazwa = nazwa;
+        }
         Zapisz();
         OnPropertyChanged(nameof(Wartosci));
     }

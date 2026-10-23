@@ -35,26 +35,46 @@ public static class Dopasowanie
         if (slowa.Count == 0)
             return wynik;
         var wszystkie = kandydaci
-            .Select(kandydat => (Kandydat: kandydat, Tekst: Normalizacja.TekstDoPorownania(tekstKandydata(kandydat)), Trafienia: slowa.Count(s => Normalizacja.TekstDoPorownania(tekstKandydata(kandydat)).Contains(s, StringComparison.Ordinal))))
+            .Select(kandydat => (Kandydat: kandydat, Tekst: Normalizacja.TekstDoPorownania(tekstKandydata(kandydat))))
             .ToList();
-        foreach (var (kandydat, _, trafienia) in wszystkie.Where(x => x.Trafienia == slowa.Count))
-            wynik.Kandydaci.Add(kandydat);
+        // słowo kluczowe trafia jako CAŁE słowo (na granicy słowa) — „pas” nie trafi w „pasoszelki”, „m4” nie trafi w „m43”
+        foreach (var (kandydat, tekst) in wszystkie)
+            if (slowa.All(w => SlowoWTekscie(w, tekst)))
+                wynik.Kandydaci.Add(kandydat);
         if (wynik.Kandydaci.Count == 0 && slowa.Count > 1)
         {
             // tolerancja n-1 słów — tylko gdy brak pełnych trafień; brakujące słowo musi być podobne do jakiegoś słowa kandydata („Sumak”→„Sumrak” tak, „Ręczny”→6Sh122 nie)
-            foreach (var x in wszystkie)
+            foreach (var (kandydat, tekst) in wszystkie)
             {
-                if (x.Trafienia < slowa.Count - 1)
+                var trafione = slowa.Count(w => SlowoWTekscie(w, tekst));
+                if (trafione < slowa.Count - 1)
                     continue;
-                var brakujace = slowa.Where(w => !x.Tekst.Contains(w, StringComparison.Ordinal)).ToList();
-                var slowaKandydata = x.Tekst.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var brakujace = slowa.Where(w => !SlowoWTekscie(w, tekst)).ToList();
+                var slowaKandydata = tekst.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 if (brakujace.All(b => slowaKandydata.Any(sk => Podobne(b, sk))))
-                    wynik.Kandydaci.Add(x.Kandydat);
+                    wynik.Kandydaci.Add(kandydat);
             }
         }
         if (wynik.Kandydaci.Count == 1)
             wynik.Element = wynik.Kandydaci[0];
         return wynik;
+    }
+
+    /// <summary>Prawda, gdy słowo występuje w tekście jako całe słowo (granice: początek/koniec lub znak niebędący literą/cyfrą). „pas” ≠ „pasoszelki”, „m4” ≠ „m43”, „m4” = „EM4 RIS”.</summary>
+    public static bool SlowoWTekscie(string slowo, string tekst)
+    {
+        var start = 0;
+        while ((start = tekst.IndexOf(slowo, start, StringComparison.Ordinal)) >= 0)
+        {
+            var przedOk = start == 0 || !JestLiteraCyfra(tekst[start - 1]);
+            var poOk = start + slowo.Length >= tekst.Length || !JestLiteraCyfra(tekst[start + slowo.Length]);
+            if (przedOk && poOk)
+                return true;
+            start++;
+        }
+        return false;
+
+        static bool JestLiteraCyfra(char znak) => char.IsLetterOrDigit(znak);
     }
 
     /// <summary>Podobieństwo słów: ta sama długość (±1) i odległość Levenshteina ≤ 2 (dla słów ≥5 znaków) lub ≤1 (krótsze). „Sumak”/„Sumrak” = 2, „Ręczny”/„6Sh122” = daleko.</summary>

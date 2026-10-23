@@ -110,24 +110,9 @@ public partial class UstawieniaViewModel : ObservableObject
                 ApplicationThemeManager.ApplySystemTheme();
                 break;
         }
-        // aliasy kolorów wykresów (FR-909) podążają za motywem
-        var jasny = _dane.Ustawienia.Motyw == Motyw.Jasny;
-        if (jasny)
-        {
-            Application.Current.Resources["Stal"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x2F, 0x4A, 0x6B));
-            Application.Current.Resources["Linia"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xCD, 0xD0, 0xCA));
-            Application.Current.Resources["Sygnal"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xA8, 0x3A, 0x2B));
-            Application.Current.Resources["Poprawny"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0x7A, 0x52));
-            Application.Current.Resources["Uwaga"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x9A, 0x6B, 0x00));
-        }
-        else
-        {
-            Application.Current.Resources["Stal"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x8D, 0xB0, 0xD8));
-            Application.Current.Resources["Linia"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x3A, 0x40, 0x3D));
-            Application.Current.Resources["Sygnal"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xE0, 0x8A, 0x7A));
-            Application.Current.Resources["Poprawny"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x8C, 0xC4, 0x95));
-            Application.Current.Resources["Uwaga"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xE0, 0xB3, 0x4A));
-        }
+        // aliasy kolorów wykresów (FR-909) podążają za motywem — „Systemowy” wg faktycznego motywu systemu
+        var jasny = ApplicationThemeManager.GetSystemTheme() == SystemTheme.Light;
+        App.UstawAliasyWykresow(jasny);
     }
 
     /// <summary>Kopia zapasowa jednym poleceniem (FR-1107).</summary>

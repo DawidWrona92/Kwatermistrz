@@ -26,7 +26,7 @@ public class SerwisZdjec
     public string? PelnaSciezka(string? sciezkaWzgledna)
         => PelnaSciezkaWalidowana(sciezkaWzgledna, _magazyn.KatalogDanych);
 
-    /// <summary>Wersja statyczna dla konwerterów: ścieżka względna względem katalogu danych aplikacji (App.KatalogDanych).</summary>
+    /// <summary>Wersja statyczna dla konwerterów (brak dostępu do instancji): ścieżka względna względem katalogu danych aplikacji (App.KatalogDanych — ten sam katalog co _magazyn.KatalogDanych; obie ścieżki mają wspólną walidację).</summary>
     public static string? PelnaSciezkaBezwzgledna(string sciezkaWzgledna)
         => PelnaSciezkaWalidowana(sciezkaWzgledna, App.KatalogDanych);
 
@@ -121,7 +121,7 @@ public class SerwisZdjec
             _ => new JpegBitmapEncoder { QualityLevel = 90 },
         };
         enkoder.Frames.Add(BitmapFrame.Create(dekorator));
-        // nieznane rozszerzenie (np. .webp, .gif) → zapisujemy jako JPEG i korygujemy nazwę pliku
+        // nieznane rozszerzenie (np. .webp, .gif — dialog ich nie dopuszcza, dane mogą zawierać takie ścieżki z zewnątrz) → zapisujemy jako JPEG i korygujemy nazwę pliku
         if (enkoder is JpegBitmapEncoder && !pelnaDocelowa.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
             && !pelnaDocelowa.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
         {

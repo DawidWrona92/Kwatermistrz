@@ -144,8 +144,8 @@ public partial class WyprawyViewModel : ObservableObject
             }
             // podpowiedź repliki głównej: pierwszy wariant slotu broni głównej (FR-802)
             var rek = _dane.Rekonstrukcje.FirstOrDefault(r => r.Id == (zestaw.RekonstrukcjaId ?? _stan.AktywnaRekonstrukcjaId));
-            var slotyBroni = rek?.SzablonSlotow.Where(s => s.CzySlotBroniGlownej).Select(s => s.Nazwa).ToHashSet() ?? new HashSet<string>();
-            foreach (var slot in zestaw.Sloty.Where(s => slotyBroni.Contains(s.Nazwa)))
+            var slotyBroni = rek?.SzablonSlotow.Where(s => s.CzySlotBroniGlownej).Select(s => s.Id).ToHashSet(StringComparer.Ordinal) ?? new HashSet<string>(StringComparer.Ordinal);
+            foreach (var slot in zestaw.Sloty.Where(s => s.SzablonSlotId != null && slotyBroni.Contains(s.SzablonSlotId)))
             {
                 if (!Nowa.WybraneWarianty.TryGetValue(slot.Id, out var wariantId))
                     continue;

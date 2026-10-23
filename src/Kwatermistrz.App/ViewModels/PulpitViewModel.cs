@@ -65,8 +65,9 @@ public partial class PulpitViewModel : ObservableObject
                     KosztNaWyprawe = Kalkulator.KosztNaWyprawe(calkowity, wyprawy),
                 };
             })
+            // tiebreak po nazwie — ten sam porządek remisów co na liście Broń i w raporcie (spójność rankingów)
             .OrderByDescending(w => w.Wyprawy)
-            .ThenBy(w => w.ReplikaId, StringComparer.Ordinal)
+            .ThenBy(w => w.Nazwa, StringComparer.CurrentCulture)
             .Take(5)
             .ToList();
         OnPropertyChanged(nameof(LacznaLiczbaWypraw));

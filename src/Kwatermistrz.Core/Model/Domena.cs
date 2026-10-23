@@ -43,11 +43,16 @@ public class Przedmiot
     public void SynchronizujCenaZakupu(Slowniki slowniki, DateOnly dataZakupu)
     {
         var rodzajZakup = slowniki.RodzajeKosztow.FirstOrDefault(r => r.Semantyka == nameof(SemantykaKosztu.Zakup));
-        // pole zarządza tylko własną pozycją (rozpoznawaną po opisie); ręczne pozycje zakupu zostają
-        var pozycjaZakupu = Koszty.FirstOrDefault(k => k.Opis == "Cena zakupu");
+        // pole zarządza własną pozycją zakupu: najpierw szukamy po opisie „Cena zakupu”,
+        // potem pierwszej pozycji semantyki Zakup (także przy zaimportowanych kosztach bez opisu
+        // edycja ceny aktualizuje pierwszy zakup zamiast dokładać drugi); pozostałe ręczne pozycje zostają
+        // najpierw własna pozycja pola (oznaczona), potem pierwsza pozycja semantyki Zakup z importu
+        var pozycjaZakupu = Koszty.FirstOrDefault(k => k.Opis == "Cena zakupu" && k.Zrodlo != "import")
+            ?? Koszty.FirstOrDefault(k => k.Opis == "Cena zakupu")
+            ?? Koszty.FirstOrDefault(k => k.Semantyka == SemantykaKosztu.Zakup && k.Zrodlo == "import");
         if (CenaZakupu == null || CenaZakupu == 0m)
         {
-            // brak ceny — pozycja zakupu znika (jeśli była tylko z pola „cena zakupu”)
+            // brak ceny — pozycja zarządzana przez pole znika (ręcznie dodany zakup zostaje)
             if (pozycjaZakupu != null && pozycjaZakupu.Opis == "Cena zakupu")
                 Koszty.Remove(pozycjaZakupu);
             return;
@@ -66,6 +71,10 @@ public class Przedmiot
         else
         {
             pozycjaZakupu.Kwota = CenaZakupu.Value;
+            // własna pozycja pola dostaje opis „Cena zakupu”; pozycja z importu zachowuje swój opis
+            if (pozycjaZakupu.Zrodlo != "import" && pozycjaZakupu.Opis != "Cena zakupu"
+                && !Koszty.Any(k => k != pozycjaZakupu && k.Opis == "Cena zakupu"))
+                pozycjaZakupu.Opis = "Cena zakupu";
             if (DataZakupu != null)
                 pozycjaZakupu.Data = DataZakupu.Value;
         }
@@ -202,6 +211,9 @@ public class SlotZestawu
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Nazwa { get; set; } = "";
+    /// <summary>Id slotu szablonu rekonstrukcji, z którego pochodzi ten slot (FR-702); null gdy slot ręczny.
+    /// Mundur wyprawy (BR-09) rozpoznawany jest po tym Id — zmiana nazwy slotu w szablonie nie odpina munduru.</summary>
+    public string? SzablonSlotId { get; set; }
     public int Kolejnosc { get; set; }
     public List<WariantSlotu> Warianty { get; set; } = new();
     /// <summary>Id wariantu domyślnego (FR-704; od 1.0.1 — wcześniej indeks, migrowany przy wczytaniu).</summary>

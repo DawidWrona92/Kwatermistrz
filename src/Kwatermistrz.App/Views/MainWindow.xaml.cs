@@ -135,6 +135,8 @@ public partial class MainWindow : FluentWindow
             return;
         PokazEkran(ekran);
         ViewModel.AktualnyEkran = ekran;
+        // nawigacja przez menu czyści flagi ustawione skrótami z pulpitu (FR-104/105)
+        WyczyscFlagiFiltru(ekran);
         // przy zmianie ekranu odświeżamy dane ekranu docelowego
         if (ekran == "Wyposazenie")
             ViewModel.Wyposazenie.Odswiez();
@@ -148,6 +150,32 @@ public partial class MainWindow : FluentWindow
             ViewModel.Raporty.Odswiez();
         if (ekran == "DoUzupelnienia")
             ViewModel.DoUzupelnienia.Odswiez();
+    }
+
+    /// <summary>Czyści flagi filtrów ustawiane skrótami z pulpitu — zostają włączone po powrocie przez menu, choć użytkownik oczekiwał pełnej listy.</summary>
+    private void WyczyscFlagiFiltru(string ekran)
+    {
+        if (ViewModel == null)
+            return;
+        if (ekran == "Bronie")
+        {
+            ViewModel.Repliki.ZawiesOdswiezanieFiltru();
+            ViewModel.Repliki.TylkoAwaria = false;
+            ViewModel.Repliki.TylkoBezTestu = false;
+            ViewModel.Repliki.WznowOdswiezanieFiltru();
+        }
+        if (ekran == "Wyposazenie")
+        {
+            ViewModel.Wyposazenie.ZawiesOdswiezanieFiltru();
+            ViewModel.Wyposazenie.TylkoBezUzycia = false;
+            ViewModel.Wyposazenie.WznowOdswiezanieFiltru();
+        }
+        if (ekran == "DoUzupelnienia")
+        {
+            ViewModel.DoUzupelnienia.ZawiesOdswiezanieFiltru();
+            ViewModel.DoUzupelnienia.TylkoZadania = false;
+            ViewModel.DoUzupelnienia.WznowOdswiezanieFiltru();
+        }
     }
 
     private void ZamknijPanelKarty_Click(object sender, RoutedEventArgs e)
@@ -165,22 +193,33 @@ public partial class MainWindow : FluentWindow
         ViewModel.AktualnyEkran = ekran;
         if (ekran == "Bronie")
         {
+            // flagi ustawiamy z wyłączonym odświeżaniem — każda zmiana flagi przebudowuje indeks; na końcu jedno Odswiez
+            ViewModel.Repliki.ZawiesOdswiezanieFiltru();
             ViewModel.Repliki.TylkoAwaria = parametr == "awaria";
             ViewModel.Repliki.TylkoBezTestu = parametr == "bezTestu";
-            ViewModel.Repliki.Odswiez();
+            ViewModel.Repliki.WznowOdswiezanieFiltru();
             if (parametr != null && parametr != "awaria" && parametr != "bezTestu")
                 ViewModel.Repliki.Wybrana = ViewModel.Repliki.Wiersze.FirstOrDefault(w => w.Id == parametr);
         }
         if (ekran == "Wyposazenie")
         {
+            ViewModel.Wyposazenie.ZawiesOdswiezanieFiltru();
             ViewModel.Wyposazenie.TylkoBezUzycia = parametr == "bezUzycia";
-            ViewModel.Wyposazenie.Odswiez();
+            ViewModel.Wyposazenie.WznowOdswiezanieFiltru();
         }
         if (ekran == "DoUzupelnienia")
         {
+            ViewModel.DoUzupelnienia.ZawiesOdswiezanieFiltru();
             ViewModel.DoUzupelnienia.TylkoZadania = parametr == "zadania";
-            ViewModel.DoUzupelnienia.Odswiez();
+            ViewModel.DoUzupelnienia.WznowOdswiezanieFiltru();
         }
+        // jedno odświeżenie po ustawieniu wszystkich flag
+        if (ekran == "Bronie")
+            ViewModel.Repliki.Odswiez();
+        if (ekran == "Wyposazenie")
+            ViewModel.Wyposazenie.Odswiez();
+        if (ekran == "DoUzupelnienia")
+            ViewModel.DoUzupelnienia.Odswiez();
         OdswiezKarte();
     }
 

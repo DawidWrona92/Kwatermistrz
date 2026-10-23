@@ -36,8 +36,11 @@ public partial class ImporterKwatermistrz
         var kolGdzie = Kolumna("gdzie");
         var kolUzycia = Kolumna("liczba uzyc");
         var kolKomentarz = Kolumna("komentarz");
-        // ostatnia kolumna (bez nagłówka w arkuszach Pasy/Nakolanniki/Plecaki) = klasa wykonania (13.8)
-        var kolKlasa = naglowek.Komorki.Count - 1;
+        // kolumna klasy wykonania (13.8): nagłówek „klasa”, gdy jest; inaczej ostatnia kolumna arkusza
+        // (arkusze Pasy/Nakolanniki/Plecaki nie mają nagłówka tej kolumny)
+        var kolKlasa = Kolumna("klasa");
+        if (kolKlasa < 0)
+            kolKlasa = naglowek.Komorki.Count - 1;
 
         var slowniki = k.Dane.Slowniki;
         var poprzedniaKategoria = "";
@@ -60,9 +63,17 @@ public partial class ImporterKwatermistrz
             if (nazwa == null)
                 continue;
 
-            var kategoria = Model.Slowniki.Znajdz(slowniki.Kategorie.Select(k2 => new WartoscSlownika { Id = k2.Id, Nazwa = k2.Nazwa }).ToList(), poprzedniaKategoria);
-            var kategoriaId = slowniki.Kategorie.FirstOrDefault(k2 => Normalizacja.TekstDoPorownania(k2.Nazwa) == Normalizacja.TekstDoPorownania(poprzedniaKategoria))?.Id
-                ?? slowniki.Kategorie.First().Id;
+            var kategoriaId = slowniki.Kategorie.FirstOrDefault(k2 => Normalizacja.TekstDoPorownania(k2.Nazwa) == Normalizacja.TekstDoPorownania(poprzedniaKategoria))?.Id;
+            if (kategoriaId == null)
+            {
+                // nieznana kategoria: konflikt zamiast cichego wpadania w pierwszą; decyzja = wybór kategorii
+                kategoriaId = slowniki.Kategorie.First().Id;
+                var konflikt = k.Podglad.DodajKonflikt(RodzajKonfliktu.BrakOdpowiednika,
+                    $"Kategoria „{poprzedniaKategoria}” ({nazwa}) nie jest w słowniku — przypisano „{slowniki.Kategorie.First().Nazwa}”; popraw w słowniku lub przypisz ręcznie",
+                    $"Wyposażenie wiersz {wiersz.Numer}");
+                konflikt.Kandydaci = slowniki.Kategorie.Select(k2 => k2.Nazwa).ToList();
+                konflikt.DomyslnyWybor = 0;
+            }
 
             var przedmiot = new Przedmiot
             {
@@ -89,6 +100,9 @@ public partial class ImporterKwatermistrz
                 var w = Model.Slowniki.Znajdz(slowniki.Strony, strona);
                 if (w != null)
                     przedmiot.StronyId.Add(w.Id);
+                else
+                    k.Podglad.DodajKonflikt(RodzajKonfliktu.BrakOdpowiednika,
+                        $"Strona „{strona}” ({nazwa}) nie jest w słowniku — pominięta", $"Wyposażenie wiersz {wiersz.Numer}");
             }
 
             var gdzie = Normalizacja.Przytnij(wiersz.Komorka(kolGdzie));
@@ -97,6 +111,9 @@ public partial class ImporterKwatermistrz
                 var w = Model.Slowniki.Znajdz(slowniki.Miejsca, gdzie);
                 if (w != null)
                     przedmiot.MiejsceId = w.Id;
+                else
+                    k.Podglad.DodajKonflikt(RodzajKonfliktu.BrakOdpowiednika,
+                        $"Miejsce „{gdzie}” ({nazwa}) nie jest w słowniku — pominięte", $"Wyposażenie wiersz {wiersz.Numer}");
             }
 
             var klasa = Normalizacja.Przytnij(wiersz.Komorka(kolKlasa));
@@ -105,6 +122,9 @@ public partial class ImporterKwatermistrz
                 var w = Model.Slowniki.Znajdz(slowniki.Pochodzenie, klasa);
                 if (w != null)
                     przedmiot.PochodzenieId = w.Id;
+                else
+                    k.Podglad.DodajKonflikt(RodzajKonfliktu.BrakOdpowiednika,
+                        $"Klasa wykonania „{klasa}” ({nazwa}) nie jest w słowniku pochodzenia — pominięta", $"Wyposażenie wiersz {wiersz.Numer}");
             }
 
             // licznik użyć: importujemy dla wszystkich kategorii, mundury dostaną później wartość z tabeli umundurowania (13.2)

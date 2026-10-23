@@ -84,7 +84,7 @@ public partial class App : Application
         services.AddSingleton<SzukanieViewModel>();
         _provider = services.BuildServiceProvider();
 
-        // motyw z ustawień (FR-1006)
+        // motyw z ustawień (FR-1006); „Systemowy” → aktualny motyw systemu, nie zawsze ciemny
         var motyw = dane.Ustawienia.Motyw switch
         {
             Motyw.Jasny => ApplicationTheme.Light,
@@ -92,6 +92,8 @@ public partial class App : Application
             _ => ApplicationThemeManager.GetSystemTheme() == SystemTheme.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light,
         };
         ApplicationThemeManager.Apply(motyw);
+        // aliasy kolorów wykresów (FR-909) ustawiane również przy starcie — wg faktycznego motywu
+        UstawAliasyWykresow(motyw == ApplicationTheme.Light);
 
         var mainWindow = new MainWindow
         {
@@ -111,6 +113,28 @@ public partial class App : Application
 
         if (!kontrola.CzyPoprawne && kontrola.Komunikat != null)
             System.Windows.MessageBox.Show(kontrola.Komunikat, "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+    }
+
+    /// <summary>Ustawia aliasy kolorów wykresów (FR-909) wg motywu — ta sama paleta co w UstawieniaViewModel.ZastosujMotyw.</summary>
+    internal static void UstawAliasyWykresow(bool jasny)
+    {
+        System.Windows.Media.Color Kolor(byte r, byte g, byte b) => System.Windows.Media.Color.FromRgb(r, g, b);
+        if (jasny)
+        {
+            Current.Resources["Stal"] = new System.Windows.Media.SolidColorBrush(Kolor(0x2F, 0x4A, 0x6B));
+            Current.Resources["Linia"] = new System.Windows.Media.SolidColorBrush(Kolor(0xCD, 0xD0, 0xCA));
+            Current.Resources["Sygnal"] = new System.Windows.Media.SolidColorBrush(Kolor(0xA8, 0x3A, 0x2B));
+            Current.Resources["Poprawny"] = new System.Windows.Media.SolidColorBrush(Kolor(0x4A, 0x7A, 0x52));
+            Current.Resources["Uwaga"] = new System.Windows.Media.SolidColorBrush(Kolor(0x9A, 0x6B, 0x00));
+        }
+        else
+        {
+            Current.Resources["Stal"] = new System.Windows.Media.SolidColorBrush(Kolor(0x8D, 0xB0, 0xD8));
+            Current.Resources["Linia"] = new System.Windows.Media.SolidColorBrush(Kolor(0x3A, 0x40, 0x3D));
+            Current.Resources["Sygnal"] = new System.Windows.Media.SolidColorBrush(Kolor(0xE0, 0x8A, 0x7A));
+            Current.Resources["Poprawny"] = new System.Windows.Media.SolidColorBrush(Kolor(0x8C, 0xC4, 0x95));
+            Current.Resources["Uwaga"] = new System.Windows.Media.SolidColorBrush(Kolor(0xE0, 0xB3, 0x4A));
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)

@@ -10,6 +10,10 @@ namespace Kwatermistrz.App.ViewModels;
 /// <summary>ViewModel ekranu zestawów (FR-701–705, FR-709): lista, karta z edytorem slotów i wariantów.</summary>
 public partial class ZestawyViewModel : ObservableObject
 {
+    /// <summary>Komunikat paska stanu (wyniki eksportów).</summary>
+    [ObservableProperty]
+    private string _komunikat = "";
+
     private readonly DaneAplikacji _dane;
     private readonly MagazynJson _magazyn;
     private readonly KalkulatorSerwis _kalkulator;
@@ -115,7 +119,7 @@ public partial class ZestawyViewModel : ObservableObject
             {
                 zestaw.StronaId = rek.StronaId;
                 foreach (var slot in rek.SzablonSlotow.OrderBy(s => s.Kolejnosc))
-                    zestaw.Sloty.Add(new SlotZestawu { Nazwa = slot.Nazwa, Kolejnosc = slot.Kolejnosc });
+                    zestaw.Sloty.Add(new SlotZestawu { Nazwa = slot.Nazwa, Kolejnosc = slot.Kolejnosc, SzablonSlotId = slot.Id });
             }
         }
         _dane.Zestawy.Add(zestaw);
@@ -418,16 +422,22 @@ public partial class ZestawyViewModel : ObservableObject
                     sb.Append(Csv(g.NazwaMiejsca)).Append(';').Append(Csv(w.Nazwa)).Append(';')
                       .AppendLine(w.Spakowany ? "tak" : "nie");
             System.IO.File.WriteAllText(dialog.FileName, sb.ToString(), System.Text.Encoding.UTF8);
+            Komunikat = $"Wyeksportowano listę pakowania: {dialog.FileName}";
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // eksport opcjonalny — błąd nie przerywa pracy
+            // eksport nie może przepaść cicho — użytkownik ma wiedzieć o błędzie (inaczej myśli, że zapisał)
+            Komunikat = "Błąd eksportu listy pakowania: " + ex.Message;
         }
     }
 
+    /// <summary>Zabezpiecza pole CSV: cudzysłowy przy separatorze/cudzysłowie/nowej linii oraz apostrof
+    /// przed formułą Excela (=, +, -, @ na początku) — klasyczny CSV formula injection.</summary>
     private static string Csv(string? tekst)
     {
         var t = tekst ?? "";
+        if (t.Length > 0 && (t[0] == '=' || t[0] == '+' || t[0] == '-' || t[0] == '@' || t[0] == '\t'))
+            t = "'" + t;
         return t.Contains(';') || t.Contains('"') || t.Contains('\n') ? "\"" + t.Replace("\"", "\"\"") + "\"" : t;
     }
 }

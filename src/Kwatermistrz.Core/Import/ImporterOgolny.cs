@@ -230,8 +230,66 @@ public static class CzytnikCsv
 {
     public static ArkuszXlsx Wczytaj(string sciezka)
     {
-        var linie = File.ReadAllLines(sciezka);
-        return WczytajZPamieci(linie);
+        // kodowanie: UTF-8 z BOM lub czysty UTF-8; polskie CSV z Excela bywa w Windows-1250
+        var bajty = File.ReadAllBytes(sciezka);
+        var tekst = WykryjKodowanie(bajty);
+        // pola w cudzysłowie mogą zawierać nowe linie (RFC 4180) — czytamy jako pola, nie linie
+        var pola = ParsujCalkowicie(tekst);
+        return WczytajZPamieci(pola);
+    }
+
+    /// <summary>Wykrywa kodowanie: BOM UTF-8, potem heurystyka (polskie znaki jako UTF-8 vs pojedyncze bajty Windows-1250).</summary>
+    internal static string WykryjKodowanie(byte[] bajty)
+    {
+        if (bajty.Length >= 3 && bajty[0] == 0xEF && bajty[1] == 0xBB && bajty[2] == 0xBF)
+            return System.Text.Encoding.UTF8.GetString(bajty, 3, bajty.Length - 3);
+        var jakoUtf8 = System.Text.Encoding.UTF8.GetString(bajty);
+        // błędna sekwencja zastępcza (U+FFFD) oznacza, że to nie UTF-8
+        if (!jakoUtf8.Contains('�'))
+            return jakoUtf8;
+        return System.Text.Encoding.GetEncoding(1250).GetString(bajty);
+    }
+
+    /// <summary>Parsuje cały tekst CSV na pola z podziałem na wiersze; cudzysłowy jak w RFC 4180 (w tym nowe linie w polu).</summary>
+    internal static List<string> ParsujCalkowicie(string tekst)
+    {
+        var wiersze = new List<string>();
+        var biezacy = new System.Text.StringBuilder();
+        var wCudzyslowiu = false;
+        for (var i = 0; i < tekst.Length; i++)
+        {
+            var znak = tekst[i];
+            if (wCudzyslowiu)
+            {
+                if (znak == '"')
+                {
+                    if (i + 1 < tekst.Length && tekst[i + 1] == '"')
+                    {
+                        biezacy.Append('"');
+                        i++;
+                    }
+                    else
+                        wCudzyslowiu = false;
+                }
+                else
+                    biezacy.Append(znak);
+            }
+            else if (znak == '"')
+                wCudzyslowiu = true;
+            else if (znak == '\n' || znak == '\r')
+            {
+                // \r\n jako jedna nowa linia
+                if (znak == '\r' && i + 1 < tekst.Length && tekst[i + 1] == '\n')
+                    i++;
+                wiersze.Add(biezacy.ToString());
+                biezacy.Clear();
+            }
+            else
+                biezacy.Append(znak);
+        }
+        if (biezacy.Length > 0)
+            wiersze.Add(biezacy.ToString());
+        return wiersze;
     }
 
     public static ArkuszXlsx WczytajZPamieci(IEnumerable<string> linie)

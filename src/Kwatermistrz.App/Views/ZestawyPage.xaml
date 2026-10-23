@@ -16,6 +16,10 @@
         <conv:KonwerterRowneIdWariantu x:Key="KonwerterRowneIdWariantu" />
     </Page.Resources>
     <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="280" />
             <ColumnDefinition Width="*" />
@@ -208,5 +212,7 @@
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>
+        <!-- Pasek komunikatu (wyniki eksportu) -->
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Komunikat}" VerticalAlignment="Center" Margin="0,4,0,0" />
     </Grid>
 </Page>

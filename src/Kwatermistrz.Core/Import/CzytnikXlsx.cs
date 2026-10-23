@@ -34,7 +34,7 @@ public static class CzytnikXlsx
     /// <summary>Wczytuje wszystkie arkusze ze strumienia.</summary>
     public static List<ArkuszXlsx> Wczytaj(Stream strumien)
     {
-        var skoroszyt = new XSSFWorkbook(strumien);
+        using var skoroszyt = new XSSFWorkbook(strumien);
         var arkusze = new List<ArkuszXlsx>();
         for (var i = 0; i < skoroszyt.NumberOfSheets; i++)
         {
@@ -110,7 +110,8 @@ public static class CzytnikXlsx
             return d1;
         if (DateOnly.TryParseExact(t, "dd.MM.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d2))
             return d2;
-        if (DateOnly.TryParse(t, out var d3))
+        // fallback kulturowy celowy: pliki z Excela eksportują daty jako tekst różnie (dd.MM.yyyy / MM/dd/yyyy)
+        if (DateOnly.TryParse(t, CultureInfo.InvariantCulture, DateTimeStyles.None, out var d3))
             return d3;
         return null;
     }

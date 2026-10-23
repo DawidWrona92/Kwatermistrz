@@ -85,6 +85,8 @@ public class WierszRaportuZestawow
 public class WierszRaportuStanu
 {
     public string Nazwa { get; set; } = "";
+    /// <summary>Tekst zamiast liczby (np. data ostatniego testu w raporcie „Stan replik”).</summary>
+    public string? Tekst { get; set; }
     public int Liczba { get; set; }
     public bool CzyNaglowek { get; set; }
     public string? ReplikaId { get; set; }
@@ -246,13 +248,14 @@ public partial class RaportyViewModel : ObservableObject
         var repliki = _dane.Repliki
             .Where(r => UwzglednijSprzedane || r.Status != StatusWlasnosci.Sprzedany)
             .Where(r => _stan.AktywnaRekonstrukcjaId == null || r.RekonstrukcjeId.Count == 0 || r.RekonstrukcjeId.Contains(_stan.AktywnaRekonstrukcjaId))
-            .Select(r => kalk.WierszRepliki(r))
-            .OrderByDescending(w => w.Wyprawy)
+            .Select(r => (Replika: r, Wiersz: kalk.WierszRepliki(r)))
+            // tiebreak po nazwie — ten sam porządek remisów co na liście Broń i na pulpicie
+            .OrderByDescending(x => x.Wiersz.Wyprawy)
+            .ThenBy(x => x.Replika.Prototyp != null ? $"{x.Replika.ModelProducenta} ({x.Replika.Prototyp})" : x.Replika.ModelProducenta, StringComparer.CurrentCulture)
             .ToList();
         var miejsce = 1;
-        foreach (var w in repliki)
+        foreach (var (r, w) in repliki)
         {
-            var r = _dane.Repliki.First(x => x.Id == w.ReplikaId);
             RaportBroni.Add(new WierszRaportuBroni
             {
                 Miejsce = miejsce++,
@@ -269,7 +272,7 @@ public partial class RaportyViewModel : ObservableObject
             });
         }
         // wiersz średnich i sum dla replik posiadanych (FR-901, BR-06)
-        var posiadane = repliki.Where(w => w.Status == StatusWlasnosci.Posiadany).ToList();
+        var posiadane = repliki.Where(x => x.Wiersz.Status == StatusWlasnosci.Posiadany).Select(x => x.Wiersz).ToList();
         if (posiadane.Count > 0)
         {
             RaportBroni.Add(new WierszRaportuBroni
@@ -447,7 +450,6 @@ public partial class RaportyViewModel : ObservableObject
         RaportKoszty.Add(new WierszRaportuKosztow { Grupa = "Kolekcja", Nazwa = "Wartość przedmiotów (cena zakupu)", Kwota = wartoscPrzedmiotow });
         RaportKoszty.Add(new WierszRaportuKosztow { Grupa = "Kolekcja", Nazwa = "Wartość replik (cena oryginalna)", Kwota = wartoscReplik });
         RaportKoszty.Add(new WierszRaportuKosztow { Grupa = "Kolekcja", Nazwa = "Razem", Kwota = wartoscPrzedmiotow + wartoscReplik, CzySuma = true });
-        _ = kalk;
     }
 
     /// <summary>FR-906: raport „Zestawy” — wyprawy, procent, ostatnie użycie, koszt zestawu, koszt na wyprawę.</summary>
@@ -492,9 +494,19 @@ public partial class RaportyViewModel : ObservableObject
             RaportStan.Add(new WierszRaportuStanu { Nazwa = nazwa, Liczba = g.Count() });
         }
         var bezTestu = kalk.ReplikiBezTestu(_dane.Ustawienia.DniBezTestu);
-        RaportStan.Add(new WierszRaportuStanu { Nazwa = $"Bez testu > {_dane.Ustawienia.DniBezTestu} dni (FR-104)", CzyNaglowek = true });
+        RaportStan.Add(new WierszRaportuStanu { Nazwa = $"Bez testu > {_dane.Ustawienia.DniBezTestu} dni (FR-104) — data ostatniego testu", CzyNaglowek = true });
         foreach (var r in bezTestu)
-            RaportStan.Add(new WierszRaportuStanu { Nazwa = r.ModelProducenta, Liczba = r.Pomiary.Count > 0 ? -1 : 0, ReplikaId = r.Id });
+        {
+            // zamiast kodowania -1: data ostatniego testu (lub „b.d.”); puste = nigdy nie testowana
+            var ostatni = r.Pomiary.Count > 0 ? r.Pomiary.Max(p => p.Data) : (DateOnly?)null;
+            RaportStan.Add(new WierszRaportuStanu
+            {
+                Nazwa = r.ModelProducenta,
+                Liczba = 0,
+                Tekst = ostatni?.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture) ?? "b.d.",
+                ReplikaId = r.Id,
+            });
+        }
         var otwarteAwaria = _dane.Zadania
             .Where(z => z.Status == StatusZadania.Otwarte && z.Semantyka == SemantykaZadania.Awaria)
             .ToList();
@@ -572,14 +584,21 @@ public partial class RaportyViewModel : ObservableObject
             case "Stan replik":
                 linie.Add("Nazwa;Liczba");
                 foreach (var w in RaportStan)
-                    linie.Add($"{Csv(w.Nazwa)};{(w.Liczba < 0 ? "ostatni test" : w.Liczba.ToString(System.Globalization.CultureInfo.InvariantCulture))}");
+                    linie.Add($"{Csv(w.Nazwa)};{(w.Tekst ?? w.Liczba.ToString(System.Globalization.CultureInfo.InvariantCulture))}");
                 break;
         }
         System.IO.File.WriteAllLines(dialog.FileName, linie, System.Text.Encoding.UTF8);
     }
 
-    private static string Csv(string? tekst) =>
-        tekst == null ? "" : "\"" + tekst.Replace("\"", "\"\"") + "\"";
+    /// <summary>Zabezpiecza pole CSV: zawsze w cudzysłowie oraz apostrof przed formułą Excela
+    /// (=, +, -, @ na początku) — klasyczny CSV formula injection.</summary>
+    private static string Csv(string? tekst)
+    {
+        var t = tekst ?? "";
+        if (t.Length > 0 && (t[0] == '=' || t[0] == '+' || t[0] == '-' || t[0] == '@' || t[0] == '\t'))
+            t = "'" + t;
+        return "\"" + t.Replace("\"", "\"\"") + "\"";
+    }
 
     private static string? NazwaSlownika(List<WartoscSlownika> slownik, string? id) =>
         id == null ? null : slownik.FirstOrDefault(w => w.Id == id)?.Nazwa;

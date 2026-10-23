@@ -23,8 +23,19 @@ public static class ScalaczRekordow
         var mapaPrzedmiotow = new Dictionary<string, string>(StringComparer.Ordinal);
         var mapaReplik = new Dictionary<string, string>(StringComparer.Ordinal);
         var mapaZestawow = new Dictionary<string, string>(StringComparer.Ordinal);
+        var mapaSlotowSzablonu = new Dictionary<string, string>(StringComparer.Ordinal);
 
         pominiete += ScalListy(docelowe.Rekonstrukcje, eksport.Rekonstrukcje, r => r.Id, mapaRekonstrukcji);
+        // sloty szablonu: mapa po Id (sloty zestawów wskazują SzablonSlotId — musi wskazywać lokalny slot)
+        foreach (var rekEksport in eksport.Rekonstrukcje)
+            if (mapaRekonstrukcji.TryGetValue(rekEksport.Id, out var rekLokalna))
+                foreach (var slotEksport in rekEksport.SzablonSlotow)
+                {
+                    var slotLokalny = docelowe.Rekonstrukcje.First(r => r.Id == rekLokalna).SzablonSlotow
+                        .FirstOrDefault(s => s.Id == slotEksport.Id);
+                    if (slotLokalny != null)
+                        mapaSlotowSzablonu[slotEksport.Id] = slotLokalny.Id;
+                }
         pominiete += ScalListy(docelowe.Przedmioty, eksport.Przedmioty, p => p.Id, mapaPrzedmiotow);
         pominiete += ScalListy(docelowe.Repliki, eksport.Repliki, r => r.Id, mapaReplik);
         pominiete += ScalListy(docelowe.Zestawy, eksport.Zestawy, z => z.Id, mapaZestawow);
@@ -37,7 +48,7 @@ public static class ScalaczRekordow
         foreach (var r in docelowe.Repliki)
             PrzemapujReplika(r, mapy, mapaRekonstrukcji);
         foreach (var z in docelowe.Zestawy)
-            PrzemapujZestaw(z, mapy, mapaRekonstrukcji, mapaPrzedmiotow, mapaReplik);
+            PrzemapujZestaw(z, mapy, mapaRekonstrukcji, mapaPrzedmiotow, mapaReplik, mapaSlotowSzablonu);
         foreach (var w in docelowe.Wyprawy)
             PrzemapujWyprawe(w, mapaRekonstrukcji, mapaReplik, mapaZestawow, mapaPrzedmiotow);
         foreach (var z in docelowe.Zadania)
@@ -100,11 +111,16 @@ public static class ScalaczRekordow
 
     private static void PrzemapujZestaw(Zestaw z, ImporterPakietuKonfiguracji.MapyId mapy,
         Dictionary<string, string> mapaRekonstrukcji,
-        Dictionary<string, string> mapaPrzedmiotow, Dictionary<string, string> mapaReplik)
+        Dictionary<string, string> mapaPrzedmiotow, Dictionary<string, string> mapaReplik,
+        Dictionary<string, string> mapaSlotowSzablonu)
     {
         z.RekonstrukcjaId = z.RekonstrukcjaId != null ? Remap(mapaRekonstrukcji, z.RekonstrukcjaId) : null;
         z.StronaId = mapy.MapujSlownik("Strony", z.StronaId);
         foreach (var slot in z.Sloty)
+        {
+            if (slot.SzablonSlotId != null)
+                slot.SzablonSlotId = Remap(mapaSlotowSzablonu, slot.SzablonSlotId);
+
             foreach (var wariant in slot.Warianty)
                 foreach (var element in wariant.Elementy)
                     element.ElementId = element.Typ switch
@@ -114,6 +130,7 @@ public static class ScalaczRekordow
                         TypElementu.Komplet => Remap(mapaPrzedmiotow, element.ElementId),
                         _ => element.ElementId,
                     };
+        }
     }
 
     private static void PrzemapujWyprawe(Wyprawa w,
