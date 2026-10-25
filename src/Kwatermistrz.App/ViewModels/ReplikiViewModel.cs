@@ -176,7 +176,14 @@ public partial class ReplikiViewModel : ObservableObject
             CzyOtwartaAwaria = czyAwaria,
             OtwarteZadania = otwarteZadania.Count,
             OstatnieWyprawy = ostatnieWyprawy,
-        });
+        })
+        {
+            NazwyStron = string.Join(", ", _dane.Slowniki.Strony.Where(s => r.StronyId.Contains(s.Id)).Select(s => s.Nazwa)),
+            NazwyRol = string.Join(", ", _dane.Slowniki.Role.Where(s => r.RoleId.Contains(s.Id)).Select(s => s.Nazwa)),
+            NazwaTypuMagazynka = _dane.Slowniki.TypyMagazynkow.FirstOrDefault(s => s.Id == r.TypMagazynkaId)?.Nazwa,
+            NazwaNapedu = _dane.Slowniki.Napedy.FirstOrDefault(s => s.Id == r.NapedId)?.Nazwa,
+            NazwaStanu = _dane.Slowniki.StanyReplik.FirstOrDefault(s => s.Id == r.StanId)?.Nazwa,
+        };
     }
 
     /// <summary>Wybiera replikę — otwiera kartę (FR-302). Samo przeglądnięcie nie akceptuje znacznika

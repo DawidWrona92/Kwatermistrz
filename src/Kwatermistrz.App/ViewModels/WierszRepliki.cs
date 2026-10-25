@@ -99,6 +99,21 @@ public partial class WierszRepliki : ObservableObject
     /// <summary>Rekonstrukcje (Id, FR-1302).</summary>
     public List<string> RekonstrukcjeId => _replika.RekonstrukcjeId;
 
+    /// <summary>Nazwy słownikowe gotowe do wyświetlenia (kolumny DataGrid nie mają drzewa wizualnego — konwerter ze słownikiem z DataContext strony nie działa tam przez ConverterParameter/RelativeSource).</summary>
+    public string NazwyStron { get; set; } = "";
+
+    /// <summary>Nazwy ról, przecinkiem.</summary>
+    public string NazwyRol { get; set; } = "";
+
+    /// <summary>Nazwa typu magazynka.</summary>
+    public string? NazwaTypuMagazynka { get; set; }
+
+    /// <summary>Nazwa napędu.</summary>
+    public string? NazwaNapedu { get; set; }
+
+    /// <summary>Nazwa stanu repliki.</summary>
+    public string? NazwaStanu { get; set; }
+
     /// <summary>Zaznaczenie do edycji zbiorczej (FR-216).</summary>
     [ObservableProperty]
     private bool _zaznaczona;

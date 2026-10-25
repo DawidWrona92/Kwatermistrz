@@ -113,8 +113,14 @@
                                                     <StackPanel>
                                                         <StackPanel Orientation="Horizontal">
                                                             <RadioButton GroupName="Domyslny" Content="Domyślny"
-                                                                         IsChecked="{Binding Id, Converter={StaticResource KonwerterRowneIdWariantu}, ConverterParameter={Binding DataContext.WariantDomyslnyId, RelativeSource={RelativeSource AncestorType=DataTemplate}}}"
-                                                                         Checked="Domyslny_Checked" />
+                                                                         Checked="Domyslny_Checked">
+                                                                <RadioButton.IsChecked>
+                                                                    <MultiBinding Converter="{x:Static conv:KonwerterRowneIdWariantu.Instance}">
+                                                                        <Binding Path="Id" />
+                                                                        <Binding Path="DataContext.WariantDomyslnyId" RelativeSource="{RelativeSource AncestorType=ItemsControl}" />
+                                                                    </MultiBinding>
+                                                                </RadioButton.IsChecked>
+                                                            </RadioButton>
                                                             <CheckBox Content="Puste (celowo brak)" Margin="12,0,0,0"
                                                                       IsChecked="{Binding CzyPuste}" VerticalAlignment="Center" />
                                                             <ui:Button Margin="8,0,0,0" Content="Dodaj element"

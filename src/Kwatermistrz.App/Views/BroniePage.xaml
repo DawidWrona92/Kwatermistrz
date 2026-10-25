@@ -101,36 +101,11 @@
                                          Binding="{Binding ZaznaczonaDoPorownania, Mode=TwoWay}" />
                 <DataGridTextColumn Header="#" Binding="{Binding MiejsceWRankingu}" Width="36" />
                 <DataGridTextColumn Header="Nazwa" Binding="{Binding NazwaPelna}" Width="*" />
-                <DataGridTextColumn Header="Strona" Width="90">
-                    <DataGridTextColumn.Binding>
-                        <Binding Path="StronyId" Converter="{StaticResource KonwerterNazwSlownikaWiele}"
-                                 ConverterParameter="{Binding DataContext.Slowniki.Strony, RelativeSource={RelativeSource AncestorType=Page}}" />
-                    </DataGridTextColumn.Binding>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="Rola" Width="110">
-                    <DataGridTextColumn.Binding>
-                        <Binding Path="RoleId" Converter="{StaticResource KonwerterNazwSlownikaWiele}"
-                                 ConverterParameter="{Binding DataContext.Slowniki.Role, RelativeSource={RelativeSource AncestorType=Page}}" />
-                    </DataGridTextColumn.Binding>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="Magazynek" Width="90">
-                    <DataGridTextColumn.Binding>
-                        <Binding Path="TypMagazynkaId" Converter="{StaticResource KonwerterNazwySlownika}"
-                                 ConverterParameter="{Binding DataContext.Slowniki.TypyMagazynkow, RelativeSource={RelativeSource AncestorType=Page}}" />
-                    </DataGridTextColumn.Binding>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="Napęd" Width="80">
-                    <DataGridTextColumn.Binding>
-                        <Binding Path="NapedId" Converter="{StaticResource KonwerterNazwySlownika}"
-                                 ConverterParameter="{Binding DataContext.Slowniki.Napedy, RelativeSource={RelativeSource AncestorType=Page}}" />
-                    </DataGridTextColumn.Binding>
-                </DataGridTextColumn>
-                <DataGridTextColumn Header="Stan" Width="90">
-                    <DataGridTextColumn.Binding>
-                        <Binding Path="StanId" Converter="{StaticResource KonwerterNazwySlownika}"
-                                 ConverterParameter="{Binding DataContext.Slowniki.StanyReplik, RelativeSource={RelativeSource AncestorType=Page}}" />
-                    </DataGridTextColumn.Binding>
-                </DataGridTextColumn>
+                <DataGridTextColumn Header="Strona" Binding="{Binding NazwyStron}" Width="90" />
+                <DataGridTextColumn Header="Rola" Binding="{Binding NazwyRol}" Width="110" />
+                <DataGridTextColumn Header="Magazynek" Binding="{Binding NazwaTypuMagazynka}" Width="90" />
+                <DataGridTextColumn Header="Napęd" Binding="{Binding NazwaNapedu}" Width="80" />
+                <DataGridTextColumn Header="Stan" Binding="{Binding NazwaStanu}" Width="90" />
                 <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="70" />
                 <DataGridTextColumn Header="%" Width="60">
                     <DataGridTextColumn.Binding>

@@ -38,8 +38,9 @@
                                 <TextBlock Text="{Binding Nazwa}" />
                                 <TextBlock Margin="6,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                                     <TextBlock.Text>
-                                        <MultiBinding Converter="{x:Static conv:KonwerterLicznikaKategorii.Instance}" ConverterParameter="{Binding Id}">
+                                        <MultiBinding Converter="{x:Static conv:KonwerterLicznikaKategorii.Instance}">
                                             <Binding Path="DataContext" RelativeSource="{RelativeSource AncestorType=Page}" />
+                                            <Binding Path="Id" />
                                         </MultiBinding>
                                     </TextBlock.Text>
                                 </TextBlock>
@@ -92,11 +93,28 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <controls:ProbkaKamuflazu
-                                        Wzor="{Binding WzorId, Converter={StaticResource KonwerterWzorKamuflazu}, ConverterParameter={Binding DataContext.DataContext.Slowniki.Wzory, RelativeSource={RelativeSource AncestorType=Page}}}"
-                                        ToolTip="{Binding WzorId, Converter={StaticResource KonwerterNazwaWzoru}, ConverterParameter={Binding DataContext.DataContext.Slowniki.Wzory, RelativeSource={RelativeSource AncestorType=Page}}}" />
-                                    <TextBlock Margin="6,0,0,0" VerticalAlignment="Center"
-                                               Text="{Binding WzorId, Converter={StaticResource KonwerterNazwaWzoru}, ConverterParameter={Binding DataContext.DataContext.Slowniki.Wzory, RelativeSource={RelativeSource AncestorType=Page}}}" />
+                                    <controls:ProbkaKamuflazu>
+                                        <controls:ProbkaKamuflazu.Wzor>
+                                            <MultiBinding Converter="{x:Static conv:KonwerterWzorKamuflazu.Instance}">
+                                                <Binding Path="WzorId" />
+                                                <Binding Path="DataContext.Slowniki.Wzory" RelativeSource="{RelativeSource AncestorType=Page}" />
+                                            </MultiBinding>
+                                        </controls:ProbkaKamuflazu.Wzor>
+                                        <controls:ProbkaKamuflazu.ToolTip>
+                                            <MultiBinding Converter="{x:Static conv:KonwerterNazwaWzoru.Instance}">
+                                                <Binding Path="WzorId" />
+                                                <Binding Path="DataContext.Slowniki.Wzory" RelativeSource="{RelativeSource AncestorType=Page}" />
+                                            </MultiBinding>
+                                        </controls:ProbkaKamuflazu.ToolTip>
+                                    </controls:ProbkaKamuflazu>
+                                    <TextBlock Margin="6,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock.Text>
+                                            <MultiBinding Converter="{x:Static conv:KonwerterNazwaWzoru.Instance}">
+                                                <Binding Path="WzorId" />
+                                                <Binding Path="DataContext.Slowniki.Wzory" RelativeSource="{RelativeSource AncestorType=Page}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
