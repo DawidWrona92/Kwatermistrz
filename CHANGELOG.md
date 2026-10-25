@@ -2,6 +2,28 @@
 
 Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie semantyczne.
 
+## [1.0.2] — naprawa crashy przy starcie + poprawki wydajności i integralności
+
+### Crash przy starcie (XamlParseException)
+- Naprawione 11 miejsc w XAML z niedozwolonym `{Binding}` jako `ConverterParameter` (WPF tego nie pozwala) — aplikacja wstawała z lawiną okien błędu (bronie, kreator pierwszego uruchomienia, wyposażenie, zestawy).
+- Kolumny listy broni (Strona, Rola, Magazynek, Napęd, Stan) liczone w ViewModelu — kolumny DataGrid nie obsługują `RelativeSource`.
+- Radio „punkt startu” w kreatorze i „Domyślny” w zestawach — MultiBinding zamiast bindingu w parametrze.
+- Komunikat o błędzie pokazuje pełną ścieżkę `error.log`; fallback zapisu logu obok exe; po serii 5 wyjątków aplikacja zamyka się po zrobieniu kopii zapasowej (zamiast zalewać oknami).
+
+### Wydajność
+- Zapisy odroczone (debounce): rutynowe edycje nie serializują całego dokumentu przy każdej zmianie — jeden zapis na 2 s lub przy wyjściu/kopii zapasowej; import i przywracanie zapisują natychmiast.
+- Podwójne parsowanie JSON przy starcie tylko dla starych plików 1.0.0 (strażnik po polu `IndeksWariantuDomyslnego`).
+- Raport umundurowania przez `IndeksObliczeniowy` (jedno przejście po wyprawach zamiast O(P·W)).
+- Zapis dłuższy niż 500 ms notowany w `error.log` (diagnostyka dużych katalogów).
+
+### Integralność danych
+- Kopiowanie `.bak` w try/catch — zablokowana kopia (antywirus, synchronizacja) nie przerywa zapisu głównego.
+- Kontrola unikalności Id przy wczytywaniu danych.
+- Mundur wyprawy z mieszanki (replika + przedmiot) liczony z przedmiotu — suma „bez munduru” (FR-910) spójna.
+- Wybór aktywnej rekonstrukcji zapisywany (przeżywa restart).
+- Porównania ścieżek (zdjęcia, import zip) bez rozróżniania wielkości liter — spójne z Windows/NTFS.
+- Usunięte nieużywane pakiety kryptograficzne z Core.
+
 ## [1.0.1] — naprawy po przeglądzie kodu (wszystkie 51 punktów raportu)
 
 Publikacja jako **folder** (nie pojedynczy plik) — wersja 1.0.0 single-file nie uruchamiała się na części maszyn. Zip zawiera cały katalog aplikacji + instrukcję; aktualizacja to rozpakowanie obok starej wersji (dane zostają w `%AppData%\Kwatermistrz`).
