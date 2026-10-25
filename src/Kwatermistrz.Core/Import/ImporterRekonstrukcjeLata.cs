@@ -48,10 +48,10 @@ public partial class ImporterKwatermistrz
             else if (klucz.StartsWith("do konca roku", StringComparison.Ordinal))
             {
                 // etykiety „Do końca roku 2022/2023” — A3: traktujemy jako wartości roczne
-                if (int.TryParse(etykieta[^4..], out var rok) && CzytnikXlsx.LiczbaCalkowita(wartosc) is int liczba)
+                if (int.TryParse(etykieta.Substring(etykieta.Length - 4), out var rok) && CzytnikXlsx.LiczbaCalkowita(wartosc) is int liczba)
                     k.Dane.Ustawienia.HistoryczneWyprawyWgRok[rok] = liczba;
             }
-            else if (klucz.StartsWith("w ", StringComparison.Ordinal) && int.TryParse(etykieta[2..].Trim(), out var rok2)
+            else if (klucz.StartsWith("w ", StringComparison.Ordinal) && int.TryParse(etykieta.Substring(2).Trim(), out var rok2)
                      && CzytnikXlsx.LiczbaCalkowita(wartosc) is int liczba2)
             {
                 k.Dane.Ustawienia.HistoryczneWyprawyWgRok[rok2] = liczba2;

@@ -47,7 +47,11 @@ public class MagazynMapowan
         var json = JsonSerializer.Serialize(mapowania, Opcje);
         var tmp = _sciezka + ".tmp";
         File.WriteAllText(tmp, json);
+#if NET48
+        System.IO.PlikiNet48.PrzeniesNadpisujac(tmp, _sciezka);
+#else
         File.Move(tmp, _sciezka, overwrite: true);
+#endif
     }
 
     /// <summary>Zapisuje lub nadpisuje jedno mapowanie (po nazwie) i zwraca zaktualizowaną listę.</summary>

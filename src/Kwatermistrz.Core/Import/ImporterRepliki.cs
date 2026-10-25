@@ -108,7 +108,7 @@ public partial class ImporterKwatermistrz
         if (magazynki != null)
         {
             // może być kilka rozdzielonych przecinkiem/ukośnikiem (np. „AK 12/AK 74”)
-            var czesci = magazynki.Split(new[] { ',', '/' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var czesci = magazynki.Split(new[] { ',', '/' }, StringSplitOptions.RemoveEmptyEntries).Select(c => c.Trim()).Where(c => c.Length > 0);
             foreach (var czesc in czesci)
             {
                 var w = Model.Slowniki.Znajdz(slowniki.TypyMagazynkow, czesc);
@@ -120,7 +120,7 @@ public partial class ImporterKwatermistrz
         var rola = Normalizacja.Przytnij(wiersz.Komorka(kol.Rola));
         if (rola != null)
         {
-            foreach (var czesc in rola.Split(new[] { '/', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            foreach (var czesc in rola.Split(new[] { '/', ',' }, StringSplitOptions.RemoveEmptyEntries).Select(c => c.Trim()).Where(c => c.Length > 0))
             {
                 var w = Model.Slowniki.Znajdz(slowniki.Role, czesc);
                 if (w != null && !replika.RoleId.Contains(w.Id))
@@ -131,7 +131,7 @@ public partial class ImporterKwatermistrz
         var strona = Normalizacja.Przytnij(wiersz.Komorka(kol.Strona));
         if (strona != null)
         {
-            foreach (var czesc in strona.Split(new[] { '/', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            foreach (var czesc in strona.Split(new[] { '/', ',' }, StringSplitOptions.RemoveEmptyEntries).Select(c => c.Trim()).Where(c => c.Length > 0))
             {
                 var w = Model.Slowniki.Znajdz(slowniki.Strony, czesc);
                 if (w != null && !replika.StronyId.Contains(w.Id))

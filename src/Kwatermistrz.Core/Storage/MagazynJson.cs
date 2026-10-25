@@ -151,7 +151,11 @@ public class MagazynJson
                     // kopia .bak zablokowana (antywirus, synchronizacja) — stara kopia .bak zostaje; zapis główny musi się udać
                 }
             }
+#if NET48
+            System.IO.PlikiNet48.PrzeniesNadpisujac(tmp, _sciezka);
+#else
             File.Move(tmp, _sciezka, overwrite: true);
+#endif
             _brudne = false;
             start.Stop();
             if (start.ElapsedMilliseconds > 500)
@@ -306,7 +310,7 @@ public class MagazynJson
     /// rozpoznawanych po polu „IndeksWariantuDomyslnego” — pliki 1.0.1 i nowsze czytane są jednym przejściem.</summary>
     private static DaneAplikacji? DeserializujZMigracja(string json)
     {
-        if (!json.Contains("IndeksWariantuDomyslnego", StringComparison.Ordinal))
+        if (json.IndexOf("IndeksWariantuDomyslnego", StringComparison.Ordinal) < 0)
             return JsonSerializer.Deserialize<DaneAplikacji>(json, Opcje);
         var node = JsonNode.Parse(json);
         if (node is JsonObject doc)

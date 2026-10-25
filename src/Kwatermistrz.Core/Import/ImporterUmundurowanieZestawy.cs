@@ -243,7 +243,7 @@ public partial class ImporterKwatermistrz
                             slot.Warianty.Add(new WariantSlotu { CzyPuste = true });
                             continue;
                         }
-                        var elementy = wariantTekst.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        var elementy = wariantTekst.Split('+', StringSplitOptions.RemoveEmptyEntries).Select(c => c.Trim()).Where(c => c.Length > 0);
                         var wariant = new WariantSlotu();
                         foreach (var elementTekst in elementy)
                         {
@@ -296,7 +296,7 @@ public partial class ImporterKwatermistrz
         var aliasyNazwy = "";
         var idx = p.Nazwa.IndexOf('„');
         if (idx >= 0)
-            aliasyNazwy = p.Nazwa[idx..].Replace("„", " ").Replace("”", " ");
+            aliasyNazwy = p.Nazwa.Substring(idx).Replace("„", " ").Replace("”", " ");
         return $"{p.Firma} {p.Nazwa} {aliasyNazwy} {wzor?.Nazwa} {aliasyWzroru}";
     }
 

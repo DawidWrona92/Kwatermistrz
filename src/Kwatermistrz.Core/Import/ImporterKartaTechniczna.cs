@@ -168,7 +168,7 @@ public partial class ImporterKwatermistrz
         // rola i magazynki (kolumny Teren, Typ magazynków)
         var rola = Normalizacja.Przytnij(wiersz.Komorka(KolumnaTeren));
         if (rola != null)
-            foreach (var czesc in rola.Split(new[] { '/', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            foreach (var czesc in rola.Split(new[] { '/', ',' }, StringSplitOptions.RemoveEmptyEntries).Select(c => c.Trim()).Where(c => c.Length > 0))
             {
                 var w = Model.Slowniki.Znajdz(k.Dane.Slowniki.Role, czesc);
                 if (w != null && !replika.RoleId.Contains(w.Id))
@@ -230,13 +230,13 @@ public partial class ImporterKwatermistrz
         var bezNawiasow = nazwaKarty;
         var idx = bezNawiasow.IndexOf('(');
         if (idx > 0)
-            bezNawiasow = bezNawiasow[..idx].Trim();
+            bezNawiasow = bezNawiasow.Substring(0, idx).Trim();
         var modelNorm = Normalizacja.TekstDoPorownania(bezNawiasow);
         var poModelu = repliki.Where(r =>
         {
             var m = r.ModelProducenta;
             var i = m.IndexOf('(');
-            var model = i > 0 ? m[..i].Trim() : m;
+            var model = i > 0 ? m.Substring(0, i).Trim() : m;
             return Normalizacja.TekstDoPorownania(model) == modelNorm;
         }).ToList();
         return poModelu.Count == 1 ? poModelu[0] : null;

@@ -61,7 +61,7 @@ public static class EksporterXlsx
         using var skoroszyt = new XSSFWorkbook();
         foreach (var arkusz in arkusze)
         {
-            var nazwa = arkusz.Nazwa.Length > 31 ? arkusz.Nazwa[..31] : arkusz.Nazwa;
+            var nazwa = arkusz.Nazwa.Length > 31 ? arkusz.Nazwa.Substring(0, 31) : arkusz.Nazwa;
             var sheet = skoroszyt.CreateSheet(string.IsNullOrWhiteSpace(nazwa) ? "Arkusz" : nazwa);
             var stylNaglowek = skoroszyt.CreateCellStyle();
             var czcionka = skoroszyt.CreateFont();

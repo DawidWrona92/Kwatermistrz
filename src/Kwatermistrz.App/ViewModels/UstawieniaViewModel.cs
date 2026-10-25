@@ -89,7 +89,7 @@ public partial class UstawieniaViewModel : ObservableObject
         Assembly.GetExecutingAssembly()
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
         is { } wersja && wersja.Contains('+')
-            ? wersja[..wersja.IndexOf('+')]
+            ? wersja.Substring(0, wersja.IndexOf('+'))
             : "dev";
 
     /// <summary>Komunikat po operacji na kopii (FR-1107).</summary>

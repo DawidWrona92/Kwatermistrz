@@ -135,7 +135,7 @@ public static class EksportRekonstrukcji
         using var zip = ZipFile.OpenRead(sciezka);
         return zip.Entries
             .Where(e => e.FullName.StartsWith(KatalogZdjec, StringComparison.Ordinal))
-            .Select(e => e.FullName[KatalogZdjec.Length..])
+            .Select(e => e.FullName.Substring(KatalogZdjec.Length))
             .OrderBy(s => s, StringComparer.Ordinal)
             .ToList();
     }
@@ -148,7 +148,7 @@ public static class EksportRekonstrukcji
         using var zip = ZipFile.OpenRead(sciezka);
         foreach (var wpis in zip.Entries.Where(e => e.FullName.StartsWith(KatalogZdjec, StringComparison.Ordinal)))
         {
-            var wzgledna = wpis.FullName[KatalogZdjec.Length..];
+            var wzgledna = wpis.FullName.Substring(KatalogZdjec.Length);
             var pelna = Path.GetFullPath(Path.Combine(katalogPelny, wzgledna.Replace('/', Path.DirectorySeparatorChar)));
             // strażnik zip-slip: plik musi leżeć w katalogu danych; porównanie bez wielkości liter — Windows (NTFS) ich nie rozróżnia
             if (!pelna.StartsWith(katalogPelny + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))

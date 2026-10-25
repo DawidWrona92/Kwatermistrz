@@ -71,7 +71,7 @@ public class EksporterXlsxTests
         Assert.Equal("1 072,00 zł", bron.Wiersze[1].Komorki[7]); // koszt całkowity (BR-04, BR-14)
         Assert.Equal("960,00 zł", bron.Wiersze[1].Komorki[8]); // cena oryginalna
         Assert.Equal("112,00 zł", bron.Wiersze[1].Komorki[9]); // dodatki
-        Assert.Equal("Suma (posiadane)", bron.Wiersze[^1].Komorki[0]); // wiersz sumy
+        Assert.Equal("Suma (posiadane)", bron.Wiersze[bron.Wiersze.Count - 1].Komorki[0]); // wiersz sumy
 
         var wyposazenie = arkusze[1];
         Assert.Equal("Kamizelka 6B46", wyposazenie.Wiersze[1].Komorki[2]);
