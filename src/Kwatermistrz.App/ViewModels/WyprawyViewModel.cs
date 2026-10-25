@@ -260,7 +260,7 @@ public partial class WyprawyViewModel : ObservableObject
             OdejmijOdLicznikow = true;
         }
         _dane.Wyprawy.Add(Nowa);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         // zapamiętaj warianty jako ostatnio użyte (FR-704) — po Id wariantu
         if (Nowa.ZestawId != null)
         {
@@ -287,7 +287,7 @@ public partial class WyprawyViewModel : ObservableObject
         CofnijOdliczenie(wyprawa, staryWplyw);
         if (CzyPrzedDniemZerowymDla(wyprawa))
             OdliczOdLicznikow(wyprawa);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -307,7 +307,7 @@ public partial class WyprawyViewModel : ObservableObject
             return;
         wiersz.Wyprawa.CzyUsunieta = true;
         CofnijOdliczenie(wiersz.Wyprawa);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -320,7 +320,7 @@ public partial class WyprawyViewModel : ObservableObject
         wiersz.Wyprawa.CzyUsunieta = false;
         if (CzyPrzedDniemZerowymDla(wiersz.Wyprawa))
             OdliczOdLicznikow(wiersz.Wyprawa);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 

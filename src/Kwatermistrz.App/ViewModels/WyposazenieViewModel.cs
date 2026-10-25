@@ -30,7 +30,7 @@ public partial class WyposazenieViewModel : ObservableObject
     }
 
     /// <summary>Zapisuje dane bez odświeżania listy — po zmianie samych zdjęć (FR-211, FR-1203).</summary>
-    public void ZapiszCicho() => _magazyn.Zapisz(_dane);
+    public void ZapiszCicho() => _magazyn.ZapiszDebounce(_dane);
 
     // ---- Konfiguracje nośnika (FR-208) ----
 
@@ -41,7 +41,7 @@ public partial class WyposazenieViewModel : ObservableObject
         if (Wybrany == null)
             return;
         Wybrany.Przedmiot.Konfiguracje.Add(new KonfiguracjaNosnika { Nazwa = "Nowa konfiguracja" });
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
     }
 
     /// <summary>Usuwa konfigurację nośnika (FR-208).</summary>
@@ -51,7 +51,7 @@ public partial class WyposazenieViewModel : ObservableObject
         if (Wybrany == null || konfiguracja == null)
             return;
         Wybrany.Przedmiot.Konfiguracje.Remove(konfiguracja);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
     }
 
     /// <summary>„Zapisz jako konfigurację” — z aktualnie zamontowanych elementów nośnika (FR-208).</summary>
@@ -66,7 +66,7 @@ public partial class WyposazenieViewModel : ObservableObject
             Nazwa = $"Konfiguracja {Wybrany.Przedmiot.Konfiguracje.Count + 1}",
             ElementyId = zamontowane,
         });
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
     }
 
     /// <summary>„Zastosuj konfigurację” — montuje elementy konfiguracji na nośniku; pozostałe montaże na nośniku zostają (FR-208).</summary>
@@ -81,7 +81,7 @@ public partial class WyposazenieViewModel : ObservableObject
             if (element != null)
                 element.ZamontowanyNaId = Wybrany.Id;
         }
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -221,7 +221,7 @@ public partial class WyposazenieViewModel : ObservableObject
         var ile = Math.Max(1, IleKopii);
         for (var i = 0; i < ile; i++)
             _dane.Przedmioty.Add(KopiujKarte(Wybrany.Przedmiot));
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -256,7 +256,7 @@ public partial class WyposazenieViewModel : ObservableObject
             return;
         var kopia = KopiujKarte(Wybrany.Przedmiot);
         _dane.Przedmioty.Add(kopia);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
         Wybrany = Wiersze.FirstOrDefault(w => w.Id == kopia.Id);
     }
@@ -269,7 +269,7 @@ public partial class WyposazenieViewModel : ObservableObject
             return;
         Wybrany.Przedmiot.ZnacznikZImportu = false;
         Wybrany.Przedmiot.SynchronizujCenaZakupu(_dane.Slowniki, Wybrany.Przedmiot.DataZakupu ?? DateOnly.FromDateTime(DateTime.Today));
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -288,7 +288,7 @@ public partial class WyposazenieViewModel : ObservableObject
             return;
         CzyscicielReferencji.UsunReferencjePrzedmiotu(_dane, wiersz.Przedmiot.Id);
         _dane.Przedmioty.Remove(wiersz.Przedmiot);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         if (Wybrany?.Id == wiersz.Id)
             Wybrany = null;
         Odswiez();
@@ -309,7 +309,7 @@ public partial class WyposazenieViewModel : ObservableObject
             return;
         }
         Wybrany.Przedmiot.KompletId = komplet.Id;
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -320,7 +320,7 @@ public partial class WyposazenieViewModel : ObservableObject
         if (Wybrany == null || Wybrany.Przedmiot.KompletId == null)
             return;
         Wybrany.Przedmiot.KompletId = null;
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -331,7 +331,7 @@ public partial class WyposazenieViewModel : ObservableObject
         if (Wybrany == null || nosnik == null)
             return;
         Wybrany.Przedmiot.ZamontowanyNaId = nosnik.Id;
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -342,7 +342,7 @@ public partial class WyposazenieViewModel : ObservableObject
         if (Wybrany == null)
             return;
         Wybrany.Przedmiot.ZamontowanyNaId = null;
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -379,7 +379,7 @@ public partial class WyposazenieViewModel : ObservableObject
             foreach (var stronaId in EdytowaneStronyId)
                 if (!p.StronyId.Contains(stronaId))
                     p.StronyId.Add(stronaId);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 

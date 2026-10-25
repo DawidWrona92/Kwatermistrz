@@ -17,6 +17,7 @@ public partial class App : Application
     private const string NazwaMutexa = "Kwatermistrz.SingleInstance";
     private static System.Threading.Mutex? _mutex;
     private ServiceProvider? _provider;
+    private System.Windows.Threading.DispatcherTimer? _timerZapisu;
 
     /// <summary>Aktualne dane aplikacji (wstrzykiwane do widoków).</summary>
     public static DaneAplikacji Dane { get; private set; } = null!;
@@ -51,8 +52,23 @@ public partial class App : Application
             _licznikNieobsluzonych++;
             if (_licznikNieobsluzonych >= 5)
             {
+                // seria wyjątków — zapisujemy odłożone zmiany i robimy kopię zapasową przed zamknięciem, żeby nie stracić edycji
+                var kopia = "";
+                try
+                {
+                    if (Magazyn != null && Dane != null)
+                    {
+                        Magazyn.ZapiszJezeliBrudne(Dane);
+                        kopia = Magazyn.UtworzKopieZapasowa(Dane);
+                    }
+                }
+                catch
+                {
+                    // kopia po awarii jest best-effort — nie może przeszkodzić zamknięciu
+                }
+                var informacjeOkopii = kopia != "" ? $"\n\nKopia zapasowa danych: {kopia}" : "";
                 System.Windows.MessageBox.Show(
-                    $"Wystąpiła seria nieoczekiwanych błędów ({_licznikNieobsluzonych}). Aby nie uszkodzić danych, aplikacja zostanie zamknięta.\n\nSzczegóły zapisano w pliku:\n{sciezkaLogu}",
+                    $"Wystąpiła seria nieoczekiwanych błędów ({_licznikNieobsluzonych}). Aby nie uszkodzić danych, aplikacja zostanie zamknięta.{informacjeOkopii}\n\nSzczegóły zapisano w pliku:\n{sciezkaLogu}",
                     "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 Shutdown();
                 return;
@@ -105,6 +121,15 @@ public partial class App : Application
         // aliasy kolorów wykresów (FR-909) ustawiane również przy starcie — wg faktycznego motywu
         UstawAliasyWykresow(motyw == ApplicationTheme.Light);
 
+        // zapis odroczony (debounce): rutynowe edycje odkładają zapis znacznikiem „brudne”,
+        // a ten timer na wątku UI spłukuje go co 2 s — jedna serializacja zamiast jednej na edycję
+        _timerZapisu = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(2),
+        };
+        _timerZapisu.Tick += (_, _) => Magazyn.ZapiszJezeliBrudne(Dane);
+        _timerZapisu.Start();
+
         var mainWindow = new MainWindow
         {
             DataContext = _provider.GetRequiredService<MainWindowViewModel>(),
@@ -149,6 +174,11 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        // spłukujemy odłożony debounce'em zapis — wyjście z aplikacji nie może gubić edycji
+        // (Magazyn/Dane null przy wczesnym wyjściu, np. druga instancja)
+        if (Magazyn != null && Dane != null)
+            Magazyn.ZapiszJezeliBrudne(Dane);
+        _timerZapisu?.Stop();
         _provider?.Dispose();
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();

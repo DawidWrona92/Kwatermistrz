@@ -273,7 +273,7 @@ public partial class MainWindow : FluentWindow
         var u = App.Dane.Ustawienia;
         u.SzerokoscOkna = Width;
         u.WysokoscOkna = Height;
-        App.Magazyn.Zapisz(App.Dane);
+        App.Magazyn.ZapiszDebounce(App.Dane);
         base.OnClosed(e);
     }
 }

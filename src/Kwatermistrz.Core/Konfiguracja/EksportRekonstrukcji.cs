@@ -150,8 +150,8 @@ public static class EksportRekonstrukcji
         {
             var wzgledna = wpis.FullName[KatalogZdjec.Length..];
             var pelna = Path.GetFullPath(Path.Combine(katalogPelny, wzgledna.Replace('/', Path.DirectorySeparatorChar)));
-            // strażnik zip-slip: plik musi leżeć w katalogu danych
-            if (!pelna.StartsWith(katalogPelny + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            // strażnik zip-slip: plik musi leżeć w katalogu danych; porównanie bez wielkości liter — Windows (NTFS) ich nie rozróżnia
+            if (!pelna.StartsWith(katalogPelny + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
                 continue;
             Directory.CreateDirectory(Path.GetDirectoryName(pelna)!);
             using var zrodlo = wpis.Open();

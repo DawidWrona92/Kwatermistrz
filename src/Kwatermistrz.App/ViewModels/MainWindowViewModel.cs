@@ -145,7 +145,7 @@ public partial class MainWindowViewModel : ObservableObject
             if (dialog.ShowDialog() != true)
                 return;
             var dane = EksportRekonstrukcji.Wczytaj(dialog.FileName);
-            _magazyn.UtworzKopieZapasowa(); // FR-1107: przed importem kopia automatyczna
+            _magazyn.UtworzKopieZapasowa(_dane); // FR-1107: przed importem kopia automatyczna
             // konfiguracja (słowniki, kategorie, wzory, szablony) przez pakiet z podglądem scalania (FR-1404)
             var pakiet = PakietKonfiguracji.Eksportuj(dane, "Z eksportu rekonstrukcji");
             var podglad = ImporterPakietuKonfiguracji.PrzygotujPodglad(_dane, pakiet);

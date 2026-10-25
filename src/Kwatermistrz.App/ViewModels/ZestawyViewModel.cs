@@ -102,7 +102,7 @@ public partial class ZestawyViewModel : ObservableObject
         if (wiersz != null)
         {
             wiersz.Zestaw.ZnacznikZImportu = false;
-            _magazyn.Zapisz(_dane);
+            _magazyn.ZapiszDebounce(_dane);
         }
     }
 
@@ -123,7 +123,7 @@ public partial class ZestawyViewModel : ObservableObject
             }
         }
         _dane.Zestawy.Add(zestaw);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
         Wybrany = Wiersze.FirstOrDefault(w => w.Id == zestaw.Id);
     }
@@ -142,7 +142,7 @@ public partial class ZestawyViewModel : ObservableObject
                 Wybrany.Zestaw.Nazwa = _dane.Przedmioty.FirstOrDefault(p => p.Id == el.ElementId)?.Nazwa ?? "";
         }
         Wybrany.Zestaw.ZnacznikZImportu = false;
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
         OdswiezPakowanie();
     }
@@ -154,7 +154,7 @@ public partial class ZestawyViewModel : ObservableObject
         if (wiersz == null)
             return;
         _dane.Zestawy.Remove(wiersz.Zestaw);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -169,7 +169,7 @@ public partial class ZestawyViewModel : ObservableObject
             Nazwa = "Nowy slot",
             Kolejnosc = Wybrany.Zestaw.Sloty.Count,
         });
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
     }
 
     /// <summary>Usuwa slot (tylko gdy nie ma wariantów; FR-702).</summary>
@@ -179,7 +179,7 @@ public partial class ZestawyViewModel : ObservableObject
         if (Wybrany == null || slot == null)
             return;
         Wybrany.Zestaw.Sloty.Remove(slot);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
     }
 
     /// <summary>Dodaje wariant do slotu (FR-703); domyślnie pierwszy element lub „puste”.</summary>
@@ -189,7 +189,7 @@ public partial class ZestawyViewModel : ObservableObject
         if (Wybrany == null || slot == null)
             return;
         slot.Warianty.Add(new WariantSlotu());
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
     }
 
     /// <summary>Usuwa wariant (FR-703).</summary>
@@ -200,7 +200,7 @@ public partial class ZestawyViewModel : ObservableObject
             return;
         foreach (var slot in Wybrany.Zestaw.Sloty)
             slot.Warianty.Remove(wariant);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
     }
 
     /// <summary>Ustawia wariant domyślny slotu (FR-704) — po Id wariantu (nie po indeksie).</summary>
@@ -212,7 +212,7 @@ public partial class ZestawyViewModel : ObservableObject
         if (tablica[0] is SlotZestawu slot && tablica[1] is WariantSlotu wariant)
         {
             slot.WariantDomyslnyId = wariant.Id;
-            _magazyn.Zapisz(_dane);
+            _magazyn.ZapiszDebounce(_dane);
         }
     }
 
@@ -223,7 +223,7 @@ public partial class ZestawyViewModel : ObservableObject
         if (Wybrany == null || wariant == null)
             return;
         wariant.Elementy.Add(new ElementWariantu { Typ = TypElementu.Przedmiot });
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
     }
 
     /// <summary>Usuwa element z wariantu (FR-703).</summary>
@@ -235,7 +235,7 @@ public partial class ZestawyViewModel : ObservableObject
         foreach (var slot in Wybrany.Zestaw.Sloty)
             foreach (var wariant in slot.Warianty)
                 wariant.Elementy.Remove(element);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
     }
 
     /// <summary>Próbki wzorów elementów wybranego wariantu slotu (FR-705).</summary>
@@ -394,7 +394,7 @@ public partial class ZestawyViewModel : ObservableObject
             Wybrany.Zestaw.SpakowaneKlucze.Add(wiersz.Klucz);
         else
             Wybrany.Zestaw.SpakowaneKlucze.Remove(wiersz.Klucz);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         foreach (var g in GrupyPakowania)
             g.OdswiezPostep();
     }

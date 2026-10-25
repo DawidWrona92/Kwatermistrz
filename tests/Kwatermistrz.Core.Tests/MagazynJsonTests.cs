@@ -97,6 +97,44 @@ public class MagazynJsonTests : IDisposable
     }
 
     [Fact]
+    public void ZapiszDebounce_OdlozoneZapisy_SplukiwanePrzezZapiszJezeliBrudne()
+    {
+        var magazyn = new MagazynJson(_katalog);
+        var dane = magazyn.Wczytaj();
+        dane.Przedmioty.Add(new Przedmiot { Nazwa = "Odłożone" });
+
+        magazyn.ZapiszDebounce(dane);
+        Assert.True(magazyn.CzyBrudne);
+        // debounced zapis nie dotknął dysku — plik danych nie istnieje
+        Assert.False(magazyn.IstniejaDane);
+
+        magazyn.ZapiszJezeliBrudne(dane);
+        Assert.False(magazyn.CzyBrudne);
+        var wczytane = magazyn.Wczytaj();
+        Assert.Single(wczytane.Przedmioty);
+
+        // drugi flush nic nie robi — brak zmian od ostatniego zapisu
+        magazyn.ZapiszJezeliBrudne(dane);
+        Assert.False(magazyn.CzyBrudne);
+    }
+
+    [Fact]
+    public void UtworzKopieZapasowa_SplukujeOdroczonyZapis()
+    {
+        var magazyn = new MagazynJson(_katalog);
+        var dane = magazyn.Wczytaj();
+        dane.Przedmioty.Add(new Przedmiot { Nazwa = "Do kopii" });
+
+        magazyn.ZapiszDebounce(dane);
+        var sciezkaKopii = magazyn.UtworzKopieZapasowa(dane);
+
+        Assert.False(magazyn.CzyBrudne);
+        Assert.True(File.Exists(Path.Combine(sciezkaKopii, "dane.json")));
+        var wczytane = MagazynJson.WczytajZPliku(Path.Combine(sciezkaKopii, "dane.json"));
+        Assert.Single(wczytane.Przedmioty);
+    }
+
+    [Fact]
     public void WczytajZPliku_PoprawnyPlik_ZwracaDane()
     {
         var magazyn = new MagazynJson(_katalog);

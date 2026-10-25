@@ -21,5 +21,7 @@ public partial class StanAplikacji : ObservableObject
     partial void OnAktywnaRekonstrukcjaIdChanged(string? value)
     {
         App.Dane.Ustawienia.OstatniaRekonstrukcjaId = value;
+        // wybór rekonstrukcji też ma przetrwać restart — odkładamy zapis (debounce), flush przy wyjściu/timerze
+        App.Magazyn.ZapiszDebounce(App.Dane);
     }
 }

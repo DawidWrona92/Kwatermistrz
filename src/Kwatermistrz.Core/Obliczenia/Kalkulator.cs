@@ -41,7 +41,10 @@ public class WierszUmundurowania
     public decimal KosztNaWyprawe { get; set; }
 }
 
-/// <summary>Implementacja reguł biznesowych rozdziału 8. Definicje są stałe i niekonfigurowalne (NFR-14); klasa nie zna interfejsu.</summary>
+/// <summary>Implementacja reguł biznesowych rozdziału 8. Definicje są stałe i niekonfigurowalne (NFR-14); klasa nie zna interfejsu.
+/// Uwaga wydajnościowa: metody tego typu (UzyciaPrzedmiotu, CzyWnaSkładzie) liczą od zera przy każdym wywołaniu —
+/// nadają się do pojedynczych zapytań (karta, wybrany wiersz). Przy odświeżaniu całych list używać
+/// <see cref="IndeksObliczeniowy"/> (jedno przejście po wyprawach, zapytania O(1)), inaczej O(P·W·E).</summary>
 public class Kalkulator
 {
     private readonly DaneAplikacji _dane;
@@ -233,8 +236,11 @@ public class Kalkulator
         }
         if (elementy.Count == 0)
             return (null, false);
-        var pierwszy = elementy[0];
-        var id = pierwszy.Typ == TypElementu.Replika ? null : pierwszy.ElementId;
+        // mundur = przedmiot (BR-09: umundurowanie); replika w slocie munduru to nie mundur — przy mieszance
+        // (replika + przedmiot) liczy się pierwszy element będący przedmiotem/kompletem/konfiguracją,
+        // żeby wyprawa z mundurem w składzie nie wchodziła do sumy „bez munduru” (FR-910)
+        var mundurElement = elementy.FirstOrDefault(e => e.Typ != TypElementu.Replika);
+        var id = mundurElement?.ElementId;
         return (id, elementy.Count > 1);
     }
 

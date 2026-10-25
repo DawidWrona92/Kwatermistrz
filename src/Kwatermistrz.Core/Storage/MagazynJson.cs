@@ -135,15 +135,73 @@ public class MagazynJson
         {
             Directory.CreateDirectory(KatalogDanych);
             dane.OstatniaZmiana = DateTime.Now;
+            var start = System.Diagnostics.Stopwatch.StartNew();
             var json = JsonSerializer.Serialize(dane, Opcje);
             var tmp = _sciezka + ".tmp";
             File.WriteAllText(tmp, json);
             if (File.Exists(_sciezka))
             {
                 var kopia = _sciezka + ".bak";
-                File.Copy(_sciezka, kopia, overwrite: true);
+                try
+                {
+                    File.Copy(_sciezka, kopia, overwrite: true);
+                }
+                catch (IOException)
+                {
+                    // kopia .bak zablokowana (antywirus, synchronizacja) — stara kopia .bak zostaje; zapis główny musi się udać
+                }
             }
             File.Move(tmp, _sciezka, overwrite: true);
+            _brudne = false;
+            start.Stop();
+            if (start.ElapsedMilliseconds > 500)
+                ZanotujWolnyZapis(start.ElapsedMilliseconds);
+        }
+    }
+
+    /// <summary>Flaga „są niezapisane zmiany” — ustawiana przez ZapiszDebounce, zdejmowana przez Zapisz/ZapiszJezeliBrudne.</summary>
+    private bool _brudne;
+
+    /// <summary>Odkłada zapis na później (debounce): znacznik „brudne” spłukuje okresowy ZapiszJezeliBrudne na wątku UI
+    /// (DispatcherTimer w App) oraz ZapiszJezeliBrudne przy zamykaniu i przed kopią zapasową. Krytyczne ścieżki
+    /// (przywracanie danych, kopie) nadal wołają Zapisz bezpośrednio.</summary>
+    public void ZapiszDebounce(DaneAplikacji dane)
+    {
+        lock (_blokada)
+        {
+            _brudne = true;
+            dane.OstatniaZmiana = DateTime.Now;
+        }
+    }
+
+    /// <summary>Czy są odłożone (niezapisane) zmiany.</summary>
+    public bool CzyBrudne
+    {
+        get { lock (_blokada) return _brudne; }
+    }
+
+    /// <summary>Spłukuje odłożony zapis (debounce), gdy istnieje. Bezpieczne także, gdy nic nie jest brudne.</summary>
+    public void ZapiszJezeliBrudne(DaneAplikacji dane)
+    {
+        lock (_blokada)
+        {
+            if (!_brudne)
+                return;
+        }
+        Zapisz(dane);
+    }
+
+    /// <summary>Notuje powolny zapis do error.log — pomiar czasu zapisu (diagnostyka rosnącego katalogu zdjęć w JSON).</summary>
+    private void ZanotujWolnyZapis(long milisekundy)
+    {
+        try
+        {
+            File.AppendAllText(Path.Combine(KatalogDanych, "error.log"),
+                $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Zapis danych trwał {milisekundy} ms (próg 500 ms){Environment.NewLine}");
+        }
+        catch
+        {
+            // logowanie nie może być przyczyną kolejnego wyjątku
         }
     }
 
@@ -152,10 +210,13 @@ public class MagazynJson
 
     /// <summary>Tworzy ręczną kopię zapasową całego katalogu danych (dane + zdjęcia) do podkatalogu kopie/ (FR-1107).
     /// Po kopii egzekwowana jest retencja (MaksymalnaLiczbaKopii). Zwraca ścieżkę katalogu kopii.</summary>
-    public string UtworzKopieZapasowa()
+    public string UtworzKopieZapasowa(DaneAplikacji? dane = null)
     {
         lock (_blokada)
         {
+            // kopia ma zawierać bieżący (też odłożony debounce'em) stan — najpierw spłukujemy zapis
+            if (dane != null && _brudne)
+                Zapisz(dane);
             // nazwa z dokładnością do sekundy — dwie kopie w tej samej sekundzie dostają sufiks
             var baza = DateTime.Now.ToString("yyyy-MM-dd-HHmmss", System.Globalization.CultureInfo.InvariantCulture);
             var katalog = Path.Combine(KatalogDanych, "kopie", baza);
@@ -218,6 +279,19 @@ public class MagazynJson
     {
         if (dane.SchemaVersion > AktualnaWersjaSchematu)
             throw new InvalidDataException("Dane pochodzą z nowszej wersji aplikacji");
+        // kontrola integralności (NFR-05) — minimum: Id muszą być unikalne w obrębie każdej kolekcji,
+        // inaczej wyszukiwanie po Id (FirstOrDefault) zwracałoby „pierwszy lepszy” rekord i sumy by się rozjeżdżały
+        static void SprawdzUnikalnosc<T>(IEnumerable<T> kolekcja, Func<T, string> id, string nazwa)
+        {
+            var duplikaty = kolekcja.GroupBy(id, StringComparer.Ordinal).Where(g => g.Count() > 1).ToList();
+            if (duplikaty.Count > 0)
+                throw new InvalidDataException($"Zduplikowane Id w kolekcji {nazwa}: {string.Join(", ", duplikaty.Select(g => g.Key))}");
+        }
+        SprawdzUnikalnosc(dane.Przedmioty, p => p.Id, "Przedmioty");
+        SprawdzUnikalnosc(dane.Repliki, r => r.Id, "Repliki");
+        SprawdzUnikalnosc(dane.Zestawy, z => z.Id, "Zestawy");
+        SprawdzUnikalnosc(dane.Rekonstrukcje, r => r.Id, "Rekonstrukcje");
+        SprawdzUnikalnosc(dane.SzablonyKart, s => s.Id, "SzablonyKart");
     }
 
     private static void Migruj(DaneAplikacji dane)
@@ -227,9 +301,13 @@ public class MagazynJson
         // kolejne migracje dopisywane tutaj; przed migracją wywołujący robi kopię (FR-1107)
     }
 
-    /// <summary>Deserializuje dokument danych; przed deserializacją przepisuje stare indeksy wariantów (format 1.0.0) na Id.</summary>
+    /// <summary>Deserializuje dokument danych; przed deserializacją przepisuje stare indeksy wariantów (format 1.0.0) na Id.
+    /// Strażnik oszczędności: podwójne parsowanie (JsonNode + deserializacja) robimy tylko dla plików 1.0.0,
+    /// rozpoznawanych po polu „IndeksWariantuDomyslnego” — pliki 1.0.1 i nowsze czytane są jednym przejściem.</summary>
     private static DaneAplikacji? DeserializujZMigracja(string json)
     {
+        if (!json.Contains("IndeksWariantuDomyslnego", StringComparison.Ordinal))
+            return JsonSerializer.Deserialize<DaneAplikacji>(json, Opcje);
         var node = JsonNode.Parse(json);
         if (node is JsonObject doc)
             PrzepiszStareIndeksyWariantow(doc);

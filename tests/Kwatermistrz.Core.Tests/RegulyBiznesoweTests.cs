@@ -181,6 +181,45 @@ public class RegulyBiznesoweTests
     }
 
     [Fact]
+    public void BR09_MundurWyprawy_ReplikaWPolaczeniuZPrzedmiotem_LiczySiePrzedmiot()
+    {
+        // replika w slocie munduru to nie mundur — przy mieszance (replika + przedmiot)
+        // wyprawa ma mundur (pierwszy element będący przedmiotem), inaczej trafiłaby do sumy „bez munduru” (FR-910)
+        var (dane, kalk) = Przygotuj();
+        var mundur = new Przedmiot { Nazwa = "Bluza" };
+        var replika = new Replika { ModelProducenta = "AK-74" };
+        dane.Przedmioty.Add(mundur);
+        dane.Repliki.Add(replika);
+        var szablonSlot = new SlotSzablonu { Nazwa = "Mundur", CzySlotMunduru = true };
+        var slot = new SlotZestawu { Nazwa = "Mundur", SzablonSlotId = szablonSlot.Id };
+        slot.Warianty.Add(new WariantSlotu
+        {
+            Elementy =
+            {
+                new ElementWariantu { Typ = TypElementu.Replika, ElementId = replika.Id },
+                new ElementWariantu { Typ = TypElementu.Przedmiot, ElementId = mundur.Id },
+            }
+        });
+        var zestaw = new Zestaw { Nazwa = "Z1" };
+        zestaw.Sloty.Add(slot);
+        dane.Zestawy.Add(zestaw);
+        var rekonstrukcja = new Rekonstrukcja { Nazwa = "R" };
+        rekonstrukcja.SzablonSlotow.Add(szablonSlot);
+        dane.Rekonstrukcje.Add(rekonstrukcja);
+        var wyprawa = new Wyprawa
+        {
+            Data = new DateOnly(2026, 3, 1),
+            ZestawId = zestaw.Id,
+            RekonstrukcjaId = rekonstrukcja.Id,
+            WybraneWarianty = new() { [slot.Id] = zestaw.Sloty[0].Warianty[0].Id },
+        };
+
+        var (mundurId, _) = kalk.MundurWyprawy(wyprawa);
+
+        Assert.Equal(mundur.Id, mundurId);
+    }
+
+    [Fact]
     public void BR13_KwotyZachowujaDokladnosc_DoGrosza()
     {
         // suma 0,1 + 0,2 w decimal daje dokładnie 0,3
