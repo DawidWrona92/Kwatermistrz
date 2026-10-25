@@ -83,7 +83,8 @@ public partial class MainWindow : FluentWindow
     {
         if (!_strony.TryGetValue(ekran, out var strona))
             return;
-        ObszarZawartosci.Content = strona;
+        if (!ReferenceEquals(ObszarZawartosci.Content, strona))
+            ObszarZawartosci.Navigate(strona);
         if (ekran == "Pulpit" && ViewModel?.Pulpit != null)
             ViewModel.Pulpit.Odswiez();
         // karta po prawej pokazuje wybrany element (FR-204/FR-302, §10.4)

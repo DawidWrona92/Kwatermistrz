@@ -176,8 +176,8 @@
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                     <TextBlock VerticalAlignment="Center">
                         <Run Text="Koszt zestawu: " />
-                        <Run Text="{Binding DataContext.KosztZestawu, RelativeSource={RelativeSource AncestorType=Page}, Converter={StaticResource KonwerterWaluty}}" />
-                        <Run Text="{Binding DataContext.ZakresKosztu, RelativeSource={RelativeSource AncestorType=Page}}" />
+                        <Run Text="{Binding DataContext.KosztZestawu, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Page}, Converter={StaticResource KonwerterWaluty}}" />
+                        <Run Text="{Binding DataContext.ZakresKosztu, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Page}}" />
                     </TextBlock>
                     <ui:Button Content="Eksportuj listę (CSV)" Margin="16,0,0,0"
                                Command="{Binding DataContext.EksportujListePakowaniaCommand, RelativeSource={RelativeSource AncestorType=Page}}" />

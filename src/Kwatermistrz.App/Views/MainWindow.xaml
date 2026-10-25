@@ -171,7 +171,9 @@
             </ui:NavigationView>
 
             <!-- Środek: lista lub raport -->
-            <ContentControl x:Name="ObszarZawartosci" Grid.Column="1" Margin="8" />
+            <!-- Frame zamiast ContentControl: element Page może być dzieckiem tylko Window lub Frame -->
+            <Frame x:Name="ObszarZawartosci" Grid.Column="1" Margin="8"
+                   NavigationUIVisibility="Hidden" JournalOwnership="OwnsJournal" />
 
             <!-- Prawy panel karty (~420 px, zamykany) -->
             <Border x:Name="PanelKarty" Grid.Column="2" Width="420" Margin="0,8,8,8"

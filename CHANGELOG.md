@@ -2,6 +2,13 @@
 
 Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie semantyczne.
 
+## [1.0.3] — naprawa hostowania stron (Frame) i bindingu kosztu zestawu
+
+### Naprawy
+- Ekrany (`Page`) hostowane w `Frame` zamiast `ContentControl` — WPF wymaga, by element `Page` był dzieckiem `Window` lub `Frame`; poprzednio każde przejście między ekranami sypało `InvalidOperationException` (50+ wpisów w error.log, zalewanie oknami błędu).
+- Nawigacja przez `Frame.Navigate` z kontrolą „nie nawiguj dwa razy na tę samą stronę" (bez rozrastania się journala).
+- `Koszt zestawu` i `Zakres kosztu` na stronie zestawów — binding `OneWay` (właściwość tylko do odczytu; poprzednio binding dwukierunkowy rzucał `InvalidOperationException`).
+
 ## [1.0.2] — naprawa crashy przy starcie + poprawki wydajności i integralności
 
 ### Crash przy starcie (XamlParseException)
