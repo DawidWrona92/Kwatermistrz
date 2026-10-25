@@ -46,9 +46,19 @@ public partial class App : Application
         DispatcherUnhandledException += (_, args) =>
         {
             args.Handled = true;
-            ZapiszLogWyjatku(args.Exception);
+            var sciezkaLogu = ZapiszLogWyjatku(args.Exception);
+            // lawina wyjątków (np. uszkodzony binding w pętli renderowania) zamiast zalewać użytkownika oknami kończy działanie
+            _licznikNieobsluzonych++;
+            if (_licznikNieobsluzonych >= 5)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Wystąpiła seria nieoczekiwanych błędów ({_licznikNieobsluzonych}). Aby nie uszkodzić danych, aplikacja zostanie zamknięta.\n\nSzczegóły zapisano w pliku:\n{sciezkaLogu}",
+                    "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                Shutdown();
+                return;
+            }
             System.Windows.MessageBox.Show(
-                "Wystąpił nieoczekiwany błąd. Szczegóły zapisano w pliku error.log w katalogu danych.",
+                $"Wystąpił nieoczekiwany błąd. Szczegóły zapisano w pliku:\n{sciezkaLogu}",
                 "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         };
 
@@ -146,17 +156,37 @@ public partial class App : Application
         base.OnExit(e);
     }
 
-    private static void ZapiszLogWyjatku(Exception ex)
+    /// <summary>Liczba nieobsłużonych wyjątków od startu — po serii zamykamy aplikację, żeby nie zalać użytkownika oknami błędu.</summary>
+    private int _licznikNieobsluzonych;
+
+    /// <summary>Zapisuje szczegóły wyjątku do error.log w katalogu danych, a gdy niemożliwe — obok pliku exe. Zwraca ścieżkę zapisanego logu (do komunikatu).</summary>
+    private static string ZapiszLogWyjatku(Exception ex)
     {
+        var wpis =
+            $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}{ex.StackTrace}{Environment.NewLine}{Environment.NewLine}";
         try
         {
             var sciezka = Path.Combine(KatalogDanych, "error.log");
-            File.AppendAllText(sciezka,
-                $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}{ex.StackTrace}{Environment.NewLine}{Environment.NewLine}");
+            if (!string.IsNullOrEmpty(KatalogDanych))
+            {
+                File.AppendAllText(sciezka, wpis);
+                return sciezka;
+            }
         }
         catch
         {
-            // logowanie nie może być przyczyną kolejnego wyjątku
+            // logowanie nie może być przyczyną kolejnego wyjątku — próbujemy obok exe
+        }
+        try
+        {
+            var sciezka = Path.Combine(AppContext.BaseDirectory, "error.log");
+            File.AppendAllText(sciezka, wpis);
+            return sciezka;
+        }
+        catch
+        {
+            // brak możliwości zapisu logu — komunikat pokaże ścieżkę, którą próbowano zapisać
+            return Path.Combine(AppContext.BaseDirectory, "error.log");
         }
     }
 }
