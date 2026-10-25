@@ -40,7 +40,7 @@ public partial class RekonstrukcjeViewModel : ObservableObject
             "Kwatermistrz", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
         if (odpowiedz != System.Windows.MessageBoxResult.Yes)
             return;
-        _magazyn.UtworzKopieZapasowa(); // FR-1107: przed zmianą konfiguracji kopia
+        _magazyn.UtworzKopieZapasowa(_dane); // FR-1107: przed zmianą konfiguracji kopia
         var (slownikiSzablonu, szablonRekonstrukcji, szablonyKart) = Kwatermistrz.Core.Konfiguracja.SzablonyKonfiguracji.Buduj(klucz);
         // scalenie słowników zamiast podmiany — istniejące wartości zostają, brakujące dopisane
         var wynik = Kwatermistrz.Core.Konfiguracja.MergerSlownikow.ScalSlowniki(_dane.Slowniki, slownikiSzablonu);
@@ -86,7 +86,7 @@ public partial class RekonstrukcjeViewModel : ObservableObject
         szablonRekonstrukcji.StronaId = wynik.MapujSlownik("Strony", szablonRekonstrukcji.StronaId);
         _dane.Rekonstrukcje.Add(szablonRekonstrukcji);
         _dane.Ustawienia.OstatniaRekonstrukcjaId = szablonRekonstrukcji.Id;
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         OnPropertyChanged(nameof(Rekonstrukcje));
         Wybrana = szablonRekonstrukcji;
     }
@@ -112,7 +112,7 @@ public partial class RekonstrukcjeViewModel : ObservableObject
         var rekonstrukcja = new Rekonstrukcja { Nazwa = nazwa };
         _dane.Rekonstrukcje.Add(rekonstrukcja);
         NowaNazwa = "";
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         OnPropertyChanged(nameof(Rekonstrukcje));
     }
 
@@ -139,7 +139,7 @@ public partial class RekonstrukcjeViewModel : ObservableObject
         };
         _dane.Rekonstrukcje.Add(rekonstrukcja);
         NowaNazwa = "";
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         OnPropertyChanged(nameof(Rekonstrukcje));
     }
 
@@ -147,7 +147,7 @@ public partial class RekonstrukcjeViewModel : ObservableObject
     [RelayCommand]
     private void ZapiszWybrana()
     {
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         OnPropertyChanged(nameof(Rekonstrukcje));
     }
 
@@ -168,7 +168,7 @@ public partial class RekonstrukcjeViewModel : ObservableObject
         // z filtrem po nieistniejącym Id (puste listy mimo danych)
         if (_dane.Ustawienia.OstatniaRekonstrukcjaId == rekonstrukcja.Id)
             _dane.Ustawienia.OstatniaRekonstrukcjaId = null;
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         OnPropertyChanged(nameof(Rekonstrukcje));
     }
 
@@ -187,7 +187,7 @@ public partial class RekonstrukcjeViewModel : ObservableObject
             Kolejnosc = Wybrana.SzablonSlotow.Count,
         });
         NowaNazwa = "";
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
     }
 
     /// <summary>Usuwa slot z szablonu (tylko gdy nie ma zestawów z tym slotem).</summary>
@@ -197,6 +197,6 @@ public partial class RekonstrukcjeViewModel : ObservableObject
         if (Wybrana == null || slot == null)
             return;
         Wybrana.SzablonSlotow.Remove(slot);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
     }
 }

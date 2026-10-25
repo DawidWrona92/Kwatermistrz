@@ -272,7 +272,7 @@ public partial class PakietyViewModel : ObservableObject
         try
         {
             _magazyn.Zapisz(_dane);
-            _magazyn.UtworzKopieZapasowa();
+            _magazyn.UtworzKopieZapasowa(_dane);
             ImporterPakietuKonfiguracji.Zastosuj(_dane, _podglad);
             _magazyn.Zapisz(_dane);
             Komunikat = $"Zaimportowano: {_podglad.LiczbaWartosciDoDodania} nowych wartości, " +

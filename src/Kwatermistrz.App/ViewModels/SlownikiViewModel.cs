@@ -148,5 +148,5 @@ public partial class SlownikiViewModel : ObservableObject
         }
     }
 
-    private void Zapisz() => _magazyn.Zapisz(_dane);
+    private void Zapisz() => _magazyn.ZapiszDebounce(_dane);
 }

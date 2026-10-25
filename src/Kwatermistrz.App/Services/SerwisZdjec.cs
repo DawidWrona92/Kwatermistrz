@@ -36,8 +36,9 @@ public class SerwisZdjec
             return null;
         var katalogPelny = Path.GetFullPath(katalogDanych);
         var pelna = Path.GetFullPath(Path.Combine(katalogPelny, sciezkaWzgledna));
-        // strażnik: ścieżka spoza katalogu danych odrzucamy (nie czytamy, nie usuwamy)
-        if (!pelna.StartsWith(katalogPelny + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+        // strażnik: ścieżka spoza katalogu danych odrzucamy (nie czytamy, nie usuwamy);
+        // porównanie bez wielkości liter — Windows (NTFS) nie rozróżnia wielkości liter w ścieżkach
+        if (!pelna.StartsWith(katalogPelny + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
             return null;
         return File.Exists(pelna) ? pelna : null;
     }

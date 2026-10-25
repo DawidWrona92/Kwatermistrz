@@ -142,7 +142,7 @@ public partial class DoUzupelnieniaViewModel : ObservableObject
                     p.LicznikHistorycznyDoWeryfikacji = false;
                 break;
         }
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Pozycje.Remove(pozycja!);
         OnPropertyChanged(nameof(Liczba));
     }

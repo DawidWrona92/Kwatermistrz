@@ -45,7 +45,7 @@ public partial class KategorieViewModel : ObservableObject
         });
         NowaNazwa = "";
         NowaCzyNosnik = false;
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         OnPropertyChanged(nameof(Kategorie));
     }
 
@@ -55,7 +55,7 @@ public partial class KategorieViewModel : ObservableObject
     {
         if (kategoria == null)
             return;
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         OnPropertyChanged(nameof(Kategorie));
     }
 
@@ -68,7 +68,7 @@ public partial class KategorieViewModel : ObservableObject
         if (_dane.Przedmioty.Any(p => p.KategoriaId == kategoria.Id))
             return;
         _dane.Slowniki.Kategorie.Remove(kategoria);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         OnPropertyChanged(nameof(Kategorie));
     }
 
@@ -78,7 +78,7 @@ public partial class KategorieViewModel : ObservableObject
     {
         if (kategoria == null)
             return;
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
     }
 
     /// <summary>Liczba przedmiotów w kategorii (FR-201).</summary>

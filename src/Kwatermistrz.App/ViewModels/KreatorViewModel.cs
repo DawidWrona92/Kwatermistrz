@@ -83,7 +83,7 @@ public partial class KreatorViewModel : ObservableObject
                     return;
                 }
                 var podglad = ImporterKwatermistrz.PrzygotujPodglad(SciezkaImportu);
-                _magazyn.UtworzKopieZapasowa(); // FR-1107: przed importem kopia automatyczna
+                _magazyn.UtworzKopieZapasowa(_dane); // FR-1107: przed importem kopia automatyczna
                 ImporterKwatermistrz.Zastosuj(podglad, _dane);
             }
             else

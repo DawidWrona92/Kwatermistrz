@@ -30,7 +30,7 @@ public partial class ReplikiViewModel : ObservableObject
     }
 
     /// <summary>Zapisuje dane bez odświeżania listy — po zmianie samych zdjęć (FR-211, FR-1203).</summary>
-    public void ZapiszCicho() => _magazyn.Zapisz(_dane);
+    public void ZapiszCicho() => _magazyn.ZapiszDebounce(_dane);
 
     /// <summary>Wiersze listy replik po filtrach (FR-301).</summary>
     public ObservableCollection<WierszRepliki> Wiersze { get; } = new();
@@ -221,7 +221,7 @@ public partial class ReplikiViewModel : ObservableObject
         replika.NapedId = z.NapedId;
         replika.TypMagazynkaId = z.TypMagazynkaId;
         _dane.Repliki.Add(replika);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
         Wybrana = Wiersze.FirstOrDefault(w => w.Id == replika.Id);
         Zakladka = "Karta";
@@ -296,7 +296,7 @@ public partial class ReplikiViewModel : ObservableObject
         if (Wybrana == null)
             return;
         Wybrana.Replika.ZnacznikZImportu = false;
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -315,7 +315,7 @@ public partial class ReplikiViewModel : ObservableObject
             return;
         CzyscicielReferencji.UsunReferencjeRepliki(_dane, wiersz.Replika.Id);
         _dane.Repliki.Remove(wiersz.Replika);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         if (Wybrana?.Id == wiersz.Id)
             Wybrana = null;
         Odswiez();
@@ -335,7 +335,7 @@ public partial class ReplikiViewModel : ObservableObject
             // semantyka z wybranego rodzaju (BR-04: cena oryginalna liczy się tylko z Zakupu)
             Semantyka = Enum.TryParse<SemantykaKosztu>(rodzajKosztu?.Semantyka, out var sem) ? sem : SemantykaKosztu.Inne,
         });
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -346,7 +346,7 @@ public partial class ReplikiViewModel : ObservableObject
         if (Wybrana == null || koszt == null)
             return;
         Wybrana.Replika.Koszty.Remove(koszt);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -357,7 +357,7 @@ public partial class ReplikiViewModel : ObservableObject
         if (Wybrana == null)
             return;
         Wybrana.Replika.Pomiary.Add(new Pomiar { Data = DateOnly.FromDateTime(DateTime.Today) });
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -368,7 +368,7 @@ public partial class ReplikiViewModel : ObservableObject
         if (Wybrana == null || pomiar == null)
             return;
         Wybrana.Replika.Pomiary.Remove(pomiar);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -379,7 +379,7 @@ public partial class ReplikiViewModel : ObservableObject
         if (Wybrana == null)
             return;
         Wybrana.Replika.Modyfikacje.Add(new Modyfikacja { Data = DateOnly.FromDateTime(DateTime.Today) });
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -390,7 +390,7 @@ public partial class ReplikiViewModel : ObservableObject
         if (Wybrana == null || modyfikacja == null)
             return;
         Wybrana.Replika.Modyfikacje.Remove(modyfikacja);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -410,7 +410,7 @@ public partial class ReplikiViewModel : ObservableObject
             Semantyka = Enum.TryParse<SemantykaZadania>(rodzajZadania?.Semantyka, out var semZ) ? semZ : SemantykaZadania.DoZrobienia,
             DataUtworzenia = DateOnly.FromDateTime(DateTime.Today),
         });
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -422,7 +422,7 @@ public partial class ReplikiViewModel : ObservableObject
             return;
         zadanie.Status = StatusZadania.Zamkniete;
         zadanie.DataZamkniecia = DateOnly.FromDateTime(DateTime.Today);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
@@ -433,7 +433,7 @@ public partial class ReplikiViewModel : ObservableObject
         if (zadanie == null)
             return;
         _dane.Zadania.Remove(zadanie);
-        _magazyn.Zapisz(_dane);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 

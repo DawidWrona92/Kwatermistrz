@@ -89,7 +89,7 @@ public partial class ImportViewModel : ObservableObject
         if (Podglad == null)
             return;
         _magazyn.Zapisz(_dane);
-        _magazyn.UtworzKopieZapasowa();
+        _magazyn.UtworzKopieZapasowa(_dane);
         ImporterKwatermistrz.Zastosuj(Podglad, _dane);
         _magazyn.Zapisz(_dane);
         Komunikat = "Import zakończony. Dane zapisane.";
@@ -277,7 +277,7 @@ public partial class ImportViewModel
             Komunikat = "Najpierw przygotuj podgląd.";
             return;
         }
-        _magazyn.UtworzKopieZapasowa(); // FR-1107: przed importem kopia (kopia zawiera stan sprzed importu)
+        _magazyn.UtworzKopieZapasowa(_dane); // FR-1107: przed importem kopia (kopia zawiera stan sprzed importu)
         var liczba = ImporterOgolny.Zastosuj(_dane, _podgladOgolny.Select(w => { w.Wiersz.Pomin = w.Pomin; return w.Wiersz; }));
         _magazyn.Zapisz(_dane);
         Komunikat = $"Zaimportowano {liczba} przedmiotów. Rekordy mają znacznik „z importu, do przeglądu” (FR-1110).";

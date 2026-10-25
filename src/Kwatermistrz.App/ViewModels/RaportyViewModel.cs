@@ -300,6 +300,8 @@ public partial class RaportyViewModel : ObservableObject
     private void BudujRaportUmundurowania()
     {
         var kalk = _kalkulator.Kalkulator();
+        // indeks zamiast O(P·W): jedno przejście po wyprawach, potem użycia/odsetki z słowników (NFR-04)
+        var indeks = new IndeksObliczeniowy(_dane);
         RaportUmundurowanie.Clear();
         var kategoriaMundury = _dane.Slowniki.Kategorie.FirstOrDefault(k =>
             Normalizacja.TekstDoPorownania(k.Nazwa) == Normalizacja.TekstDoPorownania("Mundury"));
@@ -328,7 +330,7 @@ public partial class RaportyViewModel : ObservableObject
         {
             // użycia kompletu = wspólne (BR-08) — liczymy raz dla reprezentanta, nie sumujemy po elementach;
             // koszt kompletu = koszt reprezentanta (KosztMunduru dla części zwraca koszt całego kompletu)
-            var uzycia = kalk.UzyciaPrzedmiotu(reprezentant);
+            var uzycia = indeks.UzyciaPrzedmiotu(reprezentant);
             var koszt = kalk.KosztMunduru(reprezentant);
             var wyprawy = uzycia; // dla munduru „użycia” = liczba wypraw (BR-08 przez skład)
             RaportUmundurowanie.Add(new WierszRaportuUmundurowania
@@ -337,7 +339,7 @@ public partial class RaportyViewModel : ObservableObject
                 Strona = NazwaSlownika(_dane.Slowniki.Strony, stronaId),
                 Wzor = NazwaSlownikaWzory(wzorId),
                 Wyprawy = wyprawy,
-                Procent = kalk.ProcentWypraw(wyprawy),
+                Procent = indeks.ProcentWypraw(wyprawy),
                 Koszt = koszt,
                 KosztNaWyprawe = Kalkulator.KosztNaWyprawe(koszt, wyprawy),
             });

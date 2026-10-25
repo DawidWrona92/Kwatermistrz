@@ -120,7 +120,7 @@ public partial class UstawieniaViewModel : ObservableObject
     private void UtworzKopie()
     {
         _magazyn.Zapisz(_dane);
-        var katalog = _magazyn.UtworzKopieZapasowa();
+        var katalog = _magazyn.UtworzKopieZapasowa(_dane);
         Komunikat = $"Kopia zapasowa zapisana: {katalog}";
     }
 
@@ -142,7 +142,7 @@ public partial class UstawieniaViewModel : ObservableObject
             var dane = MagazynJson.WczytajZPliku(dialog.FileName);
             // przed nadpisaniem: kopia bieżących danych (FR-1107)
             _magazyn.Zapisz(_dane);
-            _magazyn.UtworzKopieZapasowa();
+            _magazyn.UtworzKopieZapasowa(_dane);
             _dane.Slowniki = dane.Slowniki;
             _dane.Przedmioty = dane.Przedmioty;
             _dane.Repliki = dane.Repliki;
