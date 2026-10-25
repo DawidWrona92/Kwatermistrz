@@ -118,14 +118,14 @@ public class KonwerterWiekszeOdZera : IValueConverter
         => Binding.DoNothing;
 }
 
-/// <summary>Licznik przedmiotów w kategorii: parametr to Id kategorii, kontekst (DataContext strony) to ViewModel z metodą LiczbaPrzedmiotow.</summary>
+/// <summary>Licznik przedmiotów w kategorii: wartości MultiBinding to [ViewModel z metodą LiczbaPrzedmiotow, Id kategorii] (Id nie da się przekazać w ConverterParameter — nie może tam być binding).</summary>
 public class KonwerterLicznikaKategorii : IMultiValueConverter
 {
     public static readonly KonwerterLicznikaKategorii Instance = new();
 
     public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
-        if (values.Length >= 1 && values[0] is ViewModels.WyposazenieViewModel vm && parameter is string kategoriaId)
+        if (values.Length >= 2 && values[0] is ViewModels.WyposazenieViewModel vm && values[1] is string kategoriaId)
             return vm.LiczbaPrzedmiotow(kategoriaId).ToString(CultureInfo.InvariantCulture);
         return "";
     }
@@ -210,60 +210,60 @@ public class KonwerterBoolToVisibility : IValueConverter
         => value is Visibility v && v == Visibility.Visible;
 }
 
-/// <summary>Id wzoru kamuflażu → obiekt wzoru (do próbki; NFR-08: tooltip z nazwą ustawiany osobno).</summary>
-public class KonwerterWzorKamuflazu : IValueConverter
+/// <summary>Id wzoru kamuflażu + lista wzorów (wartości MultiBinding — lista wzorów nie da się przekazać w ConverterParameter) → obiekt wzoru (do próbki; NFR-08: tooltip z nazwą ustawiany osobno).</summary>
+public class KonwerterWzorKamuflazu : IMultiValueConverter
 {
     public static readonly KonwerterWzorKamuflazu Instance = new();
 
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object? Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
-        if (value is not string id || parameter is not List<WzorKamuflazu> wzory)
-            return null!;
-        return wzory.FirstOrDefault(w => w.Id == id) ?? null!;
+        if (values.Length >= 2 && values[0] is string id && values[1] is List<WzorKamuflazu> wzory)
+            return wzory.FirstOrDefault(w => w.Id == id);
+        return null;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        => Binding.DoNothing;
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
 }
 
-/// <summary>Id wzoru kamuflażu → nazwa wzoru (NFR-08: próbka zawsze ma obok nazwę).</summary>
-public class KonwerterNazwaWzoru : IValueConverter
+/// <summary>Id wzoru kamuflażu + lista wzorów (wartości MultiBinding) → nazwa wzoru (NFR-08: próbka zawsze ma obok nazwę).</summary>
+public class KonwerterNazwaWzoru : IMultiValueConverter
 {
     public static readonly KonwerterNazwaWzoru Instance = new();
 
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
-        if (value is not string id || parameter is not List<WzorKamuflazu> wzory)
-            return "";
-        return wzory.FirstOrDefault(w => w.Id == id)?.Nazwa ?? "";
+        if (values.Length >= 2 && values[0] is string id && values[1] is List<WzorKamuflazu> wzory)
+            return wzory.FirstOrDefault(w => w.Id == id)?.Nazwa ?? "";
+        return "";
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        => Binding.DoNothing;
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
 }
 
-/// <summary>String równe parametrowi → bool (dwukierunkowe; do radio „punkt startu” w kreatorze, FR-1401).</summary>
-public class KonwerterRowneSlownik : IValueConverter
+/// <summary>Dwie wartości (wybrany klucz, klucz elementu) równe → bool (radio „punkt startu” w kreatorze, FR-1401; klucze jako wartości MultiBinding, bo ConverterParameter nie może być bindingiem). Zapis wyboru robi zdarzenie Checked.</summary>
+public class KonwerterRowneSlownik : IMultiValueConverter
 {
     public static readonly KonwerterRowneSlownik Instance = new();
 
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        => Equals(value?.ToString(), parameter?.ToString());
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        => values.Length >= 2 && Equals(values[0]?.ToString(), values[1]?.ToString());
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        => value is bool wiec && wiec ? parameter : Binding.DoNothing;
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
 }
 
-/// <summary>Id wariantu równe parametrowi (Id wariantu domyślnego slotu) → bool (RadioButton „Domyślny”, FR-704).</summary>
-public class KonwerterRowneIdWariantu : IValueConverter
+/// <summary>Id wariantu i Id wariantu domyślnego slotu (wartości MultiBinding) równe → bool (RadioButton „Domyślny”, FR-704; zapis robi zdarzenie Checked).</summary>
+public class KonwerterRowneIdWariantu : IMultiValueConverter
 {
     public static readonly KonwerterRowneIdWariantu Instance = new();
 
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        => Equals(value?.ToString(), parameter?.ToString());
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        => values.Length >= 2 && Equals(values[0]?.ToString(), values[1]?.ToString());
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        => value is bool wiec && wiec ? parameter : Binding.DoNothing;
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
 }
 
 /// <summary>String równe parametrowi → Visibility (do przełączania sekcji, FR-1401).</summary>

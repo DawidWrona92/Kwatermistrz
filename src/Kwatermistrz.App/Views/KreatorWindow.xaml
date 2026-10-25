@@ -26,8 +26,15 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <RadioButton GroupName="Start" Margin="0,4,0,0"
-                                         IsChecked="{Binding DataContext.WybranyStart, RelativeSource={RelativeSource AncestorType=Window}, Converter={x:Static conv:KonwerterRowneSlownik.Instance}, ConverterParameter={Binding Klucz}}"
-                                         Content="{Binding Nazwa}" />
+                                         Checked="Start_Checked"
+                                         Content="{Binding Nazwa}">
+                                <RadioButton.IsChecked>
+                                    <MultiBinding Converter="{x:Static conv:KonwerterRowneSlownik.Instance}">
+                                        <Binding Path="DataContext.WybranyStart" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                        <Binding Path="Klucz" />
+                                    </MultiBinding>
+                                </RadioButton.IsChecked>
+                            </RadioButton>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
