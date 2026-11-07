@@ -8,6 +8,7 @@ namespace Kwatermistrz.App.Views;
 public partial class MainWindow : FluentWindow
 {
     private readonly Dictionary<string, FrameworkElement> _strony = new();
+    private readonly Dictionary<string, Func<FrameworkElement>> _fabrykiStron = new();
 
     public MainWindow()
     {
@@ -26,6 +27,15 @@ public partial class MainWindow : FluentWindow
             vm.Pulpit.Odswiez();
             // karty skrótowe pulpitu (FR-104) i ranking (FR-105) — przejście do listy z filtrem
             vm.Pulpit.PrzejdzDo += PrzejdzZPulpitu;
+            vm.FokusujSzukanieWidok += () => PoleSzukania.Focus();
+            vm.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(MainWindowViewModel.AktualnyEkran))
+                {
+                    PokazEkran(vm.AktualnyEkran);
+                    ZaznaczNawigacje(vm.AktualnyEkran);
+                }
+            };
         }
         // globalne wyszukiwanie (FR-1201): wyniki pod polem, Enter otwiera pierwszy
         PoleSzukania.TextChanged += (_, _) =>
@@ -55,7 +65,8 @@ public partial class MainWindow : FluentWindow
 
         ZarejestrujStrony();
         // przywrócenie ostatniego ekranu (FR-1303/NFR-12)
-        var ekran = u.OstatniEkran ?? "Pulpit";
+        var ekran = u.OstatniEkran is { } zapamietany && _fabrykiStron.ContainsKey(zapamietany)
+            ? zapamietany : "Pulpit";
         PokazEkran(ekran);
         ZaznaczNawigacje(ekran);
     }
@@ -63,26 +74,61 @@ public partial class MainWindow : FluentWindow
     private void ZarejestrujStrony()
     {
         var vm = ViewModel!;
-        _strony["Pulpit"] = new PulpitPage { DataContext = vm.Pulpit };
-        _strony["Slowniki"] = new SlownikiPage { DataContext = vm.Slowniki };
-        _strony["Ustawienia"] = new UstawieniaPage { DataContext = vm.Ustawienia };
-        _strony["Import"] = new ImportPage { DataContext = vm.Import };
-        _strony["Pakiety"] = new PakietyPage { DataContext = vm.Pakiety };
-        _strony["Wyprawy"] = new WyprawyPage { DataContext = vm.Wyprawy };
-        _strony["Bronie"] = new BroniePage { DataContext = vm.Repliki };
-        _strony["Wyposazenie"] = new WyposazeniePage { DataContext = vm.Wyposazenie };
-        _strony["Zestawy"] = new ZestawyPage { DataContext = vm.Zestawy };
-        _strony["Raporty"] = new RaportyPage { DataContext = vm.Raporty };
-        _strony["DoUzupelnienia"] = new DoUzupelnieniaPage { DataContext = vm.DoUzupelnienia };
-        // rekonstrukcje edytujemy w panelu karty po prawej stronie
-        _strony["Rekonstrukcje"] = new RekonstrukcjePage { DataContext = vm.Rekonstrukcje };
+        // XAML każdej strony tworzymy dopiero przy pierwszym wejściu.
+        // Awaria pojedynczego ekranu nie blokuje pulpitu i pozostałych funkcji.
+        _fabrykiStron["Pulpit"] = () => new PulpitPage { DataContext = vm.Pulpit };
+        _fabrykiStron["Slowniki"] = () => new SlownikiPage { DataContext = vm.Slowniki };
+        _fabrykiStron["Ustawienia"] = () => new UstawieniaPage { DataContext = vm.Ustawienia };
+        _fabrykiStron["Import"] = () => new ImportPage { DataContext = vm.Import };
+        _fabrykiStron["Pakiety"] = () => new PakietyPage { DataContext = vm.Pakiety };
+        _fabrykiStron["Wyprawy"] = () => new WyprawyPage { DataContext = vm.Wyprawy };
+        _fabrykiStron["Bronie"] = () => new BroniePage { DataContext = vm.Repliki };
+        _fabrykiStron["Wyposazenie"] = () => new WyposazeniePage { DataContext = vm.Wyposazenie };
+        _fabrykiStron["Zestawy"] = () => new ZestawyPage { DataContext = vm.Zestawy };
+        _fabrykiStron["Raporty"] = () => new RaportyPage { DataContext = vm.Raporty };
+        _fabrykiStron["DoUzupelnienia"] = () => new DoUzupelnieniaPage { DataContext = vm.DoUzupelnienia };
+        _fabrykiStron["Rekonstrukcje"] = () => new RekonstrukcjePage { DataContext = vm.Rekonstrukcje };
+    }
+
+    /// <summary>Tworzy każdy ekran i sprawdza parsowanie XAML bez wyświetlania okna.</summary>
+    public void ZweryfikujEkrany()
+    {
+        if (_fabrykiStron.Count == 0)
+            ZarejestrujStrony();
+        foreach (var (nazwa, fabryka) in _fabrykiStron)
+        {
+            try
+            {
+                _strony.TryAdd(nazwa, fabryka());
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Nie udało się utworzyć ekranu: {nazwa}", ex);
+            }
+        }
+        // Karty są tworzone poza Frame; testujemy także ich zasoby i konwertery.
+        _ = new KartaPrzedmiotu { ViewModel = ViewModel!.Wyposazenie };
+        _ = new KartaRepliki { ViewModel = ViewModel!.Repliki };
+        _ = new KreatorWindow();
     }
 
     /// <summary>Pokazuje ekran o podanym kluczu (bez zmiany zaznaczenia w nawigacji).</summary>
     public void PokazEkran(string ekran)
     {
-        if (!_strony.TryGetValue(ekran, out var strona))
+        if (!_fabrykiStron.TryGetValue(ekran, out var fabryka))
             return;
+        if (!_strony.TryGetValue(ekran, out var strona))
+        {
+            try
+            {
+                strona = fabryka();
+                _strony[ekran] = strona;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Błąd inicjalizacji ekranu: {ekran}", ex);
+            }
+        }
         if (!ReferenceEquals(ObszarZawartosci.Content, strona))
             ObszarZawartosci.Navigate(strona);
         if (ekran == "Pulpit" && ViewModel?.Pulpit != null)
@@ -91,9 +137,11 @@ public partial class MainWindow : FluentWindow
         if (ViewModel == null)
             return;
         if (ekran == "Wyposazenie" && ViewModel.Wyposazenie.Wybrany != null)
-            PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany });
-        if (ekran == "Bronie" && ViewModel.Repliki.Wybrana != null)
-            PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana });
+            PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany, ViewModel = ViewModel.Wyposazenie });
+        else if (ekran == "Bronie" && ViewModel.Repliki.Wybrana != null)
+            PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana, ViewModel = ViewModel.Repliki });
+        else
+            UkryjKarte();
     }
 
     /// <summary>Odświeża kartę po prawej po zmianie wyboru (FR-204, FR-302).</summary>
@@ -102,9 +150,11 @@ public partial class MainWindow : FluentWindow
         if (ViewModel == null)
             return;
         if (ViewModel.AktualnyEkran == "Wyposazenie" && ViewModel.Wyposazenie.Wybrany != null)
-            PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany });
+            PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany, ViewModel = ViewModel.Wyposazenie });
         else if (ViewModel.AktualnyEkran == "Bronie" && ViewModel.Repliki.Wybrana != null)
-            PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana });
+            PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana, ViewModel = ViewModel.Repliki });
+        else
+            UkryjKarte();
     }
 
     private void ZaznaczNawigacje(string ekran)
@@ -112,7 +162,8 @@ public partial class MainWindow : FluentWindow
         foreach (var pozycja in WszystkiePozycjeNawigacji())
             if (pozycja is NavigationViewItem item && item.Tag as string == ekran)
             {
-                item.Activate(Nawigacja);
+                if (!ReferenceEquals(Nawigacja.SelectedItem, item))
+                    item.Activate(Nawigacja);
                 return;
             }
     }
@@ -179,8 +230,11 @@ public partial class MainWindow : FluentWindow
         }
     }
 
-    private void ZamknijPanelKarty_Click(object sender, RoutedEventArgs e)
+    private void ZamknijPanelKarty_Click(object sender, RoutedEventArgs e) => UkryjKarte();
+
+    private void UkryjKarte()
     {
+        ZawartoscKarty.Content = null;
         PanelKarty.Visibility = Visibility.Collapsed;
     }
 
