@@ -126,6 +126,7 @@ public partial class App : Application
             mainWindow.Show();
             mainWindow.ZweryfikujEkrany();
             mainWindow.ZweryfikujNawigacje();
+            mainWindow.ZweryfikujKreator();
             mainWindow.Close();
             Shutdown();
             return;
