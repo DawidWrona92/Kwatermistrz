@@ -80,30 +80,34 @@ public class MagazynJson
             {
                 var kopia = _sciezka + ".bak";
                 // Nigdy nie nadpisuj poprawnej .bak uszkodzonym plikiem głównym.
+                DaneAplikacji? odzyskane = null;
                 try
                 {
                     if (File.Exists(kopia))
                     {
                         var json = File.ReadAllText(kopia);
-                        var dane = DeserializujZMigracja(json);
-                        if (dane != null)
+                        odzyskane = DeserializujZMigracja(json);
+                        if (odzyskane != null)
                         {
-                            Waliduj(dane);
-                            Migruj(dane);
-                            ZabezpieczUszkodzonyPlik(_sciezka);
-                            File.Copy(kopia, _sciezka);
-                            return (dane, new WynikKontroli
-                            {
-                                CzyPoprawne = false,
-                                Komunikat = "Przywrócono dane z ostatniej poprawnej kopii .bak; uszkodzony plik zachowano.",
-                                Zrodlo = kopia,
-                            });
+                            Waliduj(odzyskane);
+                            Migruj(odzyskane);
                         }
                     }
                 }
                 catch (Exception exBak) when (exBak is IOException or InvalidDataException or System.Text.Json.JsonException)
                 {
-                    // Wyłącznie błędy odczytu kopii; błędy zapisu zabezpieczenia trzeba zgłosić.
+                    // Odczyt backupu nie powiódł się. Błędy zapisu poniżej nie są tłumione.
+                }
+                if (odzyskane != null)
+                {
+                    ZabezpieczUszkodzonyPlik(_sciezka);
+                    File.Copy(kopia, _sciezka);
+                    return (odzyskane, new WynikKontroli
+                    {
+                        CzyPoprawne = false,
+                        Komunikat = "Przywrócono dane z ostatniej poprawnej kopii .bak; uszkodzony plik zachowano.",
+                        Zrodlo = kopia,
+                    });
                 }
                 // Oba pliki są nieczytelne. Nie wolno po cichu nadpisać jedynych kopii.
                 ZabezpieczUszkodzonyPlik(_sciezka);
