@@ -243,6 +243,8 @@ public partial class MainWindowViewModel : ObservableObject
         get => _stan.AktualnyEkran;
         set
         {
+            if (_stan.AktualnyEkran == value)
+                return;
             _stan.AktualnyEkran = value;
             OnPropertyChanged();
             _dane.Ustawienia.OstatniEkran = value;
