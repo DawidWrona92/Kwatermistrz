@@ -29,7 +29,7 @@
                                          Checked="Start_Checked"
                                          Content="{Binding Nazwa}">
                                 <RadioButton.IsChecked>
-                                    <MultiBinding Converter="{x:Static conv:KonwerterRowneSlownik.Instance}">
+                                    <MultiBinding Mode="OneWay" Converter="{x:Static conv:KonwerterRowneSlownik.Instance}">
                                         <Binding Path="DataContext.WybranyStart" RelativeSource="{RelativeSource AncestorType=Window}" />
                                         <Binding Path="Klucz" />
                                     </MultiBinding>
