@@ -9,6 +9,9 @@ using Microsoft.Win32;
 
 namespace Kwatermistrz.App.ViewModels;
 
+/// <summary>Opcja kreatora. WPF wiąże właściwości CLR, a nie pola ValueTuple.</summary>
+public sealed record OpcjaStartu(string Klucz, string Nazwa);
+
 /// <summary>ViewModel kreatora pierwszego uruchomienia (FR-1401): wariant pusty, szablon konfiguracji (FR-1406) lub import z arkusza (FR-1101).</summary>
 public partial class KreatorViewModel : ObservableObject
 {
@@ -39,9 +42,10 @@ public partial class KreatorViewModel : ObservableObject
     [ObservableProperty]
     private string _wybranyStart = SzablonyKonfiguracji.Pusta;
 
-    /// <summary>Lista punktów startu: klucz → opis.</summary>
-    public static IReadOnlyList<(string Klucz, string Nazwa)> Starty { get; } = SzablonyKonfiguracji.Lista
-        .Concat(new[] { ("import", "Import z arkusza Excel (Dane_zrodlowe_Kwatermistrz.xlsx)") })
+    /// <summary>Lista punktów startu: właściwości Klucz i Nazwa dostępne przez binding WPF.</summary>
+    public static IReadOnlyList<OpcjaStartu> Starty { get; } = SzablonyKonfiguracji.Lista
+        .Select(opcja => new OpcjaStartu(opcja.Klucz, opcja.Nazwa))
+        .Append(new OpcjaStartu("import", "Import z arkusza Excel (Dane_zrodlowe_Kwatermistrz.xlsx)"))
         .ToList();
 
     /// <summary>Ścieżka pliku do importu (wariant „import”).</summary>
@@ -71,7 +75,11 @@ public partial class KreatorViewModel : ObservableObject
     {
         var nazwa = Normalizacja.Przytnij(NazwaRekonstrukcji);
         if (nazwa == null && WybranyStart != "import")
+        {
+            Komunikat = "Podaj nazwę rekonstrukcji, aby rozpocząć.";
             return;
+        }
+        Komunikat = "";
         try
         {
             if (WybranyStart == "import")
