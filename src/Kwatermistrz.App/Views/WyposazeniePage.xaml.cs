@@ -13,13 +13,20 @@ public partial class WyposazeniePage : Page
             if (DataContext is ViewModels.WyposazenieViewModel vm)
             {
                 vm.Odswiez();
-                vm.PropertyChanged += (_, e) =>
-                {
-                    if (e.PropertyName == nameof(vm.Wybrany) &&
-                        System.Windows.Window.GetWindow(this) is MainWindow okno)
-                        okno.OdswiezKarte();
-                };
+                vm.PropertyChanged -= WyborZmieniony;
+                vm.PropertyChanged += WyborZmieniony;
             }
         };
+        Unloaded += (_, _) =>
+        {
+            if (DataContext is ViewModels.WyposazenieViewModel vm)
+                vm.PropertyChanged -= WyborZmieniony;
+        };
+    }
+    private void WyborZmieniony(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ViewModels.WyposazenieViewModel.Wybrany) &&
+            System.Windows.Window.GetWindow(this) is MainWindow okno)
+            okno.OdswiezKarte();
     }
 }
