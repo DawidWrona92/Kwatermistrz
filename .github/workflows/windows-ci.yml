@@ -3,7 +3,9 @@ name: Windows build, tests and XAML smoke test
 on:
   push:
     branches:
-      - fix/startup-stability-and-windows-smoke
+      - main
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - main
@@ -75,3 +77,26 @@ jobs:
           name: Kwatermistrz-win-x64
           path: ${{ runner.temp }}\\Kwatermistrz-win-x64.zip
           if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release for a version tag
+    needs: windows
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Kwatermistrz-win-x64
+          path: release
+      - name: Create or update release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" release/Kwatermistrz-win-x64.zip --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$GITHUB_REF_NAME" release/Kwatermistrz-win-x64.zip --repo "$GITHUB_REPOSITORY" --title "Kwatermistrz $GITHUB_REF_NAME" --generate-notes --verify-tag
+          fi
