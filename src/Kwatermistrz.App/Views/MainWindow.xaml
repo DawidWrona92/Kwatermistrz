@@ -14,7 +14,7 @@
                  UseLayoutRounding="True"
                  SnapsToDevicePixels="True">
     <Window.InputBindings>
-        <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding NawigujCommand}" CommandParameter="Wyprawa" />
+        <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding NawigujCommand}" CommandParameter="Wyprawy" />
         <KeyBinding Key="F" Modifiers="Ctrl" Command="{Binding FokusujSzukanieCommand}" />
     </Window.InputBindings>
     <Grid>
@@ -176,7 +176,7 @@
                    NavigationUIVisibility="Hidden" JournalOwnership="OwnsJournal" />
 
             <!-- Prawy panel karty (~420 px, zamykany) -->
-            <Border x:Name="PanelKarty" Grid.Column="2" Width="420" Margin="0,8,8,8"
+            <Border x:Name="PanelKarty" Grid.Column="2" Visibility="Collapsed" Width="420" Margin="0,8,8,8"
                     BorderThickness="1,0,0,0"
                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
                 <Grid>
