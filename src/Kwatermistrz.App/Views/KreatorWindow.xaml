@@ -7,8 +7,10 @@
         Width="560" Height="560"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="{DynamicResource ApplicationBackgroundBrush}">
-    <Grid Margin="24">
+        Background="{DynamicResource ApplicationBackgroundBrush}"
+        Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+    <!-- Native WPF TextBlock/RadioButton do not automatically inherit WPF-UI's dark text palette. -->
+    <Grid Margin="24" TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -25,7 +27,9 @@
                 <ItemsControl ItemsSource="{Binding Starty}" Margin="0,4,0,0">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <RadioButton GroupName="Start" Margin="0,4,0,0"
+                            <RadioButton GroupName="Start" Margin="0,6,0,6"
+                                         Padding="4,3"
+                                         Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                          Checked="Start_Checked"
                                          Content="{Binding Nazwa}">
                                 <RadioButton.IsChecked>
@@ -55,6 +59,7 @@
                 <ui:TextBox Margin="0,4,0,0" Text="{Binding NazwaRekonstrukcji, UpdateSourceTrigger=PropertyChanged}" />
                 <TextBlock Text="Strona (opcjonalnie)" Margin="0,16,0,0" />
                 <ComboBox Margin="0,4,0,0"
+                          Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                           ItemsSource="{Binding Strony}"
                           SelectedValue="{Binding WybranaStronaId}"
                           SelectedValuePath="Id"
