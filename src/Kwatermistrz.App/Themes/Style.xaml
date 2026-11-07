@@ -31,8 +31,8 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <Style TargetType="ui:Button" BasedOn="{StaticResource FokusKlawiatury}" />
-    <Style TargetType="ui:TextBox" BasedOn="{StaticResource FokusKlawiatury}" />
+    <!-- Nie zastępujemy implicit styles WPF-UI: gubiły szablony i wygląd kontrolek.
+         Kontrolki biblioteki zachowują własny styl i obsługę fokusu. -->
 
     <!-- Typografia (§10.3): jedna rodzina Bahnschrift z zapasową Segoe UI. -->
     <FontFamily x:Key="CzcionkaBazowa">Bahnschrift, Segoe UI</FontFamily>
