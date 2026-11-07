@@ -16,6 +16,8 @@ public partial class App : Application
 {
     private const string NazwaMutexa = "Kwatermistrz.SingleInstance";
     private static System.Threading.Mutex? _mutex;
+    private static bool _posiadamyMutex;
+    private bool _wyjscieAwaryjne;
     private ServiceProvider? _provider;
     private System.Windows.Threading.DispatcherTimer? _timerZapisu;
 
@@ -34,6 +36,7 @@ public partial class App : Application
 
         // jedna instancja na użytkownika — dwie instancje nadpisywałyby sobie dane (NFR-05)
         _mutex = new System.Threading.Mutex(true, NazwaMutexa, out var czyNowa);
+        _posiadamyMutex = czyNowa;
         if (!czyNowa)
         {
             System.Windows.MessageBox.Show(
@@ -43,43 +46,23 @@ public partial class App : Application
             return;
         }
 
-        // globalna obsługa wyjątków: log + komunikat zamiast cichego zamknięcia (NFR-05)
+        // Wyjątki na wątku UI są krytyczne. Nie kontynuujemy z niekompletnym
+        // drzewem wizualnym ani nie nadpisujemy danych po awarii.
         DispatcherUnhandledException += (_, args) =>
         {
-            args.Handled = true;
+            _wyjscieAwaryjne = true;
             var sciezkaLogu = ZapiszLogWyjatku(args.Exception);
-            // lawina wyjątków (np. uszkodzony binding w pętli renderowania) zamiast zalewać użytkownika oknami kończy działanie
-            _licznikNieobsluzonych++;
-            if (_licznikNieobsluzonych >= 5)
-            {
-                // seria wyjątków — zapisujemy odłożone zmiany i robimy kopię zapasową przed zamknięciem, żeby nie stracić edycji
-                var kopia = "";
-                try
-                {
-                    if (Magazyn != null && Dane != null)
-                    {
-                        Magazyn.ZapiszJezeliBrudne(Dane);
-                        kopia = Magazyn.UtworzKopieZapasowa(Dane);
-                    }
-                }
-                catch
-                {
-                    // kopia po awarii jest best-effort — nie może przeszkodzić zamknięciu
-                }
-                var informacjeOkopii = kopia != "" ? $"\n\nKopia zapasowa danych: {kopia}" : "";
-                System.Windows.MessageBox.Show(
-                    $"Wystąpiła seria nieoczekiwanych błędów ({_licznikNieobsluzonych}). Aby nie uszkodzić danych, aplikacja zostanie zamknięta.{informacjeOkopii}\n\nSzczegóły zapisano w pliku:\n{sciezkaLogu}",
-                    "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-                Shutdown();
-                return;
-            }
+            args.Handled = true;
             System.Windows.MessageBox.Show(
-                $"Wystąpił nieoczekiwany błąd. Szczegóły zapisano w pliku:\n{sciezkaLogu}",
+                $"Kwatermistrz napotkał błąd i zostanie zamknięty.\nSzczegóły: {sciezkaLogu}",
                 "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            Shutdown(1);
         };
 
-        KatalogDanych = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Kwatermistrz");
+        var testUruchomienia = e.Args.Contains("--smoke-test", StringComparer.OrdinalIgnoreCase);
+        KatalogDanych = testUruchomienia
+            ? Path.Combine(Path.GetTempPath(), "Kwatermistrz-smoke-" + Guid.NewGuid().ToString("N"))
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Kwatermistrz");
         Directory.CreateDirectory(KatalogDanych);
         Magazyn = new MagazynJson(KatalogDanych);
         var (dane, kontrola) = Magazyn.WczytajZKontrola();
@@ -134,6 +117,14 @@ public partial class App : Application
         {
             DataContext = _provider.GetRequiredService<MainWindowViewModel>(),
         };
+        if (testUruchomienia)
+        {
+            // Windows CI: parsuj każdy ekran i karty bez pokazywania okna.
+            // Awaria któregokolwiek widoku kończy proces kodem != 0.
+            mainWindow.ZweryfikujEkrany();
+            Shutdown();
+            return;
+        }
         mainWindow.Show();
 
         if (dane.CzyPierwszeUruchomienie)
@@ -176,24 +167,23 @@ public partial class App : Application
     {
         // spłukujemy odłożony debounce'em zapis — wyjście z aplikacji nie może gubić edycji
         // (Magazyn/Dane null przy wczesnym wyjściu, np. druga instancja)
-        if (Magazyn != null && Dane != null)
+        if (!_wyjscieAwaryjne && Magazyn != null && Dane != null)
             Magazyn.ZapiszJezeliBrudne(Dane);
         _timerZapisu?.Stop();
         _provider?.Dispose();
-        _mutex?.ReleaseMutex();
+        if (_posiadamyMutex)
+            _mutex?.ReleaseMutex();
         _mutex?.Dispose();
         _mutex = null;
+        _posiadamyMutex = false;
         base.OnExit(e);
     }
-
-    /// <summary>Liczba nieobsłużonych wyjątków od startu — po serii zamykamy aplikację, żeby nie zalać użytkownika oknami błędu.</summary>
-    private int _licznikNieobsluzonych;
 
     /// <summary>Zapisuje szczegóły wyjątku do error.log w katalogu danych, a gdy niemożliwe — obok pliku exe. Zwraca ścieżkę zapisanego logu (do komunikatu).</summary>
     private static string ZapiszLogWyjatku(Exception ex)
     {
         var wpis =
-            $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}{ex.StackTrace}{Environment.NewLine}{Environment.NewLine}";
+            $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex}{Environment.NewLine}{Environment.NewLine}";
         try
         {
             var sciezka = Path.Combine(KatalogDanych, "error.log");
