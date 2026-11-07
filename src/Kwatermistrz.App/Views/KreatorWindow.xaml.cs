@@ -15,8 +15,8 @@ public partial class KreatorWindow : Window
             if (DataContext is KreatorViewModel vm)
                 vm.Zakonczono += (_, _) =>
                 {
+                    // Ustawienie wyniku zamyka okno modalne ShowDialog.
                     DialogResult = true;
-                    Close();
                 };
         };
     }
@@ -24,8 +24,8 @@ public partial class KreatorWindow : Window
     /// <summary>Zapisuje wybór punktu startu (radio „Start”; IsChecked jest jednokierunkowe przez MultiBinding, więc wybór trafia do ViewModelu tutaj).</summary>
     private void Start_Checked(object sender, RoutedEventArgs e)
     {
-        if (sender is RadioButton { DataContext: ValueTuple<string, string> start }
+        if (sender is RadioButton { DataContext: OpcjaStartu start }
             && DataContext is KreatorViewModel vm)
-            vm.WybranyStart = start.Item1;
+            vm.WybranyStart = start.Klucz;
     }
 }
