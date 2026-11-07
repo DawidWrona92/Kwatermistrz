@@ -33,6 +33,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        var testUruchomienia = e.Args.Contains("--smoke-test", StringComparer.OrdinalIgnoreCase);
 
         // jedna instancja na użytkownika — dwie instancje nadpisywałyby sobie dane (NFR-05)
         _mutex = new System.Threading.Mutex(true, NazwaMutexa, out var czyNowa);
@@ -53,13 +54,13 @@ public partial class App : Application
             _wyjscieAwaryjne = true;
             var sciezkaLogu = ZapiszLogWyjatku(args.Exception);
             args.Handled = true;
-            System.Windows.MessageBox.Show(
-                $"Kwatermistrz napotkał błąd i zostanie zamknięty.\nSzczegóły: {sciezkaLogu}",
-                "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            if (!testUruchomienia)
+                System.Windows.MessageBox.Show(
+                    $"Kwatermistrz napotkał błąd i zostanie zamknięty.\nSzczegóły: {sciezkaLogu}",
+                    "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             Shutdown(1);
         };
 
-        var testUruchomienia = e.Args.Contains("--smoke-test", StringComparer.OrdinalIgnoreCase);
         KatalogDanych = testUruchomienia
             ? Path.Combine(Path.GetTempPath(), "Kwatermistrz-smoke-" + Guid.NewGuid().ToString("N"))
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Kwatermistrz");
@@ -121,7 +122,11 @@ public partial class App : Application
         {
             // Windows CI: parsuj każdy ekran i karty bez pokazywania okna.
             // Awaria któregokolwiek widoku kończy proces kodem != 0.
+            // Odpalamy prawdziwy lifecycle WPF, a nie tylko parsowanie konstruktorów.
+            mainWindow.Show();
             mainWindow.ZweryfikujEkrany();
+            mainWindow.ZweryfikujNawigacje();
+            mainWindow.Close();
             Shutdown();
             return;
         }
