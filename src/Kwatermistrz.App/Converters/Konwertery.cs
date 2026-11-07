@@ -36,6 +36,19 @@ public class KonwerterDaty : IValueConverter
         => Binding.DoNothing;
 }
 
+/// <summary>WPF DatePicker obsługuje DateTime?, model domenowy przechowuje DateOnly/DateOnly?.</summary>
+public sealed class KonwerterDateOnlyDateTime : IValueConverter
+{
+    public static readonly KonwerterDateOnlyDateTime Instance = new();
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is DateOnly data ? data.ToDateTime(TimeOnly.MinValue) : value is null ? null! : Binding.DoNothing;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is DateTime data ? DateOnly.FromDateTime(data)
+            : targetType == typeof(DateOnly) ? Binding.DoNothing : null!;
+}
+
 /// <summary>Nazwa wartości słownika po Id; puste dla null.</summary>
 public class KonwerterNazwySlownika : IValueConverter
 {
