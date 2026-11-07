@@ -28,7 +28,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <DatePicker Grid.Column="0" SelectedDate="{Binding Nowa.Data}" ToolTip="Data (wymagana)" />
+                <DatePicker Grid.Column="0" SelectedDate="{Binding Nowa.Data, Converter={x:Static conv:KonwerterDateOnlyDateTime.Instance}}" ToolTip="Data (wymagana)" />
                 <ComboBox Grid.Column="1" MinWidth="160" Margin="8,0,0,0"
                           ItemsSource="{Binding Zestawy}"
                           SelectedValue="{Binding Nowa.ZestawId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa"
