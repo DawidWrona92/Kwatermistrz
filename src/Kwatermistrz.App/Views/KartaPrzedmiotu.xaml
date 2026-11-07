@@ -85,7 +85,7 @@
                 <ui:TextBox Grid.Row="7" Grid.Column="1" Margin="0,4,0,0" Text="{Binding Przedmiot.CenaZakupu}" />
 
                 <TextBlock Grid.Row="8" Grid.Column="0" Text="Data zakupu" VerticalAlignment="Center" Margin="0,4,0,0" />
-                <DatePicker Grid.Row="8" Grid.Column="1" Margin="0,4,0,0" SelectedDate="{Binding Przedmiot.DataZakupu}" />
+                <DatePicker Grid.Row="8" Grid.Column="1" Margin="0,4,0,0" SelectedDate="{Binding Przedmiot.DataZakupu, Converter={x:Static conv:KonwerterDateOnlyDateTime.Instance}}" />
 
                 <TextBlock Grid.Row="9" Grid.Column="0" Text="Komentarz" VerticalAlignment="Top" Margin="0,8,0,0" />
                 <ui:TextBox Grid.Row="9" Grid.Column="1" Margin="0,4,0,0" Text="{Binding Przedmiot.Komentarz}"
