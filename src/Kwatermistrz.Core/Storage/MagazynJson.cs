@@ -78,10 +78,10 @@ public class MagazynJson
             }
             catch (Exception ex) when (ex is IOException or InvalidDataException or System.Text.Json.JsonException)
             {
-                // odczyt .bak też w try — uszkodzony główny i .bak nie mogą wywalić startu
+                var kopia = _sciezka + ".bak";
+                // Nigdy nie nadpisuj poprawnej .bak uszkodzonym plikiem głównym.
                 try
                 {
-                    var kopia = _sciezka + ".bak";
                     if (File.Exists(kopia))
                     {
                         var json = File.ReadAllText(kopia);
@@ -90,18 +90,43 @@ public class MagazynJson
                         {
                             Waliduj(dane);
                             Migruj(dane);
-                            return (dane, new WynikKontroli { CzyPoprawne = false, Komunikat = "Odczytano ostatnią kopię zapasową", Zrodlo = kopia });
+                            ZabezpieczUszkodzonyPlik(_sciezka);
+                            File.Copy(kopia, _sciezka);
+                            return (dane, new WynikKontroli
+                            {
+                                CzyPoprawne = false,
+                                Komunikat = "Przywrócono dane z ostatniej poprawnej kopii .bak; uszkodzony plik zachowano.",
+                                Zrodlo = kopia,
+                            });
                         }
                     }
                 }
                 catch (Exception exBak) when (exBak is IOException or InvalidDataException or System.Text.Json.JsonException)
                 {
-                    // oba pliki uszkodzone — pusty dokument + komunikat
+                    // Wyłącznie błędy odczytu kopii; błędy zapisu zabezpieczenia trzeba zgłosić.
                 }
+                // Oba pliki są nieczytelne. Nie wolno po cichu nadpisać jedynych kopii.
+                ZabezpieczUszkodzonyPlik(_sciezka);
+                ZabezpieczUszkodzonyPlik(kopia);
                 var nowe = NoweDane();
-                return (nowe, new WynikKontroli { CzyPoprawne = false, Komunikat = "Nie udało się odczytać danych; utworzono pusty dokument", Zrodlo = null });
+                return (nowe, new WynikKontroli
+                {
+                    CzyPoprawne = false,
+                    Komunikat = "Nie udało się odczytać danych. Uszkodzone pliki zachowano z dopiskiem .uszkodzony; utworzono pusty dokument.",
+                    Zrodlo = null,
+                });
             }
         }
+    }
+
+    /// <summary>Archiwizuje uszkodzony plik zamiast pozwalać późniejszemu zapisowi go nadpisać.</summary>
+    private static void ZabezpieczUszkodzonyPlik(string sciezka)
+    {
+        if (!File.Exists(sciezka))
+            return;
+        var archiwum = sciezka + ".uszkodzony-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss",
+            System.Globalization.CultureInfo.InvariantCulture) + "-" + Guid.NewGuid().ToString("N");
+        File.Move(sciezka, archiwum);
     }
 
     /// <summary>Wczytuje dane z konkretnego pliku (przywracanie z kopii, FR-1107). Przy błędzie rzuca wyjątek.</summary>
