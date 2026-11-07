@@ -27,7 +27,7 @@
             <TextBlock Text="Zdjęcia" Style="{StaticResource NaglowekSekcji}" Margin="0,8,0,4" />
             <controls:GaleriaZdjec x:Name="Galeria"
                                    Sciezki="{Binding Przedmiot.Zdjecia}"
-                                   Serwis="{Binding DataContext.DataContext.SerwisZdjec, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                   Serwis="{Binding ViewModel.SerwisZdjec, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                    WlascicielNazwa="{Binding Przedmiot.Nazwa}" />
 
             <Grid Margin="0,8,0,0">
@@ -57,22 +57,22 @@
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Kategoria" VerticalAlignment="Center" Margin="0,4,0,0" />
                 <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,4,0,0"
-                          ItemsSource="{Binding DataContext.DataContext.Slowniki.Kategorie, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          ItemsSource="{Binding ViewModel.Slowniki.Kategorie, RelativeSource={RelativeSource AncestorType=UserControl}}"
                           SelectedValue="{Binding Przedmiot.KategoriaId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
 
                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Wzór" VerticalAlignment="Center" Margin="0,4,0,0" />
                 <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,4,0,0"
-                          ItemsSource="{Binding DataContext.DataContext.Slowniki.Wzory, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          ItemsSource="{Binding ViewModel.Slowniki.Wzory, RelativeSource={RelativeSource AncestorType=UserControl}}"
                           SelectedValue="{Binding Przedmiot.WzorId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
 
                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Miejsce" VerticalAlignment="Center" Margin="0,4,0,0" />
                 <ComboBox Grid.Row="4" Grid.Column="1" Margin="0,4,0,0"
-                          ItemsSource="{Binding DataContext.DataContext.Slowniki.Miejsca, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          ItemsSource="{Binding ViewModel.Slowniki.Miejsca, RelativeSource={RelativeSource AncestorType=UserControl}}"
                           SelectedValue="{Binding Przedmiot.MiejsceId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
 
                 <TextBlock Grid.Row="5" Grid.Column="0" Text="Pochodzenie" VerticalAlignment="Center" Margin="0,4,0,0" />
                 <ComboBox Grid.Row="5" Grid.Column="1" Margin="0,4,0,0"
-                          ItemsSource="{Binding DataContext.DataContext.Slowniki.Pochodzenie, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          ItemsSource="{Binding ViewModel.Slowniki.Pochodzenie, RelativeSource={RelativeSource AncestorType=UserControl}}"
                           SelectedValue="{Binding Przedmiot.PochodzenieId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
 
                 <TextBlock Grid.Row="6" Grid.Column="0" Text="Status" VerticalAlignment="Center" Margin="0,4,0,0" />
@@ -120,20 +120,20 @@
             <TextBlock Visibility="{Binding CzyWKomplecie, Converter={x:Static conv:KonwerterNieRowneNull.Instance}}"
                        Text="Element kompletu" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                <ui:Button Content="Dołącz do kompletu…" Command="{Binding DataContext.DataContext.DolaczDoKompletuCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                           CommandParameter="{Binding DataContext.DataContext.Wybrany, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                <ui:Button Content="Dołącz do kompletu…" Command="{Binding ViewModel.DolaczDoKompletuCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           CommandParameter="{Binding ViewModel.Wybrany, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                 <ui:Button Content="Odepnij od kompletu" Margin="8,0,0,0"
-                           Command="{Binding DataContext.DataContext.OdlaczZKompletuCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                           Command="{Binding ViewModel.OdlaczZKompletuCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
             </StackPanel>
 
             <!-- Montaż (FR-207) -->
             <TextBlock Text="Montaż na nośniku" Style="{StaticResource NaglowekSekcji}" Margin="0,16,0,4" />
             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                <ComboBox MinWidth="180" ItemsSource="{Binding DataContext.DataContext.Nosniki, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                <ComboBox MinWidth="180" ItemsSource="{Binding ViewModel.Nosniki, RelativeSource={RelativeSource AncestorType=UserControl}}"
                           SelectedValue="{Binding Przedmiot.ZamontowanyNaId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa"
                           ToolTip="Nośnik (puste = niezamontowany)" />
                 <ui:Button Content="Zdejmij" Margin="8,0,0,0"
-                           Command="{Binding DataContext.DataContext.ZdejmijCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                           Command="{Binding ViewModel.ZdejmijCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
             </StackPanel>
 
             <!-- Konfiguracje nośnika (FR-208) — tylko gdy przedmiot jest nośnikiem -->
@@ -156,10 +156,10 @@
                                     <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                Text="{Binding ElementyId.Count, StringFormat={}{0} elem.}" />
                                     <ui:Button Grid.Column="2" Content="Zastosuj" Margin="4,0,0,0" Padding="6,2"
-                                               Command="{Binding DataContext.DataContext.DataContext.ZastosujKonfiguracjeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               Command="{Binding ViewModel.ZastosujKonfiguracjeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                CommandParameter="{Binding}" />
                                     <ui:Button Grid.Column="3" Margin="4,0,0,0" Padding="6,2" Appearance="Danger"
-                                               Command="{Binding DataContext.DataContext.DataContext.UsunKonfiguracjeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               Command="{Binding ViewModel.UsunKonfiguracjeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                CommandParameter="{Binding}">
                                         <ui:SymbolIcon Symbol="Dismiss24" />
                                     </ui:Button>
@@ -170,20 +170,20 @@
                 </ItemsControl>
                 <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                     <ui:Button Content="Zapisz z zamontowanych" Padding="6,2"
-                               Command="{Binding DataContext.DataContext.ZapiszKonfiguracjeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                               Command="{Binding ViewModel.ZapiszKonfiguracjeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                ToolTip="Tworzy konfigurację z elementów aktualnie zamontowanych na tym nośniku" />
                     <ui:Button Content="Dodaj pustą" Margin="8,0,0,0" Padding="6,2"
-                               Command="{Binding DataContext.DataContext.DodajKonfiguracjeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                               Command="{Binding ViewModel.DodajKonfiguracjeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                 </StackPanel>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
                 <ui:Button Content="Zapisz" Appearance="Primary"
-                           Command="{Binding DataContext.DataContext.ZapiszKarteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                           Command="{Binding ViewModel.ZapiszKarteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                 <ui:Button Content="Duplikuj" Margin="8,0,0,0"
-                           Command="{Binding DataContext.DataContext.DuplikujCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                           Command="{Binding ViewModel.DuplikujCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                 <ui:Button Content="Usuń" Appearance="Danger" Margin="8,0,0,0"
-                           Command="{Binding DataContext.DataContext.UsunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           Command="{Binding ViewModel.UsunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                            CommandParameter="{Binding}" />
                 <!-- FR-1205: ostatnia zmiana na karcie -->
                 <TextBlock VerticalAlignment="Center" Margin="16,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
