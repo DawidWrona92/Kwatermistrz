@@ -126,6 +126,46 @@ public partial class MainWindow : FluentWindow
         }
     }
 
+    /// <summary>Windows CI: pierwszy start w motywie ciemnym i jasnym oraz zapis kreatora.</summary>
+    public void ZweryfikujKreator()
+    {
+        foreach (var motyw in new[] { Wpf.Ui.Appearance.ApplicationTheme.Dark, Wpf.Ui.Appearance.ApplicationTheme.Light })
+        {
+            Wpf.Ui.Appearance.ApplicationThemeManager.Apply(motyw);
+            var vm = new KreatorViewModel(App.Dane, App.Magazyn);
+            var kreator = new KreatorWindow { Owner = this, DataContext = vm };
+            Exception? blad = null;
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, new Action(() =>
+            {
+                try
+                {
+                    kreator.ZweryfikujOpcjeStartu();
+                    if (motyw == Wpf.Ui.Appearance.ApplicationTheme.Light)
+                    {
+                        vm.NazwaRekonstrukcji = "Test pierwszego uruchomienia";
+                        vm.PotwierdzCommand.Execute(null);
+                        if (App.Dane.CzyPierwszeUruchomienie || vm.Komunikat.Length > 0)
+                            throw new InvalidOperationException("Nie udało się zakończyć kreatora.");
+                    }
+                    else
+                    {
+                        kreator.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    blad = ex;
+                    kreator.Close();
+                }
+            }));
+            var wynik = kreator.ShowDialog();
+            if (blad != null)
+                throw new InvalidOperationException($"Test kreatora w motywie {motyw} nie powiódł się.", blad);
+            if (motyw == Wpf.Ui.Appearance.ApplicationTheme.Light && wynik != true)
+                throw new InvalidOperationException("Kreator nie zakończył się poprawnie po zatwierdzeniu.");
+        }
+    }
+
     /// <summary>Pokazuje ekran o podanym kluczu (bez zmiany zaznaczenia w nawigacji).</summary>
     public void PokazEkran(string ekran)
     {
