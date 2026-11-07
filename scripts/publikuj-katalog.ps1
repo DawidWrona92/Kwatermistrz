@@ -1,19 +1,27 @@
 # Publikacja Kwatermistrza 1.0.1+ (NFR-10, decyzja 06): self-contained jako katalog
 # (NIE single-file — wersja 1.0.0 single-file nie uruchamiała się na części maszyn),
 # zip z całym katalogiem + instrukcją.
-# Wymaga: Windows + .NET 10 SDK. Uruchomienie:  powershell -File scripts\publikuj-katalog.ps1 [-Wersja 1.0.1]
+# Wymaga: Windows + .NET 10 SDK. Uruchomienie: powershell -File scripts\publikuj-katalog.ps1 [-Wersja 1.0.3]
 # Wynik:  dist\Kwatermistrz-<wersja>.zip  (gotowy do rozdania kolegom — bez danych autora, NFR-15)
 param(
-    [string]$Wersja = "1.0.1"
+    [string]$Wersja = ""
 )
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
+# Jedno źródło numeru wydania — metadane projektu.
+if ([string]::IsNullOrWhiteSpace($Wersja)) {
+    [xml]$projekt = Get-Content (Join-Path $root "src\Kwatermistrz.App\Kwatermistrz.App.csproj")
+    $Wersja = [string]$projekt.Project.PropertyGroup.Version
+    if ([string]::IsNullOrWhiteSpace($Wersja)) { throw "Brak wersji w csproj" }
+}
 $publikacja = Join-Path $root "dist\publish"
 $zip = Join-Path $root "dist\Kwatermistrz-$Wersja.zip"
 $staging = Join-Path $root "dist\staging"
 
 Write-Host "== Kwatermistrz $Wersja — publikacja self-contained (katalog) ==" -ForegroundColor Cyan
+# Stare zależności z poprzednich wersji nie mogą trafiać do paczki.
+Remove-Item $publikacja -Recurse -Force -ErrorAction SilentlyContinue
 
 # wersja trafia do metadanych pliku exe (widoczna w oknie właściwości i w O programie)
 & dotnet publish "$root\src\Kwatermistrz.App\Kwatermistrz.App.csproj" `
