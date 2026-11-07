@@ -194,7 +194,7 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <DatePicker Grid.Column="0" SelectedDate="{Binding Data}" />
+                                    <DatePicker Grid.Column="0" SelectedDate="{Binding Data, Converter={x:Static conv:KonwerterDateOnlyDateTime.Instance}}" />
                                     <ui:TextBox Grid.Column="1" Margin="4,0" Text="{Binding EnergiaJ}" ToolTip="Energia (J)" />
                                     <ui:TextBox Grid.Column="2" Margin="4,0" Text="{Binding Rof}" ToolTip="ROF" />
                                     <ui:TextBox Grid.Column="3" Margin="4,0" Text="{Binding ZasiegM}" ToolTip="Zasięg (m)" />
@@ -228,7 +228,7 @@
                                     <ColumnDefinition Width="130" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <DatePicker Grid.Column="0" SelectedDate="{Binding Data}" />
+                                <DatePicker Grid.Column="0" SelectedDate="{Binding Data, Converter={x:Static conv:KonwerterDateOnlyDateTime.Instance}}" />
                                 <ui:TextBox Grid.Column="1" Margin="4,0" Text="{Binding Opis}" ToolTip="Opis" />
                                 <ui:TextBox Grid.Column="2" Margin="4,0" Text="{Binding Kwota}" ToolTip="Kwota (PLN, ujemna = zwrot)" />
                                 <ComboBox Grid.Column="3" Margin="4,0"
@@ -254,7 +254,7 @@
                                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal">
-                                        <DatePicker SelectedDate="{Binding Data}" />
+                                        <DatePicker SelectedDate="{Binding Data, Converter={x:Static conv:KonwerterDateOnlyDateTime.Instance}}" />
                                         <ui:TextBox MinWidth="200" Margin="8,0,0,0" Text="{Binding Opis}" ToolTip="Opis modyfikacji" />
                                         <ui:Button Margin="8,0,0,0" Appearance="Danger"
                                                    Command="{Binding ViewModel.UsunModyfikacjeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
