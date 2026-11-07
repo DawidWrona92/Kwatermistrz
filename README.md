@@ -36,7 +36,7 @@ Publikacja zgodnie z [decyzją 06](docs/decyzje/06-instalacja.md): self-containe
 
 ```powershell
 # wydanie paczki dist\Kwatermistrz-<wersja>.zip (Windows, .NET 10 SDK)
-powershell -File scripts\publikuj-katalog.ps1 -Wersja 1.0.1
+powershell -File scripts\publikuj-katalog.ps1
 ```
 
 Paczka nie zawiera danych autora (NFR-15). Instrukcja dla kolegów: [`docs/instalacja/INSTRUKCJA.txt`](docs/instalacja/INSTRUKCJA.txt).
@@ -54,3 +54,19 @@ docs/dane-startowe/      plik źródłowy xlsx do importu
 docs/decyzje/            notatki decyzji technologicznych
 docs/instalacja/         instrukcja dla użytkowników (trafia do paczki)
 ```
+
+## Diagnostyka uruchomienia i walidacja Windows
+
+Jeśli aplikacja się nie uruchamia, sprawdź `%AppData%\Kwatermistrz\error.log`
+(znajdują się tam pełne wyjątki, także z parsowania `App.xaml`).
+**Nie usuwaj `%AppData%\Kwatermistrz`** — zawiera dane, zdjęcia i kopie.
+
+Przed wypuszczeniem nowej wersji uruchom CI `Windows build, tests and XAML smoke test`.
+CI kompiluje .NET 10, uruchamia testy Core, sprawdza pokazanie okna,
+wszystkie widoki i nawigację WPF w trybie `--smoke-test`,
+a następnie tworzy przenośny ZIP jako artefakt GitHub Actions.
+Test automatyczny **nie zastępuje ręcznego sprawdzenia** na docelowym Windows
+z rzeczywistymi danymi.
+
+Skrypt `scripts/publikuj-katalog.ps1` czyści katalog `dist/publish`
+i pobiera numer wersji automatycznie z `Kwatermistrz.App.csproj`.
