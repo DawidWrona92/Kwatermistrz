@@ -6,8 +6,8 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <!-- WPF-UI: kontrolki, ikony i domyślne motywy (jasny/ciemny) -->
-                <ui:ControlsDictionary />
                 <ui:ThemesDictionary Theme="Light" />
+                <ui:ControlsDictionary />
 
                 <!-- Paleta Kwatermistrza (§10.2) + typografia (§10.3) + style własne -->
                 <ResourceDictionary Source="Themes/Paleta.xaml" />
