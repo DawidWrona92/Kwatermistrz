@@ -2,6 +2,24 @@
 
 Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie semantyczne.
 
+## [1.0.4] — stabilizacja startu, naprawa formularzy i CI Windows
+
+### Uruchamianie i diagnostyka
+- Dodatkowy punkt wejścia z ochroną przed błędami parsowania App.xaml; pełne wyjątki w `%AppData%\\Kwatermistrz\\error.log`.
+- Strony WPF są tworzone dopiero przy otwarciu; awaria pojedynczej strony nie blokuje inicjalizacji pozostałych.
+- Obsługa wyjątków zamyka niespójną aplikację bez automatycznego zapisu uszkodzonego stanu; poprawione zwalnianie mutexa drugiej instancji.
+- Tryb `--smoke-test` tworzy okno na Windows, sprawdza wszystkie widoki, karty i przejścia w `Frame`. Windows CI buduje .NET 10, uruchamia testy Core, wykonuje smoke test i publikuje archiwum przenośne.
+
+### Interfejs i dane
+- Poprawione powiązania akcji i słowników w kartach przedmiotów/replik, zakładki replik, zestawy oraz widoczność raportów.
+- Poprawione tryby MultiBinding RadioButton, obsługa dat DateOnly w DatePicker, focus wyszukiwania i nawigacja.
+- Przywrócenie z `.bak` archiwizuje uszkodzony plik przed zapisem, zachowując dobrą kopię. Dwa uszkodzone pliki są zabezpieczane z dopiskiem `.uszkodzony`, bez utraty oryginałów.
+- Skrypt wydania czyści katalog publikacji i pobiera numer wersji z projektu; uporządkowano `.gitignore`.
+
+### Weryfikacja
+- Testy Core oraz smoke WPF są uruchamiane automatycznie na Windows CI.
+- Ręczny test użytkowy na docelowym komputerze nadal jest potrzebny przed oznaczeniem wydania jako w pełni zatwierdzonego.
+
 ## [1.0.3] — naprawa hostowania stron (Frame) i bindingu kosztu zestawu
 
 ### Naprawy
