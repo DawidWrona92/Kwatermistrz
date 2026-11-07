@@ -112,6 +112,20 @@ public partial class MainWindow : FluentWindow
         _ = new KreatorWindow();
     }
 
+    /// <summary>Smoke test Windows: rzeczywiste przejścia Frame.Navigate i zdarzenia Loaded.</summary>
+    public void ZweryfikujNawigacje()
+    {
+        foreach (var ekran in _fabrykiStron.Keys.ToList())
+        {
+            PokazEkran(ekran);
+            // Frame może planować ładowanie na dispatcherze zamiast wykonywać je od razu.
+            var klatka = new System.Windows.Threading.DispatcherFrame();
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background,
+                new Action(() => klatka.Continue = false));
+            System.Windows.Threading.Dispatcher.PushFrame(klatka);
+        }
+    }
+
     /// <summary>Pokazuje ekran o podanym kluczu (bez zmiany zaznaczenia w nawigacji).</summary>
     public void PokazEkran(string ekran)
     {
