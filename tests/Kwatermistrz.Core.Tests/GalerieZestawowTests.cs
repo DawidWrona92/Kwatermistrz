@@ -74,7 +74,7 @@ public sealed class GalerieZestawowTests : IDisposable
         var wynik = EksportRekonstrukcji.Eksportuj(dane, rekonstrukcja.Id, _katalog, archiwum);
         Assert.Equal(1, wynik.Zestawy);
         Assert.Equal(2, wynik.Zdjecia); // duplikat w obu galeriach pakujemy tylko raz
-        Assert.Equal(new[] { "ref.png", "sylwetka.jpg" }, EksportRekonstrukcji.WypiszZdjecia(archiwum));
+        Assert.Equal(new[] { "zdjecia/ref.png", "zdjecia/sylwetka.jpg" }, EksportRekonstrukcji.WypiszZdjecia(archiwum));
 
         var import = EksportRekonstrukcji.Wczytaj(archiwum);
         var odtworzony = Assert.Single(import.Zestawy);
