@@ -263,6 +263,74 @@ public partial class MainWindow : FluentWindow
         }
     }
 
+    /// <summary>Windows smoke: prawdziwy edytor zestawu, dwie galerie, limit i zapis plików.</summary>
+    public void ZweryfikujGalerieZestawu()
+    {
+        ViewModel!.Zestawy.Odswiez();
+        var wiersz = ViewModel.Zestawy.Wiersze.FirstOrDefault();
+        if (wiersz == null)
+            throw new InvalidOperationException("Brak zestawu do testu galerii.");
+        ViewModel.Zestawy.Wybrany = wiersz;
+        PokazEkran("Zestawy");
+        PrzepompujNawigacje();
+        UpdateLayout();
+
+        if (ObszarZawartosci.Content is not ZestawyPage strona)
+            throw new InvalidOperationException("Nie udało się wyświetlić edytora zestawu.");
+        strona.UpdateLayout();
+        var galerie = ZnajdzWizualne<Kwatermistrz.App.Controls.GaleriaZdjec>(strona).ToList();
+        if (galerie.Count != 2)
+            throw new InvalidOperationException($"Oczekiwano 2 galerii, znaleziono: {galerie.Count}.");
+
+        var wlasne = galerie.Single(g => g.MaksymalnaLiczbaZdjec == 0);
+        var referencje = galerie.Single(g => g.MaksymalnaLiczbaZdjec == 10);
+        if (!ReferenceEquals(wlasne.Sciezki, wiersz.Zestaw.Zdjecia) ||
+            !ReferenceEquals(referencje.Sciezki, wiersz.Zestaw.ZdjeciaReferencyjne) ||
+            !ReferenceEquals(wlasne.Opisy, wiersz.Zestaw.OpisyZdjec) ||
+            referencje.Serwis == null)
+            throw new InvalidOperationException("Nieprawidłowe powiązania galerii zestawu.");
+
+        var plik = System.IO.Path.Combine(App.KatalogDanych, "probka-galerii.png");
+        var piksel = System.Windows.Media.Imaging.BitmapSource.Create(
+            1, 1, 96, 96, System.Windows.Media.PixelFormats.Bgra32, null,
+            new byte[] { 4, 15, 230, 255 }, 4);
+        var png = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(piksel));
+        using (var strumien = System.IO.File.Create(plik))
+            png.Save(strumien);
+        try
+        {
+            var własnaPoczatkowa = wiersz.Zestaw.Zdjecia.Count;
+            var refsPoczatkowe = wiersz.Zestaw.ZdjeciaReferencyjne.Count;
+            if (wlasne.DodajPliki([plik]) != 1 ||
+                wiersz.Zestaw.Zdjecia.Count != własnaPoczatkowa + 1)
+                throw new InvalidOperationException("Dodawanie własnego zdjęcia nie działa.");
+
+            var ileDodac = Math.Min(2, 10 - refsPoczatkowe);
+            if (referencje.DodajPliki(Enumerable.Repeat(plik, ileDodac)) != ileDodac ||
+                wiersz.Zestaw.ZdjeciaReferencyjne.Count != refsPoczatkowe + ileDodac)
+                throw new InvalidOperationException("Dodawanie referencji nie działa.");
+            var opisSciezka = wiersz.Zestaw.ZdjeciaReferencyjne.Last();
+            wiersz.Zestaw.OpisyZdjec[opisSciezka] = "Zdjęcie referencyjne — test";
+            ViewModel.Zestawy.ZapiszGalerie();
+
+            var odczyt = new Kwatermistrz.Core.Storage.MagazynJson(App.KatalogDanych).Wczytaj();
+            var zestaw = odczyt.Zestawy.Single(z => z.Id == wiersz.Id);
+            if (zestaw.Zdjecia.Count != wiersz.Zestaw.Zdjecia.Count ||
+                zestaw.ZdjeciaReferencyjne.Count != wiersz.Zestaw.ZdjeciaReferencyjne.Count ||
+                zestaw.OpisyZdjec[opisSciezka] != "Zdjęcie referencyjne — test" ||
+                !System.IO.File.Exists(referencje.Serwis.PelnaSciezka(opisSciezka)))
+                throw new InvalidOperationException("Zdjęcia i opisy zestawu nie zostały trwale zapisane.");
+        }
+        finally
+        {
+            // Plik źródłowy może zniknąć; skopiowane fotografie i JSON są w
+            // izolowanym profilu smoke i zostaną posprzątane przez runner.
+            System.IO.File.Delete(plik);
+        }
+        PokazEkran("Pulpit");
+    }
+
     /// <summary>Test wizualnej regresji: podstawowe etykiety pulpitu nie mogą mieć czarnego tekstu w dark mode.</summary>
     public void ZweryfikujKoloryPulpitu()
     {
