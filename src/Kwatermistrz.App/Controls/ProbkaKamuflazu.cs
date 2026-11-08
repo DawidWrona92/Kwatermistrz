@@ -65,7 +65,7 @@ public sealed class ProbkaKamuflazu : FrameworkElement
         }
     }
 
-    protected override void OnRender(DrawingContext dc)
+    protected override void OnRender(DrawingContext drawingContext)
     {
         base.OnRender(dc);
 
@@ -79,22 +79,22 @@ public sealed class ProbkaKamuflazu : FrameworkElement
         switch (_kolory.Length)
         {
             case 1:
-                dc.DrawRectangle(_kolory[0], null, new Rect(0, 0, w, h));
+                drawingContext.DrawRectangle(_kolory[0], null, new Rect(0, 0, w, h));
                 break;
             case 2:
-                dc.DrawRectangle(_kolory[0], null, new Rect(0, 0, polowaW, h));
-                dc.DrawRectangle(_kolory[1], null, new Rect(polowaW, 0, w - polowaW, h));
+                drawingContext.DrawRectangle(_kolory[0], null, new Rect(0, 0, polowaW, h));
+                drawingContext.DrawRectangle(_kolory[1], null, new Rect(polowaW, 0, w - polowaW, h));
                 break;
             case 3:
-                dc.DrawRectangle(_kolory[0], null, new Rect(0, 0, polowaW, polowaH));
-                dc.DrawRectangle(_kolory[1], null, new Rect(polowaW, 0, w - polowaW, polowaH));
-                dc.DrawRectangle(_kolory[2], null, new Rect(0, polowaH, w, h - polowaH));
+                drawingContext.DrawRectangle(_kolory[0], null, new Rect(0, 0, polowaW, polowaH));
+                drawingContext.DrawRectangle(_kolory[1], null, new Rect(polowaW, 0, w - polowaW, polowaH));
+                drawingContext.DrawRectangle(_kolory[2], null, new Rect(0, polowaH, w, h - polowaH));
                 break;
             default:
-                dc.DrawRectangle(_kolory[0], null, new Rect(0, 0, polowaW, polowaH));
-                dc.DrawRectangle(_kolory[1], null, new Rect(polowaW, 0, w - polowaW, polowaH));
-                dc.DrawRectangle(_kolory[2], null, new Rect(0, polowaH, polowaW, h - polowaH));
-                dc.DrawRectangle(_kolory[3], null, new Rect(polowaW, polowaH, w - polowaW, h - polowaH));
+                drawingContext.DrawRectangle(_kolory[0], null, new Rect(0, 0, polowaW, polowaH));
+                drawingContext.DrawRectangle(_kolory[1], null, new Rect(polowaW, 0, w - polowaW, polowaH));
+                drawingContext.DrawRectangle(_kolory[2], null, new Rect(0, polowaH, polowaW, h - polowaH));
+                drawingContext.DrawRectangle(_kolory[3], null, new Rect(polowaW, polowaH, w - polowaW, h - polowaH));
                 break;
         }
     }
