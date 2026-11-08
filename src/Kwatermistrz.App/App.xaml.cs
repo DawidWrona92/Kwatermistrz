@@ -126,10 +126,10 @@ public partial class App : Application
             mainWindow.Show();
             mainWindow.ZweryfikujEkrany();
             mainWindow.ZweryfikujNawigacje();
-            mainWindow.ZweryfikujKoloryPulpitu();
             mainWindow.ZweryfikujKreator();
             if (e.Args.Length >= 2 && !string.IsNullOrWhiteSpace(e.Args[1]))
                 mainWindow.ZweryfikujImportPoStarcie(e.Args[1]);
+            mainWindow.ZweryfikujKoloryPulpitu();
             mainWindow.Close();
             Shutdown();
             return;
