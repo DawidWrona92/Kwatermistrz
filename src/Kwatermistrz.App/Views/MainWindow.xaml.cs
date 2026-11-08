@@ -166,6 +166,71 @@ public partial class MainWindow : FluentWindow
         }
     }
 
+    private static IEnumerable<T> ZnajdzWizualne<T>(DependencyObject rodzic) where T : DependencyObject
+    {
+        if (rodzic is T znaleziony)
+            yield return znaleziony;
+        for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(rodzic); i++)
+            foreach (var element in ZnajdzWizualne<T>(System.Windows.Media.VisualTreeHelper.GetChild(rodzic, i)))
+                yield return element;
+    }
+
+    /// <summary>Weryfikuje realne piksele 2x2 i zmianę Wzor już po pierwszym renderze.</summary>
+    private static void ZweryfikujRysowanieKamuflazu()
+    {
+        var kontrolka = new Kwatermistrz.App.Controls.ProbkaKamuflazu();
+        var paleta = new Kwatermistrz.Core.Model.WzorKamuflazu
+        {
+            KoloryProbki = ["#FF0000", "#00FF00", "#0000FF", "#FFFFFF"],
+        };
+        void Renderuj()
+        {
+            kontrolka.Measure(new Size(24, 16));
+            kontrolka.Arrange(new Rect(0, 0, 24, 16));
+            kontrolka.UpdateLayout();
+            var obraz = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                24, 16, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            obraz.Render(kontrolka);
+            var piksele = new byte[24 * 16 * 4];
+            obraz.CopyPixels(piksele, 24 * 4, 0);
+            if (kontrolka.Wzor == paleta)
+            {
+                void Sprawdz(int x, int y, byte r, byte g, byte b)
+                {
+                    var i = (y * 24 + x) * 4;
+                    if (piksele[i] != b || piksele[i + 1] != g || piksele[i + 2] != r)
+                        throw new InvalidOperationException(
+                            $"Błędny kolor próbki kamuflażu w punkcie ({x},{y}).");
+                }
+                Sprawdz(3, 3, 255, 0, 0);
+                Sprawdz(17, 3, 0, 255, 0);
+                Sprawdz(3, 12, 0, 0, 255);
+                Sprawdz(17, 12, 255, 255, 255);
+            }
+        }
+
+        // Zmiana powiązania w zrealizowanym już wierszu nie może modyfikować Template.
+        kontrolka.Wzor = paleta;
+        Renderuj();
+        foreach (var ilosc in new[] { 1, 2, 3, 4 })
+        {
+            kontrolka.Wzor = new Kwatermistrz.Core.Model.WzorKamuflazu
+            {
+                KoloryProbki = paleta.KoloryProbki.Take(ilosc).ToList(),
+            };
+            Renderuj();
+        }
+        kontrolka.Wzor = new Kwatermistrz.Core.Model.WzorKamuflazu
+        {
+            KoloryProbki = ["#NIEPOPRAWNY"],
+        };
+        Renderuj();
+        kontrolka.Wzor = null;
+        Renderuj();
+        kontrolka.Wzor = paleta;
+        Renderuj();
+    }
+
     private void PrzepompujNawigacje()
     {
         var klatka = new System.Windows.Threading.DispatcherFrame();
@@ -286,6 +351,30 @@ public partial class MainWindow : FluentWindow
         if (ViewModel.AktualnyEkran != "Bronie" || ObszarZawartosci.Content is not BroniePage)
             throw new InvalidOperationException($"Komenda nawigacji do Broni nie działa: " +
                 $"VM={ViewModel.AktualnyEkran}, Frame={ObszarZawartosci.Content?.GetType().Name ?? "null"}.");
+
+        // Regresja po zgłoszeniu 08.11: duża lista wyposażenia wcześniej wywoływała
+        // InvalidOperationException: nie wolno modyfikować zapieczętowanego Template.
+        ViewModel.NawigujCommand.Execute("Wyposazenie");
+        PrzepompujNawigacje();
+        if (ViewModel.AktualnyEkran != "Wyposazenie" ||
+            ObszarZawartosci.Content is not WyposazeniePage stronaWyposazenia)
+            throw new InvalidOperationException("Nie udało się otworzyć wyposażenia po imporcie.");
+
+        var tabela = ZnajdzWizualne<System.Windows.Controls.DataGrid>(stronaWyposazenia).FirstOrDefault()
+            ?? throw new InvalidOperationException("Nie znaleziono tabeli wyposażenia.");
+        if (tabela.Items.Count < 105)
+            throw new InvalidOperationException(
+                $"Wyposażenie ma za mało wierszy po imporcie: {tabela.Items.Count}.");
+
+        foreach (var indeks in new[] { 0, tabela.Items.Count / 4, tabela.Items.Count / 2,
+                                       tabela.Items.Count - 1 })
+        {
+            tabela.ScrollIntoView(tabela.Items[indeks]);
+            PrzepompujNawigacje();
+            tabela.UpdateLayout();
+        }
+
+        ZweryfikujRysowanieKamuflazu();
 
         ViewModel.NawigujCommand.Execute("Pulpit");
         PrzepompujNawigacje();
