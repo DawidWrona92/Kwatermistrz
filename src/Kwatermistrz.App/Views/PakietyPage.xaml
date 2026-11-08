@@ -57,10 +57,10 @@
                          CanUserResizeColumns="True" ColumnWidth="Auto"
                          HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Rodzaj" Binding="{Binding Rodzaj}" Width="Auto" />
-                    <DataGridTextColumn Header="Nazwa z pakietu" Binding="{Binding Nazwa}" Width="Auto" />
-                    <DataGridTextColumn Header="Szczegóły" Binding="{Binding Opis}" Width="Auto" />
-                    <DataGridTextColumn Header="Istniejąca" Binding="{Binding Istniejaca}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Rodzaj" Binding="{Binding Rodzaj}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa z pakietu" Binding="{Binding Nazwa}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Szczegóły" Binding="{Binding Opis}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Istniejąca" Binding="{Binding Istniejaca}" Width="Auto" />
                     <DataGridTemplateColumn Header="Decyzja" Width="180">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
