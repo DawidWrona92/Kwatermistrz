@@ -1,7 +1,7 @@
 <Page x:Class="Kwatermistrz.App.Views.PlaceholderPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Title="Placeholder">
+      Title="Placeholder" TextElement.Foreground="{DynamicResource TekstAplikacji}">
     <StackPanel Margin="16" VerticalAlignment="Top">
         <TextBlock x:Name="Tytul" Style="{StaticResource TytulEkranu}" />
         <TextBlock x:Name="Opis" Margin="0,12,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
