@@ -185,8 +185,7 @@ public partial class MainWindow : FluentWindow
             if (etykiety.Count != 3)
                 throw new InvalidOperationException($"Nie znaleziono etykiet Pulpitu: {etykiety.Count}/3.");
 
-            var wzorcowy = Application.Current.TryFindResource("TekstAplikacji")
-                as System.Windows.Media.SolidColorBrush;
+            var wzorcowy = App.Kolory.Glowny as System.Windows.Media.SolidColorBrush;
             if (wzorcowy == null)
                 throw new InvalidOperationException("Brak podstawowego pędzla tekstu WPF-UI.");
 
@@ -299,6 +298,9 @@ public partial class MainWindow : FluentWindow
                 throw new InvalidOperationException($"Błąd inicjalizacji ekranu: {ekran}", ex);
             }
         }
+        // Każda Page ma binding do palety INPC, aby wcześniej utworzone
+        // widoki nie przechowywały czarnego Foreground po przełączeniu motywu.
+        UstawWiazanieKoloru(strona);
         if (!ReferenceEquals(ObszarZawartosci.Content, strona))
             ObszarZawartosci.Navigate(strona);
         if (ekran == "Pulpit" && ViewModel?.Pulpit != null)
@@ -518,8 +520,23 @@ public partial class MainWindow : FluentWindow
     /// <summary>Otwiera panel karty po prawej (§10.4).</summary>
     public void PokazKarte(FrameworkElement zawartosc)
     {
+        UstawWiazanieKoloru(zawartosc);
         ZawartoscKarty.Content = zawartosc;
         PanelKarty.Visibility = Visibility.Visible;
+    }
+
+    private static void UstawWiazanieKoloru(FrameworkElement element)
+    {
+        var wlasciwosc = System.Windows.Documents.TextElement.ForegroundProperty;
+        if (System.Windows.Data.BindingOperations.GetBindingBase(element, wlasciwosc) == null)
+        {
+            System.Windows.Data.BindingOperations.SetBinding(element, wlasciwosc,
+                new System.Windows.Data.Binding(nameof(App.Kolory.Glowny))
+                {
+                    Source = App.Kolory,
+                    Mode = System.Windows.Data.BindingMode.OneWay,
+                });
+        }
     }
 
     protected override void OnClosed(EventArgs e)
