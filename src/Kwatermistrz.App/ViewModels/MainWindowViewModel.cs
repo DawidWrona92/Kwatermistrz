@@ -152,6 +152,11 @@ public partial class MainWindowViewModel : ObservableObject
             var pakiet = PakietKonfiguracji.Eksportuj(dane, "Z eksportu rekonstrukcji");
             var podglad = ImporterPakietuKonfiguracji.PrzygotujPodglad(_dane, pakiet);
             var mapy = ImporterPakietuKonfiguracji.Zastosuj(_dane, podglad);
+            // Zanim dołączymy obiekty do lokalnego magazynu, kopiujemy obrazy
+            // bez nadpisywania istniejących plików; kolizje nazw aktualizują
+            // referencje (również w obu galeriach zestawu i w opisach).
+            var liczbaZdjec = EksportRekonstrukcji.WyodrebnijZdjecia(
+                dialog.FileName, _magazyn.KatalogDanych, dane);
             // dane rekonstrukcji: pomiń już istniejące, przemapuj Id słowników na lokalne (ponowny import = bez duplikatów)
             var wynik = ScalaczRekordow.Scal(_dane, dane, mapy);
             // ustawienia z eksportu (dzień zerowy, liczniki historyczne wg rok) — tylko gdy lokalnie jeszcze pusto
@@ -161,8 +166,6 @@ public partial class MainWindowViewModel : ObservableObject
                 _dane.Ustawienia.HistoryczneWyprawyWgRok.TryAdd(rok, liczba);
             if (_dane.Ustawienia.DataPierwszejWyprawy == null && dane.Ustawienia.DataPierwszejWyprawy != null)
                 _dane.Ustawienia.DataPierwszejWyprawy = dane.Ustawienia.DataPierwszejWyprawy;
-            // zdjęcia do katalogu danych
-            var liczbaZdjec = EksportRekonstrukcji.WyodrebnijZdjecia(dialog.FileName, _magazyn.KatalogDanych);
             _magazyn.Zapisz(_dane);
             var pominieteInfo = wynik.Pominiete > 0 ? $" (pominięto {wynik.Pominiete} już istniejących)" : "";
             OdswiezWszystkieEkrany();
