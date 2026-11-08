@@ -39,17 +39,24 @@
             <ui:DataGrid ItemsSource="{Binding Wiersze}"
                          AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                          SelectionMode="Single" SelectedItem="{Binding Wybrany}"
-                         HeadersVisibility="Column">
+                         HeadersVisibility="Column" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
-                    <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="60" />
-                    <DataGridTextColumn Header="%" Width="50">
-                        <DataGridTextColumn.Binding>
+                    <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
+                    <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="Auto" />
+                    <DataGridTextColumn Header="%" Width="Auto">
+                        <DataGridTextColumn.Binding Width="Auto">
                             <Binding Path="Procent" Converter="{StaticResource KonwerterProcentu}" />
                         </DataGridTextColumn.Binding>
                     </DataGridTextColumn>
-                    <DataGridTextColumn Header="Ostatnie" Width="80">
-                        <DataGridTextColumn.Binding>
+                    <DataGridTextColumn Header="Ostatnie" Width="Auto">
+                        <DataGridTextColumn.Binding Width="Auto">
                             <Binding Path="OstatnieUzycie" Converter="{StaticResource KonwerterDaty}" />
                         </DataGridTextColumn.Binding>
                     </DataGridTextColumn>
