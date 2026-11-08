@@ -140,7 +140,13 @@ public partial class App : Application
                 Owner = mainWindow,
                 DataContext = new KreatorViewModel(dane, Magazyn),
             };
-            kreator.ShowDialog();
+            if (kreator.ShowDialog() == true)
+            {
+                // MainWindow została pokazana wcześniej: jej Pulpit i filtry mają
+                // migawki sprzed importu. Odświeżamy je po zakończeniu kreatora.
+                if (mainWindow.DataContext is MainWindowViewModel widok)
+                    widok.OdswiezWszystkieEkrany();
+            }
         }
 
         if (!kontrola.CzyPoprawne && kontrola.Komunikat != null)
