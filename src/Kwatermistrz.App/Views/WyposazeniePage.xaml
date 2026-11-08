@@ -14,6 +14,11 @@
         <conv:KonwerterWiekszeOdZera x:Key="KonwerterWiekszeOdZera" />
         <conv:KonwerterWzorKamuflazu x:Key="KonwerterWzorKamuflazu" />
         <conv:KonwerterNazwaWzoru x:Key="KonwerterNazwaWzoru" />
+        <!-- Domyślny styl TextBlock w DataGridTextColumn był czarny w dark mode. -->
+        <Style x:Key="CzytelnyTekstTabeli" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
     </Page.Resources>
     <Grid Margin="8">
         <Grid.ColumnDefinitions>
@@ -107,7 +112,8 @@
                                             </MultiBinding>
                                         </controls:ProbkaKamuflazu.ToolTip>
                                     </controls:ProbkaKamuflazu>
-                                    <TextBlock Margin="6,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Margin="6,0,0,0" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                                         <TextBlock.Text>
                                             <MultiBinding Converter="{x:Static conv:KonwerterNazwaWzoru.Instance}">
                                                 <Binding Path="WzorId" />
@@ -119,7 +125,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Firma" Binding="{Binding Firma}" Width="120" />
+                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Firma" Binding="{Binding Firma}" Width="120" />
                     <DataGridTemplateColumn Header="Zdjęcie" Width="56">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -129,11 +135,11 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
-                    <DataGridTextColumn Header="Miejsce" Binding="{Binding MiejsceId}" Width="110" />
-                    <DataGridTextColumn Header="Użycia" Binding="{Binding Uzycia}" Width="70" />
-                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="90" />
-                    <DataGridTextColumn Header="Komentarz" Binding="{Binding Komentarz}" Width="160" />
+                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
+                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Miejsce" Binding="{Binding MiejsceId}" Width="110" />
+                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Użycia" Binding="{Binding Uzycia}" Width="70" />
+                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Status" Binding="{Binding Status}" Width="90" />
+                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Komentarz" Binding="{Binding Komentarz}" Width="160" />
                 </DataGrid.Columns>
             </ui:DataGrid>
 
