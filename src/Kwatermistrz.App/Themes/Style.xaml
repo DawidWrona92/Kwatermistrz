@@ -5,7 +5,7 @@
     <!-- Kolor tekstu zwykłych stron WPF: domyślny Page ma czarny tekst nawet
          przy ciemnym motywie WPF-UI. DynamicResource reaguje na zmianę motywu. -->
     <Style TargetType="{x:Type Page}">
-        <Setter Property="TextElement.Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource TekstAplikacji}" />
     </Style>
 
     <!-- Nagłówki i wartości mają jawny kolor, bo style typograficzne nadpisują
@@ -48,7 +48,7 @@
 
     <!-- Tytuł ekranu: Bahnschrift SemiCondensed SemiBold 22 px -->
     <Style x:Key="TytulEkranu" TargetType="TextBlock">
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TekstAplikacji}" />
         <Setter Property="FontFamily" Value="{StaticResource CzcionkaBazowa}" />
         <Setter Property="FontSize" Value="22" />
         <Setter Property="FontWeight" Value="SemiBold" />
@@ -57,7 +57,7 @@
 
     <!-- Nagłówek sekcji: 16 px SemiBold -->
     <Style x:Key="NaglowekSekcji" TargetType="TextBlock">
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TekstAplikacji}" />
         <Setter Property="FontFamily" Value="{StaticResource CzcionkaBazowa}" />
         <Setter Property="FontSize" Value="16" />
         <Setter Property="FontWeight" Value="SemiBold" />
@@ -66,7 +66,7 @@
 
     <!-- Liczby na pulpicie: 32 px Bold -->
     <Style x:Key="LiczbaPulpitu" TargetType="TextBlock">
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TekstAplikacji}" />
         <Setter Property="FontFamily" Value="{StaticResource CzcionkaBazowa}" />
         <Setter Property="FontSize" Value="32" />
         <Setter Property="FontWeight" Value="Bold" />
@@ -82,7 +82,7 @@
 
     <!-- Etykieta liczby na pulpicie -->
     <Style x:Key="EtykietaLiczby" TargetType="TextBlock">
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TekstAplikacji}" />
         <Setter Property="FontFamily" Value="{StaticResource CzcionkaBazowa}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Opacity" Value="0.7" />
