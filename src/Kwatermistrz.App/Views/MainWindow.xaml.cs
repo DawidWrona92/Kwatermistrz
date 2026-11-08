@@ -166,6 +166,71 @@ public partial class MainWindow : FluentWindow
         }
     }
 
+    /// <summary>Test regresji: realny import repozytoryjnego Excela po pokazaniu okna.</summary>
+    public void ZweryfikujImportPoStarcie(string sciezkaXlsx)
+    {
+        if (!System.IO.File.Exists(sciezkaXlsx))
+            throw new System.IO.FileNotFoundException("Brak arkusza do testu importu", sciezkaXlsx);
+
+        // Tworzymy i kończymy kreator tak samo jak użytkownik, w tym zdarzenie
+        // Zakonczono, zapis do JSON i zamknięcie okna modalnego.
+        var vm = new KreatorViewModel(App.Dane, App.Magazyn)
+        {
+            WybranyStart = "import",
+            SciezkaImportu = sciezkaXlsx,
+        };
+        var kreator = new KreatorWindow { Owner = this, DataContext = vm };
+        Exception? blad = null;
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, new Action(() =>
+        {
+            try
+            {
+                vm.PotwierdzCommand.Execute(null);
+                if (!string.IsNullOrWhiteSpace(vm.Komunikat))
+                    throw new InvalidOperationException(vm.Komunikat);
+            }
+            catch (Exception ex)
+            {
+                blad = ex;
+                kreator.Close();
+            }
+        }));
+        var wynik = kreator.ShowDialog();
+        if (blad != null)
+            throw new InvalidOperationException("Nie udało się zaimportować repozytoryjnego arkusza.", blad);
+        if (wynik != true)
+            throw new InvalidOperationException("Kreator importu nie zakończył się pomyślnie.");
+
+        ViewModel!.OdswiezWszystkieEkrany();
+
+        var zapisane = new Kwatermistrz.Core.Storage.MagazynJson(App.KatalogDanych).Wczytaj();
+        if (App.Dane.Repliki.Count < 27 || App.Dane.Przedmioty.Count < 105 ||
+            zapisane.Repliki.Count != App.Dane.Repliki.Count ||
+            zapisane.Przedmioty.Count != App.Dane.Przedmioty.Count)
+            throw new InvalidOperationException("Rekordy nie zostały poprawnie zaimportowane i zapisane.");
+
+        if (ViewModel.Pulpit.LacznaLiczbaWypraw != 89)
+            throw new InvalidOperationException(
+                $"Pulpit nie pokazuje 89 wypraw po imporcie; pokazuje {ViewModel.Pulpit.LacznaLiczbaWypraw}.");
+
+        if (ViewModel.RekonstrukcjeLista.Count < 3)
+            throw new InvalidOperationException("Wybór rekonstrukcji nie odświeżył się po imporcie.");
+
+        // Sprawdzamy akcje użytkownika, a nie wyłącznie utworzenie widoków XAML.
+        ViewModel.DodajWypraweCommand.Execute(null);
+        if (ViewModel.AktualnyEkran != "Wyprawy" || ObszarZawartosci.Content is not WyprawyPage)
+            throw new InvalidOperationException("Przycisk 'Dodaj wyprawę' nie przełącza ekranu.");
+
+        ViewModel.NawigujCommand.Execute("Bronie");
+        if (ViewModel.AktualnyEkran != "Bronie" || ObszarZawartosci.Content is not BroniePage)
+            throw new InvalidOperationException("Komenda nawigacji do Broni nie działa.");
+
+        ViewModel.NawigujCommand.Execute("Pulpit");
+        if (ViewModel.AktualnyEkran != "Pulpit" ||
+            ViewModel.Pulpit.LacznaLiczbaWypraw != 89)
+            throw new InvalidOperationException("Nie udało się powrócić do odświeżonego Pulpitu.");
+    }
+
     /// <summary>Pokazuje ekran o podanym kluczu (bez zmiany zaznaczenia w nawigacji).</summary>
     public void PokazEkran(string ekran)
     {
