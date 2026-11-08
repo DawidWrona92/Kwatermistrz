@@ -291,7 +291,8 @@
                             <Border BorderThickness="0,0,0,1" Padding="6" Margin="0,2"
                                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
                                 <StackPanel Orientation="Horizontal">
-                                    <CheckBox IsChecked="{Binding Status, Converter={StaticResource KonwerterRowne}, ConverterParameter=Zamkniete}"
+                                    <CheckBox IsChecked="{Binding Status, Converter={StaticResource KonwerterRowne}, ConverterParameter=Zamkniete, Mode=OneWay}"
+                                               IsHitTestVisible="False" Focusable="False"
                                               VerticalAlignment="Center" ToolTip="Zamknięte" />
                                     <ui:TextBox MinWidth="220" Margin="8,0" Text="{Binding Opis}" />
                                     <ComboBox MinWidth="120" Margin="4,0"
