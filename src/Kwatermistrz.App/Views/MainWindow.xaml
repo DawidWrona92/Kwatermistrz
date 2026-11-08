@@ -20,13 +20,20 @@
     </Window.InputBindings>
     <Grid TextElement.Foreground="{Binding Glowny, Source={x:Static app:App.Kolory}}">
         <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
+        <!-- Własny pasek tytułowy: WPF-UI zapewnia przeciąganie, maksymalizację,
+             minimalizację i zamykanie, gdy treść sięga do górnej krawędzi FluentWindow. -->
+        <ui:TitleBar x:Name="PasekTytulowy" Grid.Row="0"
+                     Title="Kwatermistrz"
+                     ShowMinimize="True" ShowMaximize="True" ShowClose="True" />
+
         <!-- Pasek górny: wyszukiwanie, przełącznik rekonstrukcji, "Dodaj wyprawę" (FR-103, §10.4) -->
-        <Border Grid.Row="0" Padding="12,8" BorderThickness="0,0,0,1"
+        <Border Grid.Row="1" Padding="12,8" BorderThickness="0,0,0,1"
                 BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -98,7 +105,7 @@
         </Border>
 
         <!-- Nawigacja + zawartość + panel karty (§10.4) -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -199,7 +206,7 @@
                 </Grid>
             </Border>
         </Grid>
-        <Border Grid.Row="2" Padding="12,5"
+        <Border Grid.Row="3" Padding="12,5"
                 BorderThickness="0,1,0,0"
                 BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
             <TextBlock Text="{Binding Komunikat, TargetNullValue=Gotowy do pracy}"
