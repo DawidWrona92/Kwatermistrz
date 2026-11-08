@@ -39,6 +39,12 @@ public partial class ZestawyViewModel : ObservableObject
     [ObservableProperty]
     private WierszZestawu? _wybrany;
 
+    /// <summary>Aktualny licznik referencji, aktualizowany przy zmianie galerii i zestawu.</summary>
+    public string LicznikReferencji => $"{Wybrany?.Zestaw.ZdjeciaReferencyjne.Count ?? 0}/10";
+
+    partial void OnWybranyChanged(WierszZestawu? value)
+        => OnPropertyChanged(nameof(LicznikReferencji));
+
     /// <summary>Filtr tekstowy.</summary>
     [ObservableProperty]
     private string _filtrTekst = "";
@@ -142,6 +148,7 @@ public partial class ZestawyViewModel : ObservableObject
         // Zdjęcia zapisujemy od razu, nie przez debounce; po awarii aplikacji
         // zaktualizowane referencje muszą nadal wskazywać na skopiowane pliki.
         _magazyn.Zapisz(_dane);
+        OnPropertyChanged(nameof(LicznikReferencji));
         Komunikat = $"Zapisano galerie zestawu „{Wybrany.Zestaw.Nazwa}”: " +
             $"{Wybrany.Zestaw.Zdjecia.Count} własnych i " +
             $"{Wybrany.Zestaw.ZdjeciaReferencyjne.Count}/10 referencyjnych.";
