@@ -239,6 +239,30 @@ public partial class MainWindow : FluentWindow
         System.Windows.Threading.Dispatcher.PushFrame(klatka);
     }
 
+    /// <summary>Regresja: poprzednio każde przejście pozostawiało niebieskie
+    /// podświetlenie poprzedniej pozycji NavigationView.</summary>
+    public void ZweryfikujJednoZaznaczenieMenu()
+    {
+        foreach (var ekran in new[]
+        {
+            "Pulpit", "Wyprawy", "Bronie", "Wyposazenie",
+            "Zestawy", "Raporty", "DoUzupelnienia", "Slowniki",
+            "Import", "Pakiety", "Ustawienia", "Pulpit",
+        })
+        {
+            OtworzEkranZMenu(ekran);
+            PrzepompujNawigacje();
+
+            var aktywne = WszystkiePozycjeNawigacji()
+                .OfType<NavigationViewItem>()
+                .Where(item => item.IsActive).ToList();
+            if (aktywne.Count != 1 || aktywne[0].Tag as string != ekran)
+                throw new InvalidOperationException(
+                    $"Błędny stan menu po przejściu do '{ekran}': " +
+                    string.Join(", ", aktywne.Select(item => item.Tag)));
+        }
+    }
+
     /// <summary>Test wizualnej regresji: podstawowe etykiety pulpitu nie mogą mieć czarnego tekstu w dark mode.</summary>
     public void ZweryfikujKoloryPulpitu()
     {
