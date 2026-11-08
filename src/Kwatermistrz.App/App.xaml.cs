@@ -132,6 +132,7 @@ public partial class App : Application
             mainWindow.ZweryfikujKreator();
             if (e.Args.Length >= 2 && !string.IsNullOrWhiteSpace(e.Args[1]))
                 mainWindow.ZweryfikujImportPoStarcie(e.Args[1]);
+            mainWindow.ZweryfikujTabeleIPasekTytulu();
             mainWindow.ZweryfikujKoloryPulpitu();
             mainWindow.Close();
             Shutdown();
