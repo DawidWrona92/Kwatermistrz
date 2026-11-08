@@ -477,15 +477,32 @@ public partial class MainWindow : FluentWindow
             UkryjKarte();
     }
 
+    private bool _synchronizujeNawigacje;
+
     private void ZaznaczNawigacje(string ekran)
     {
-        foreach (var pozycja in WszystkiePozycjeNawigacji())
-            if (pozycja is NavigationViewItem item && item.Tag as string == ekran)
-            {
-                if (!ReferenceEquals(Nawigacja.SelectedItem, item))
-                    item.Activate(Nawigacja);
-                return;
-            }
+        // WPF-UI Activate nie usuwa IsActive z pozostałych pozycji podczas
+        // ręcznego nawigowania we własnym Frame. Synchronizujemy cały pasek.
+        if (_synchronizujeNawigacje)
+            return;
+        _synchronizujeNawigacje = true;
+        try
+        {
+            var pozycje = WszystkiePozycjeNawigacji()
+                .OfType<NavigationViewItem>()
+                .ToList();
+            var aktywna = pozycje.FirstOrDefault(p => p.Tag as string == ekran);
+            foreach (var pozycja in pozycje)
+                if (!ReferenceEquals(pozycja, aktywna) && pozycja.IsActive)
+                    pozycja.Deactivate(Nawigacja);
+            if (aktywna != null && (!aktywna.IsActive ||
+                !ReferenceEquals(Nawigacja.SelectedItem, aktywna)))
+                aktywna.Activate(Nawigacja);
+        }
+        finally
+        {
+            _synchronizujeNawigacje = false;
+        }
     }
 
     private IEnumerable<INavigationViewItem> WszystkiePozycjeNawigacji()
@@ -516,6 +533,8 @@ public partial class MainWindow : FluentWindow
 
     private void Nawigacja_SelectionChanged(NavigationView sender, RoutedEventArgs args)
     {
+        if (_synchronizujeNawigacje)
+            return;
         if (sender.SelectedItem is NavigationViewItem { Tag: string ekran })
             OtworzEkranZMenu(ekran);
     }
@@ -546,6 +565,7 @@ public partial class MainWindow : FluentWindow
             ViewModel.Raporty.Odswiez();
         if (ekran == "DoUzupelnienia")
             ViewModel.DoUzupelnienia.Odswiez();
+        ZaznaczNawigacje(ekran);
         }
         finally
         {
