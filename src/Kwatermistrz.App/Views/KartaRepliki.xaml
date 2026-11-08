@@ -5,7 +5,7 @@
              xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
              xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
              xmlns:model="clr-namespace:Kwatermistrz.Core.Model;assembly=Kwatermistrz.Core"
-             xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime" TextElement.Foreground="{DynamicResource TekstAplikacji}">
     <UserControl.Resources>
         <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
         <conv:KonwerterProcentu x:Key="KonwerterProcentu" />
