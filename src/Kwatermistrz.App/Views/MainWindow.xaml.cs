@@ -266,17 +266,20 @@ public partial class MainWindow : FluentWindow
     /// <summary>Windows smoke: prawdziwy edytor zestawu, dwie galerie, limit i zapis plików.</summary>
     public void ZweryfikujGalerieZestawu()
     {
+        PokazEkran("Zestawy");
+        PrzepompujNawigacje();
+        UpdateLayout();
+        if (ObszarZawartosci.Content is not ZestawyPage strona)
+            throw new InvalidOperationException("Nie udało się wyświetlić edytora zestawu.");
+
+        // Loaded odświeża Wiersze (i resetuje DataGrid.SelectedItem);
+        // wybór musi nastąpić po zakończeniu ładowania prawdziwego ekranu.
         ViewModel!.Zestawy.Odswiez();
         var wiersz = ViewModel.Zestawy.Wiersze.FirstOrDefault();
         if (wiersz == null)
             throw new InvalidOperationException("Brak zestawu do testu galerii.");
         ViewModel.Zestawy.Wybrany = wiersz;
-        PokazEkran("Zestawy");
         PrzepompujNawigacje();
-        UpdateLayout();
-
-        if (ObszarZawartosci.Content is not ZestawyPage strona)
-            throw new InvalidOperationException("Nie udało się wyświetlić edytora zestawu.");
         strona.UpdateLayout();
         var galerie = ZnajdzWizualne<Kwatermistrz.App.Controls.GaleriaZdjec>(strona).ToList();
         if (galerie.Count != 2)
@@ -288,7 +291,13 @@ public partial class MainWindow : FluentWindow
             !ReferenceEquals(referencje.Sciezki, wiersz.Zestaw.ZdjeciaReferencyjne) ||
             !ReferenceEquals(wlasne.Opisy, wiersz.Zestaw.OpisyZdjec) ||
             referencje.Serwis == null)
-            throw new InvalidOperationException("Nieprawidłowe powiązania galerii zestawu.");
+            throw new InvalidOperationException(
+                $"Nieprawidłowe powiązania galerii: moje={ReferenceEquals(wlasne.Sciezki, wiersz.Zestaw.Zdjecia)}, " +
+                $"ref={ReferenceEquals(referencje.Sciezki, wiersz.Zestaw.ZdjeciaReferencyjne)}, " +
+                $"opisy={ReferenceEquals(wlasne.Opisy, wiersz.Zestaw.OpisyZdjec)}, " +
+                $"serwis={(referencje.Serwis != null)}; " +
+                $"Wybrany={(ViewModel.Zestawy.Wybrany?.Id ?? "null")}, " +
+                $"DataContext={strona.DataContext?.GetType().Name}.");
 
         var plik = System.IO.Path.Combine(App.KatalogDanych, "probka-galerii.png");
         var piksel = System.Windows.Media.Imaging.BitmapSource.Create(
