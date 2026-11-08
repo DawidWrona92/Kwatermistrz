@@ -19,6 +19,12 @@ public partial class ZestawyPage : Page
         };
     }
 
+    private void GaleriaZdjec_Zmieniono(object? sender, EventArgs e)
+    {
+        if (DataContext is ViewModels.ZestawyViewModel vm)
+            vm.ZapiszGalerie();
+    }
+
     private void Domyslny_Checked(object sender, RoutedEventArgs e)
     {
         // RadioButton "Domyślny": DataContext = WariantSlotu, przodek DataTemplate = SlotZestawu
