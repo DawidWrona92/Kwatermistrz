@@ -194,7 +194,12 @@ public class Zestaw
     public string? StronaId { get; set; }
     public string? Opis { get; set; }
     public bool CzySzkic { get; set; }
+    /// <summary>Moje zdjęcia w stroju (istniejące pole — zgodność z danymi sprzed 1.0.5).</summary>
     public List<string> Zdjecia { get; set; } = new();
+    /// <summary>Fotografie referencyjne zestawu (maksymalnie 10 dodawanych z UI).</summary>
+    public List<string> ZdjeciaReferencyjne { get; set; } = new();
+    /// <summary>Opcjonalne opisy według ścieżki zdjęcia; wspólne dla obu galerii.</summary>
+    public Dictionary<string, string> OpisyZdjec { get; set; } = new();
     public List<SlotZestawu> Sloty { get; set; } = new();
     /// <summary>Ostatnio użyte warianty (FR-704): slotId → Id wariantu (od 1.0.1; wcześniej indeks, migrowane przy wczytaniu).</summary>
     public Dictionary<string, string> OstatnieWarianty { get; set; } = new();
