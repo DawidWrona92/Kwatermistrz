@@ -127,6 +127,8 @@ public partial class App : Application
             mainWindow.ZweryfikujEkrany();
             mainWindow.ZweryfikujNawigacje();
             mainWindow.ZweryfikujKreator();
+            if (e.Args.Length >= 2 && !string.IsNullOrWhiteSpace(e.Args[1]))
+                mainWindow.ZweryfikujImportPoStarcie(e.Args[1]);
             mainWindow.Close();
             Shutdown();
             return;
