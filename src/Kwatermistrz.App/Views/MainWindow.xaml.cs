@@ -289,6 +289,52 @@ public partial class MainWindow : FluentWindow
         }
     }
 
+    /// <summary>UI smoke: pasek przeciągania oraz czytelne, dopasowane kolumny tabel.</summary>
+    public void ZweryfikujTabeleIPasekTytulu()
+    {
+        if (!PasekTytulowy.IsVisible || PasekTytulowy.ActualHeight < 30 ||
+            !PasekTytulowy.ShowMinimize || !PasekTytulowy.ShowMaximize ||
+            !PasekTytulowy.ShowClose)
+            throw new InvalidOperationException("Brak aktywnego paska tytułowego i przycisków okna.");
+
+        foreach (var ekran in new[]
+        {
+            "Wyposazenie", "Bronie", "Wyprawy", "Zestawy",
+            "DoUzupelnienia", "Slowniki", "Pakiety", "Raporty",
+        })
+        {
+            PokazEkran(ekran);
+            PrzepompujNawigacje();
+            UpdateLayout();
+
+            if (ObszarZawartosci.Content is not DependencyObject zawartosc)
+                throw new InvalidOperationException($"Brak widoku: {ekran}.");
+
+            var tabele = ZnajdzWizualne<System.Windows.Controls.DataGrid>(zawartosc).ToList();
+            if (tabele.Count == 0)
+                throw new InvalidOperationException($"Brak tabeli w ekranie: {ekran}.");
+
+            foreach (var tabela in tabele)
+            {
+                if (tabela.GridLinesVisibility != System.Windows.Controls.DataGridGridLinesVisibility.All ||
+                    !tabela.CanUserResizeColumns ||
+                    tabela.BorderThickness.Left < 1 ||
+                    tabela.HorizontalGridLinesBrush == null ||
+                    tabela.VerticalGridLinesBrush == null ||
+                    tabela.AlternationCount < 2)
+                    throw new InvalidOperationException($"Tabela {ekran} nie ma poprawnego wyglądu/resize.");
+
+                foreach (var kolumna in tabela.Columns.OfType<System.Windows.Controls.DataGridTextColumn>())
+                {
+                    if (!kolumna.Width.IsAuto)
+                        throw new InvalidOperationException(
+                            $"Kolumna tekstowa '{kolumna.Header}' w {ekran} nie dopasowuje się do zawartości.");
+                }
+            }
+        }
+        PokazEkran("Pulpit");
+    }
+
     /// <summary>Test regresji: realny import repozytoryjnego Excela po pokazaniu okna.</summary>
     public void ZweryfikujImportPoStarcie(string sciezkaXlsx)
     {
