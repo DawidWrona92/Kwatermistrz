@@ -21,6 +21,9 @@ public partial class App : Application
     private ServiceProvider? _provider;
     private System.Windows.Threading.DispatcherTimer? _timerZapisu;
 
+    /// <summary>Obserwowalna paleta Foreground standardowych widoków WPF.</summary>
+    public static KoloryInterfejsu Kolory { get; } = new();
+
     /// <summary>Aktualne dane aplikacji (wstrzykiwane do widoków).</summary>
     public static DaneAplikacji Dane { get; private set; } = null!;
 
@@ -159,6 +162,7 @@ public partial class App : Application
     /// <summary>Ustawia aliasy kolorów wykresów (FR-909) wg motywu — ta sama paleta co w UstawieniaViewModel.ZastosujMotyw.</summary>
     internal static void UstawAliasyWykresow(bool jasny)
     {
+        Kolory.UstawMotyw(jasny);
         System.Windows.Media.Color Kolor(byte r, byte g, byte b) => System.Windows.Media.Color.FromRgb(r, g, b);
         // WPF-UI może utrzymywać stary pędzel TextFillColorPrimaryBrush
         // w już utworzonych stronach Frame. DynamicResource do własnego
