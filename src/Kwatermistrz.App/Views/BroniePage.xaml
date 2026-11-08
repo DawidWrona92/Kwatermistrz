@@ -106,41 +106,41 @@
             <DataGrid.Columns>
                 <DataGridCheckBoxColumn Header="Por." Width="36"
                                          Binding="{Binding ZaznaczonaDoPorownania, Mode=TwoWay}" />
-                <DataGridTextColumn Header="#" Binding="{Binding MiejsceWRankingu}" Width="Auto" />
-                <DataGridTextColumn Header="Nazwa" Binding="{Binding NazwaPelna}" Width="Auto" />
-                <DataGridTextColumn Header="Strona" Binding="{Binding NazwyStron}" Width="Auto" />
-                <DataGridTextColumn Header="Rola" Binding="{Binding NazwyRol}" Width="Auto" />
-                <DataGridTextColumn Header="Magazynek" Binding="{Binding NazwaTypuMagazynka}" Width="Auto" />
-                <DataGridTextColumn Header="Napęd" Binding="{Binding NazwaNapedu}" Width="Auto" />
-                <DataGridTextColumn Header="Stan" Binding="{Binding NazwaStanu}" Width="Auto" />
-                <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="Auto" />
-                <DataGridTextColumn Header="%" Width="Auto">
-                    <DataGridTextColumn.Binding Width="Auto">
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="#" Binding="{Binding MiejsceWRankingu}" Width="Auto" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding NazwaPelna}" Width="Auto" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Strona" Binding="{Binding NazwyStron}" Width="Auto" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Rola" Binding="{Binding NazwyRol}" Width="Auto" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Magazynek" Binding="{Binding NazwaTypuMagazynka}" Width="Auto" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Napęd" Binding="{Binding NazwaNapedu}" Width="Auto" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Stan" Binding="{Binding NazwaStanu}" Width="Auto" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Wyprawy" Binding="{Binding Wyprawy}" Width="Auto" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="%" Width="Auto">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}".Binding Width="Auto">
                         <Binding Path="ProcentWypraw" Converter="{StaticResource KonwerterProcentu}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Koszt całk." Width="Auto">
-                    <DataGridTextColumn.Binding Width="Auto">
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Koszt całk." Width="Auto">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}".Binding Width="Auto">
                         <Binding Path="KosztCalkowity" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Cena oryg." Width="Auto">
-                    <DataGridTextColumn.Binding Width="Auto">
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Cena oryg." Width="Auto">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}".Binding Width="Auto">
                         <Binding Path="CenaOryginalna" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Dodatki" Width="Auto">
-                    <DataGridTextColumn.Binding Width="Auto">
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Dodatki" Width="Auto">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}".Binding Width="Auto">
                         <Binding Path="KosztDodatkow" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Koszt/wyp." Width="Auto">
-                    <DataGridTextColumn.Binding Width="Auto">
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Koszt/wyp." Width="Auto">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}".Binding Width="Auto">
                         <Binding Path="KosztNaWyprawe" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Ostatni test" Width="Auto">
-                    <DataGridTextColumn.Binding Width="Auto">
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Ostatni test" Width="Auto">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}".Binding Width="Auto">
                         <Binding Path="DataOstatniegoTestu" Converter="{StaticResource KonwerterDaty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
