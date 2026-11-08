@@ -70,3 +70,26 @@ z rzeczywistymi danymi.
 
 Skrypt `scripts/publikuj-katalog.ps1` czyści katalog `dist/publish`
 i pobiera numer wersji automatycznie z `Kwatermistrz.App.csproj`.
+
+## Zdjęcia zestawów i referencje
+
+W zakładce **Zestawy** wybierz zestaw. Na karcie są dwie osobne galerie:
+
+- **Moje zdjęcia w stroju** — Twoje zdjęcia sylwetki, bez limitu liczby plików. Wykorzystuje istniejące pole `Zestaw.Zdjecia`, więc stare zdjęcia są zachowywane.
+- **Zdjęcia referencyjne** — do 10 zdjęć wzorcowych dla danego zestawu; licznik pokazuje postęp od 0 do 10.
+
+Kliknij **+**, aby wybrać kilka plików naraz, albo przeciągnij pliki z Eksploratora do galerii.
+Obsługiwane formaty: JPG, JPEG, PNG, BMP. Kliknięcie miniatury otwiera powiększenie.
+Prawym przyciskiem myszy na miniaturze można ustawić zdjęcie główne,
+zmienić opcjonalny opis (maks. 500 znaków) lub usunąć zdjęcie z galerii.
+
+**Bezpieczeństwo:** usuwanie zdjęcia z galerii wymaga potwierdzenia i nie
+usuwa od razu fizycznego pliku z katalogu `%APPDATA%\\Kwatermistrz\\zdjecia`.
+To chroni inne zestawy i istniejące kopie danych. Dopiero osobna, świadoma
+operacja porządkowania osieroconych plików mogłaby je trwale usuwać.
+Zdjęcia są kopiowane do katalogu aplikacji, zmniejszane według ustawień,
+a referencje i opisy zapisywane w `dane.json`.
+
+Eksport rekonstrukcji do `.kwreko` uwzględnia obie galerie wraz z opisami.
+Przy imporcie kolizja z istniejącym plikiem o tej samej nazwie nie nadpisuje zdjęcia:
+różna zawartość otrzymuje nową nazwę i aktualizowane są ścieżki importowanego zestawu.
