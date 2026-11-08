@@ -160,6 +160,13 @@ public partial class App : Application
     internal static void UstawAliasyWykresow(bool jasny)
     {
         System.Windows.Media.Color Kolor(byte r, byte g, byte b) => System.Windows.Media.Color.FromRgb(r, g, b);
+        // WPF-UI może utrzymywać stary pędzel TextFillColorPrimaryBrush
+        // w już utworzonych stronach Frame. DynamicResource do własnego
+        // klucza, podmienianego jawnie, odświeża kolory istniejących widoków.
+        Current.Resources["TekstAplikacji"] = new System.Windows.Media.SolidColorBrush(
+            jasny ? Kolor(0x22, 0x27, 0x25) : Kolor(0xF0, 0xF2, 0xF0));
+        Current.Resources["TekstAplikacjiDrugorzedny"] = new System.Windows.Media.SolidColorBrush(
+            jasny ? Kolor(0x59, 0x62, 0x5E) : Kolor(0xB8, 0xBF, 0xBB));
         if (jasny)
         {
             Current.Resources["Stal"] = new System.Windows.Media.SolidColorBrush(Kolor(0x2F, 0x4A, 0x6B));
