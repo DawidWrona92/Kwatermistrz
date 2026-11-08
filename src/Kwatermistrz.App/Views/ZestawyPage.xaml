@@ -130,7 +130,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <ui:TextBox MinWidth="140" Text="{Binding Nazwa}" ToolTip="Nazwa slotu" />
                                         <TextBlock VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                                            <Run Text="Wariantów: " /><Run Text="{Binding Warianty.Count}" />
+                                            <Run Text="Wariantów: " /><Run Text="{Binding Warianty.Count, Mode=OneWay}" />
                                         </TextBlock>
                                         <ui:Button Margin="8,0,0,0" Content="Dodaj wariant"
                                                    Command="{Binding DataContext.DodajWariantCommand, RelativeSource={RelativeSource AncestorType=Page}}"
