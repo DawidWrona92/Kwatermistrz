@@ -19,12 +19,17 @@ public partial class ZestawyViewModel : ObservableObject
     private readonly KalkulatorSerwis _kalkulator;
     private readonly StanAplikacji _stan;
 
-    public ZestawyViewModel(DaneAplikacji dane, MagazynJson magazyn, KalkulatorSerwis kalkulator, StanAplikacji stan)
+    /// <summary>Ten sam serwis plików co w kartach wyposażenia i replik.</summary>
+    public SerwisZdjec SerwisZdjec { get; }
+
+    public ZestawyViewModel(DaneAplikacji dane, MagazynJson magazyn, KalkulatorSerwis kalkulator, StanAplikacji stan,
+        SerwisZdjec serwisZdjec)
     {
         _dane = dane;
         _magazyn = magazyn;
         _kalkulator = kalkulator;
         _stan = stan;
+        SerwisZdjec = serwisZdjec;
     }
 
     /// <summary>Wiersze listy zestawów (FR-709).</summary>
@@ -126,6 +131,20 @@ public partial class ZestawyViewModel : ObservableObject
         _magazyn.ZapiszDebounce(_dane);
         Odswiez();
         Wybrany = Wiersze.FirstOrDefault(w => w.Id == zestaw.Id);
+    }
+
+    /// <summary>Zapisuje zmiany galerii nie odświeżając edytora ani bieżącej selekcji.</summary>
+    public void ZapiszGalerie()
+    {
+        if (Wybrany == null)
+            return;
+        Wybrany.Zestaw.OstatniaZmiana = DateTime.Now;
+        // Zdjęcia zapisujemy od razu, nie przez debounce; po awarii aplikacji
+        // zaktualizowane referencje muszą nadal wskazywać na skopiowane pliki.
+        _magazyn.Zapisz(_dane);
+        Komunikat = $"Zapisano galerie zestawu „{Wybrany.Zestaw.Nazwa}”: " +
+            $"{Wybrany.Zestaw.Zdjecia.Count} własnych i " +
+            $"{Wybrany.Zestaw.ZdjeciaReferencyjne.Count}/10 referencyjnych.";
     }
 
     /// <summary>Zapisuje kartę zestawu (FR-1203).</summary>
