@@ -63,23 +63,23 @@
                                        Serwis="{Binding ViewModel.SerwisZdjec, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                        WlascicielNazwa="{Binding NazwaPelna}" />
                 <TextBlock Margin="0,4,0,0">
-                    <Run Text="Status: " /><Run Text="{Binding Status}" />
+                    <Run Text="Status: " /><Run Text="{Binding Status, Mode=OneWay}" />
                 </TextBlock>
                 <TextBlock Margin="0,4,0,0">
-                    <Run Text="Wyprawy: " /><Run Text="{Binding Wyprawy}" />
-                    <Run Text=" (" /><Run Text="{Binding ProcentWypraw, Converter={StaticResource KonwerterProcentu}}" />
+                    <Run Text="Wyprawy: " /><Run Text="{Binding Wyprawy, Mode=OneWay}" />
+                    <Run Text=" (" /><Run Text="{Binding ProcentWypraw, Converter={StaticResource KonwerterProcentu}, Mode=OneWay}" />
                     <Run Text=")" />
                 </TextBlock>
                 <TextBlock Margin="0,4,0,0">
-                    <Run Text="Koszt całkowity: " /><Run Text="{Binding KosztCalkowity, Converter={StaticResource KonwerterWaluty}}" />
+                    <Run Text="Koszt całkowity: " /><Run Text="{Binding KosztCalkowity, Converter={StaticResource KonwerterWaluty}, Mode=OneWay}" />
                 </TextBlock>
                 <TextBlock Margin="0,4,0,0">
-                    <Run Text="Cena oryginalna: " /><Run Text="{Binding CenaOryginalna, Converter={StaticResource KonwerterWaluty}}" />
+                    <Run Text="Cena oryginalna: " /><Run Text="{Binding CenaOryginalna, Converter={StaticResource KonwerterWaluty}, Mode=OneWay}" />
                     <Run Text="  Dodatki: " />
-                    <Run Text="{Binding KosztDodatkow, Converter={StaticResource KonwerterWaluty}}" />
+                    <Run Text="{Binding KosztDodatkow, Converter={StaticResource KonwerterWaluty}, Mode=OneWay}" />
                 </TextBlock>
                 <TextBlock Margin="0,4,0,0">
-                    <Run Text="Koszt na wyprawę: " /><Run Text="{Binding KosztNaWyprawe, Converter={StaticResource KonwerterWaluty}}" />
+                    <Run Text="Koszt na wyprawę: " /><Run Text="{Binding KosztNaWyprawe, Converter={StaticResource KonwerterWaluty}, Mode=OneWay}" />
                 </TextBlock>
                 <StackPanel Margin="0,4,0,0" Orientation="Horizontal"
                             Visibility="{Binding OstatniPomiar, Converter={StaticResource KonwerterNieRowneNull}}">
@@ -92,19 +92,19 @@
                                Visibility="{Binding OstatniPomiar.NaMaksimum, Converter={StaticResource KonwerterBoolToVisibility}}" />
                 </StackPanel>
                 <TextBlock Margin="0,4,0,0">
-                    <Run Text="Ostatni test: " /><Run Text="{Binding DataOstatniegoTestu, Converter={StaticResource KonwerterDaty}}" />
+                    <Run Text="Ostatni test: " /><Run Text="{Binding DataOstatniegoTestu, Converter={StaticResource KonwerterDaty}, Mode=OneWay}" />
                 </TextBlock>
                 <TextBlock Margin="0,4,0,0">
-                    <Run Text="Otwarte zadania: " /><Run Text="{Binding OtwarteZadania}" />
+                    <Run Text="Otwarte zadania: " /><Run Text="{Binding OtwarteZadania, Mode=OneWay}" />
                 </TextBlock>
                 <TextBlock Text="Ostatnie wyprawy:" Style="{StaticResource NaglowekSekcji}" Margin="0,12,0,4" />
                 <ItemsControl ItemsSource="{Binding OstatnieWyprawy}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Margin="0,2">
-                                <Run Text="{Binding Data, Converter={StaticResource KonwerterDaty}}" />
+                                <Run Text="{Binding Data, Converter={StaticResource KonwerterDaty}, Mode=OneWay}" />
                                 <Run Text=" — " />
-                                <Run Text="{Binding Miejsce}" />
+                                <Run Text="{Binding Miejsce, Mode=OneWay}" />
                             </TextBlock>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
