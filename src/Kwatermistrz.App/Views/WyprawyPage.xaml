@@ -77,14 +77,21 @@
                          IsReadOnly="True"
                          SelectionMode="Single"
                          SelectedItem="{Binding Wybrana}"
-                         HeadersVisibility="Column">
+                         HeadersVisibility="Column" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Data" Binding="{Binding Data, Converter={StaticResource KonwerterDaty}}" Width="90" />
-                    <DataGridTextColumn Header="Miejsce" Binding="{Binding Miejsce}" Width="*" />
-                    <DataGridTextColumn Header="Replika główna" Binding="{Binding ReplikaNazwa}" Width="160" />
-                    <DataGridTextColumn Header="Zestaw" Binding="{Binding ZestawNazwa}" Width="140" />
-                    <DataGridTextColumn Header="Mundur" Binding="{Binding MundurNazwa}" Width="140" />
-                    <DataGridTextColumn Header="Komentarz" Binding="{Binding Komentarz}" Width="160" />
+                    <DataGridTextColumn Header="Data" Binding="{Binding Data, Converter={StaticResource KonwerterDaty}}" Width="Auto" />
+                    <DataGridTextColumn Header="Miejsce" Binding="{Binding Miejsce}" Width="Auto" />
+                    <DataGridTextColumn Header="Replika główna" Binding="{Binding ReplikaNazwa}" Width="Auto" />
+                    <DataGridTextColumn Header="Zestaw" Binding="{Binding ZestawNazwa}" Width="Auto" />
+                    <DataGridTextColumn Header="Mundur" Binding="{Binding MundurNazwa}" Width="Auto" />
+                    <DataGridTextColumn Header="Komentarz" Binding="{Binding Komentarz}" Width="Auto" />
                     <DataGridTemplateColumn Header="Akcje" Width="70">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
