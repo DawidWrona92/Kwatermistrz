@@ -92,7 +92,11 @@ public static class EksportRekonstrukcji
             sciezkiZdjec.Add(rekonstrukcja.Zdjecie);
         foreach (var p in przedmioty) Dodaj(p.Zdjecia);
         foreach (var r in repliki) Dodaj(r.Zdjecia);
-        foreach (var z in zestawy) Dodaj(z.Zdjecia);
+        foreach (var z in zestawy)
+        {
+            Dodaj(z.Zdjecia);
+            Dodaj(z.ZdjeciaReferencyjne);
+        }
         foreach (var w in wyprawy) Dodaj(w.Zdjecia);
 
         var liczbaZdjec = 0;
