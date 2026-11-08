@@ -163,9 +163,21 @@ public partial class App : Application
         // WPF-UI może utrzymywać stary pędzel TextFillColorPrimaryBrush
         // w już utworzonych stronach Frame. DynamicResource do własnego
         // klucza, podmienianego jawnie, odświeża kolory istniejących widoków.
-        Current.Resources["TekstAplikacji"] = new System.Windows.Media.SolidColorBrush(
+        // Zmiana ResourceDictionary[key] nie odświeża już rozwiązanego Foreground
+        // w starszych elementach WPF. Mutujemy ten SAM Brush: Freezable zgłasza
+        // zmianę i aktualizuje każdy TextBlock bez ponownego budowania ekranu.
+        void UstawKolorTekstu(string klucz, System.Windows.Media.Color kolor)
+        {
+            if (Current.TryFindResource(klucz) is System.Windows.Media.SolidColorBrush pedzel && !pedzel.IsFrozen)
+            {
+                pedzel.Color = kolor;
+                return;
+            }
+            Current.Resources[klucz] = new System.Windows.Media.SolidColorBrush(kolor);
+        }
+        UstawKolorTekstu("TekstAplikacji",
             jasny ? Kolor(0x22, 0x27, 0x25) : Kolor(0xF0, 0xF2, 0xF0));
-        Current.Resources["TekstAplikacjiDrugorzedny"] = new System.Windows.Media.SolidColorBrush(
+        UstawKolorTekstu("TekstAplikacjiDrugorzedny",
             jasny ? Kolor(0x59, 0x62, 0x5E) : Kolor(0xB8, 0xBF, 0xBB));
         if (jasny)
         {
