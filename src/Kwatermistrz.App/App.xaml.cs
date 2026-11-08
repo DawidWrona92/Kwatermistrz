@@ -192,6 +192,10 @@ public partial class App : Application
             jasny ? Kolor(0x22, 0x27, 0x25) : Kolor(0xF0, 0xF2, 0xF0));
         UstawKolorTekstu("TekstAplikacjiDrugorzedny",
             jasny ? Kolor(0x59, 0x62, 0x5E) : Kolor(0xB8, 0xBF, 0xBB));
+        UstawKolorTekstu("LiniaTabeli",
+            jasny ? Kolor(0xB3, 0xBD, 0xB8) : Kolor(0x59, 0x65, 0x60));
+        UstawKolorTekstu("WierszTabeliNaprzemienny",
+            jasny ? Kolor(0xEE, 0xF0, 0xED) : Kolor(0x29, 0x2C, 0x2B));
         if (jasny)
         {
             Current.Resources["Stal"] = new System.Windows.Media.SolidColorBrush(Kolor(0x2F, 0x4A, 0x6B));
