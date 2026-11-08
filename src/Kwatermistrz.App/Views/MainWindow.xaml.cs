@@ -172,6 +172,7 @@ public partial class MainWindow : FluentWindow
         foreach (var motyw in new[] { Wpf.Ui.Appearance.ApplicationTheme.Dark, Wpf.Ui.Appearance.ApplicationTheme.Light })
         {
             Wpf.Ui.Appearance.ApplicationThemeManager.Apply(motyw);
+            App.UstawAliasyWykresow(motyw == Wpf.Ui.Appearance.ApplicationTheme.Light);
             PokazEkran("Pulpit");
             UpdateLayout();
 
@@ -184,7 +185,7 @@ public partial class MainWindow : FluentWindow
             if (etykiety.Count != 3)
                 throw new InvalidOperationException($"Nie znaleziono etykiet Pulpitu: {etykiety.Count}/3.");
 
-            var wzorcowy = Application.Current.TryFindResource("TextFillColorPrimaryBrush")
+            var wzorcowy = Application.Current.TryFindResource("TekstAplikacji")
                 as System.Windows.Media.SolidColorBrush;
             if (wzorcowy == null)
                 throw new InvalidOperationException("Brak podstawowego pędzla tekstu WPF-UI.");
@@ -202,6 +203,7 @@ public partial class MainWindow : FluentWindow
         }
         // Po zakończeniu testu motyw ustawiamy tak jak konfiguracja systemowa.
         Wpf.Ui.Appearance.ApplicationThemeManager.Apply(Wpf.Ui.Appearance.ApplicationTheme.Dark);
+        App.UstawAliasyWykresow(jasny: false);
     }
 
     private static IEnumerable<System.Windows.Controls.TextBlock> ZnajdzTeksty(DependencyObject element)
