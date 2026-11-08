@@ -1,4 +1,4 @@
-name: Windows build, tests and XAML smoke test
+name: Windows build, tests and import/UI smoke test
 
 on:
   push:
@@ -46,7 +46,9 @@ jobs:
         shell: pwsh
         run: |
           $exe = Join-Path $env:RUNNER_TEMP "kwatermistrz\Kwatermistrz.exe"
-          $process = Start-Process -FilePath $exe -ArgumentList "--smoke-test" -PassThru
+          $sample = Join-Path $env:GITHUB_WORKSPACE "docs\dane-startowe\Dane_zrodlowe_Kwatermistrz.xlsx"
+          if (-not (Test-Path $sample)) { throw "Missing sample workbook: $sample" }
+          $process = Start-Process -FilePath $exe -ArgumentList "--smoke-test `"$sample`"" -PassThru
           if (-not $process.WaitForExit(60000)) {
             Stop-Process -Id $process.Id -Force
             throw "Smoke test timed out"
