@@ -10,6 +10,13 @@ Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepach
 - Obsługa wyjątków zamyka niespójną aplikację bez automatycznego zapisu uszkodzonego stanu; poprawione zwalnianie mutexa drugiej instancji.
 - Tryb `--smoke-test` tworzy okno na Windows, sprawdza wszystkie widoki, karty i przejścia w `Frame`. Windows CI buduje .NET 10, uruchamia testy Core, wykonuje smoke test i publikuje archiwum przenośne.
 
+### Galerie zdjęć zestawów (1.0.4)
+- Rozdzielono istniejące zdjęcia zestawu na „Moje zdjęcia w stroju” (bez limitu) i nową kolekcję „Zdjęcia referencyjne” (maks. 10).
+- Galeria obsługuje wybór wielu plików, przeciąganie JPG/PNG/BMP, powiększenie, ustawianie zdjęcia głównego i opcjonalne opisy zdjęć.
+- Usuwanie wymaga potwierdzenia i odłącza zdjęcie od listy bez fizycznego kasowania pliku, aby zachować spójność innych rekordów i kopii zapasowych.
+- Zdjęcia i opisy są zapisywane od razu w danych JSON i przenoszone w eksporcie .kwreko. Import zabezpiecza istniejące lokalne pliki przy konfliktach nazw i aktualizuje referencje.
+- Testy regresyjne: stary JSON, zapis i ponowny odczyt dwóch galerii, archiwum .kwreko, zabezpieczenie kolizji nazw oraz interakcyjny smoke galerii w Windows.
+
 ### Interfejs i dane
 - Poprawione powiązania akcji i słowników w kartach przedmiotów/replik, zakładki replik, zestawy oraz widoczność raportów.
 - Poprawione tryby MultiBinding RadioButton, obsługa dat DateOnly w DatePicker, focus wyszukiwania i nawigacja.
