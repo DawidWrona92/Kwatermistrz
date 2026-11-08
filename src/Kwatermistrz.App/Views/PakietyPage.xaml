@@ -48,12 +48,19 @@
                          Margin="0,12,0,0" MinHeight="120"
                          HeadersVisibility="Column" IsReadOnly="True"
                          Visibility="{Binding Wiersze.Count, Converter={x:Static conv:KonwerterWiekszeOdZera.Instance}, ConverterParameter=Visibility}"
-                         xmlns:conv="clr-namespace:Kwatermistrz.App.Converters">
+                         xmlns:conv="clr-namespace:Kwatermistrz.App.Converters" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Rodzaj" Binding="{Binding Rodzaj}" Width="140" />
-                    <DataGridTextColumn Header="Nazwa z pakietu" Binding="{Binding Nazwa}" Width="200" />
-                    <DataGridTextColumn Header="Szczegóły" Binding="{Binding Opis}" Width="180" />
-                    <DataGridTextColumn Header="Istniejąca" Binding="{Binding Istniejaca}" Width="140" />
+                    <DataGridTextColumn Header="Rodzaj" Binding="{Binding Rodzaj}" Width="Auto" />
+                    <DataGridTextColumn Header="Nazwa z pakietu" Binding="{Binding Nazwa}" Width="Auto" />
+                    <DataGridTextColumn Header="Szczegóły" Binding="{Binding Opis}" Width="Auto" />
+                    <DataGridTextColumn Header="Istniejąca" Binding="{Binding Istniejaca}" Width="Auto" />
                     <DataGridTemplateColumn Header="Decyzja" Width="180">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
