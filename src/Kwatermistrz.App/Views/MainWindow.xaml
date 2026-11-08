@@ -17,7 +17,7 @@
         <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding NawigujCommand}" CommandParameter="Wyprawy" />
         <KeyBinding Key="F" Modifiers="Ctrl" Command="{Binding FokusujSzukanieCommand}" />
     </Window.InputBindings>
-    <Grid TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+    <Grid TextElement.Foreground="{DynamicResource TekstAplikacji}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
