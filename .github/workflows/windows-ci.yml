@@ -56,6 +56,13 @@ jobs:
           if ($process.ExitCode -ne 0) {
             $log = Join-Path $env:APPDATA "Kwatermistrz\error.log"
             if (Test-Path $log) { Get-Content $log -Tail 200 }
+            Get-ChildItem -Path $env:TEMP -Directory -Filter "Kwatermistrz-smoke-*" -ErrorAction SilentlyContinue | ForEach-Object {
+              $smokeLog = Join-Path $_.FullName "error.log"
+              if (Test-Path $smokeLog) {
+                Write-Host "Smoke log: $smokeLog"
+                Get-Content $smokeLog -Tail 200
+              }
+            }
             throw "XAML smoke test failed with exit code $($process.ExitCode)"
           }
 
