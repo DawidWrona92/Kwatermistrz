@@ -144,8 +144,8 @@ public class GaleriaZdjec : Control
                 CornerRadius = new CornerRadius(4),
                 BorderThickness = new Thickness(indeks == 0 ? 2 : 1),
                 BorderBrush = indeks == 0
-                    ? (Brush?)Application.Current.TryFindResource("Stal") ?? Brushes.SteelBlue
-                    : (Brush?)Application.Current.TryFindResource("Linia") ?? Brushes.LightGray,
+                    ? (Brush?)Application.Current?.TryFindResource("Stal") ?? Brushes.SteelBlue
+                    : (Brush?)Application.Current?.TryFindResource("Linia") ?? Brushes.LightGray,
                 Cursor = Cursors.Hand,
                 ToolTip = indeks == 0 ? "Zdjęcie główne — kliknij, aby powiększyć" : "Kliknij, aby powiększyć",
             };
@@ -297,7 +297,7 @@ public class GaleriaZdjec : Control
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Owner = Window.GetWindow(this),
             ResizeMode = ResizeMode.NoResize,
-            Background = (Brush?)Application.Current.TryFindResource("ApplicationBackgroundBrush")
+            Background = (Brush?)Application.Current?.TryFindResource("ApplicationBackgroundBrush")
                 ?? Brushes.White,
         };
         var zawartosc = new DockPanel { Margin = new Thickness(18) };
