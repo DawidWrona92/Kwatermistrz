@@ -55,10 +55,11 @@ public partial class MainWindowViewModel : ObservableObject
             _stan.AktualnyEkran = dane.Ustawienia.OstatniEkran;
         // po przywróceniu danych z kopii wszystkie ekrany odświeżają listy (FR-1107)
         ustawienia.DanePrzywrocone += OdswiezWszystkieEkrany;
+        import.DaneZaimportowane += OdswiezWszystkieEkrany;
     }
 
-    /// <summary>Odświeża wszystkie ekrany po przywróceniu danych z kopii (FR-1107).</summary>
-    private void OdswiezWszystkieEkrany()
+    /// <summary>Odświeża wszystkie ekrany po imporcie, konfiguracji początkowej i przywróceniu kopii.</summary>
+    public void OdswiezWszystkieEkrany()
     {
         Pulpit.Odswiez();
         Wyposazenie.Odswiez();
@@ -69,6 +70,7 @@ public partial class MainWindowViewModel : ObservableObject
         DoUzupelnienia.Odswiez();
         OnPropertyChanged(nameof(RekonstrukcjeLista));
         OnPropertyChanged(nameof(AktywnaRekonstrukcjaNazwa));
+        Komunikat = $"Dane: {_dane.Przedmioty.Count} przedmiotów, {_dane.Repliki.Count} replik, {_dane.Zestawy.Count} zestawów; {_dane.Wyprawy.Count} wypraw zapisanych.";
     }
 
     private readonly MagazynJson _magazyn;
@@ -163,6 +165,7 @@ public partial class MainWindowViewModel : ObservableObject
             var liczbaZdjec = EksportRekonstrukcji.WyodrebnijZdjecia(dialog.FileName, _magazyn.KatalogDanych);
             _magazyn.Zapisz(_dane);
             var pominieteInfo = wynik.Pominiete > 0 ? $" (pominięto {wynik.Pominiete} już istniejących)" : "";
+            OdswiezWszystkieEkrany();
             Komunikat = $"Zaimportowano rekonstrukcję: {_dane.Przedmioty.Count} przedmiotów (łącznie), {_dane.Repliki.Count} replik, " +
                 $"{_dane.Zestawy.Count} zestawów, {_dane.Wyprawy.Count} wypraw, {liczbaZdjec} zdjęć{pominieteInfo}. " +
                 "Nowe słowniki i kategorie dodano automatycznie (aliasami dopasowano istniejące).";
@@ -217,15 +220,17 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Wszystkie rekonstrukcje do przełącznika (nowa instancja przy każdym odczycie —
     /// ItemsSource się odświeża po OnPropertyChanged).</summary>
-    public IReadOnlyList<Rekonstrukcja> RekonstrukcjeLista => _dane.Rekonstrukcje.ToList();
+    public IReadOnlyList<Rekonstrukcja> RekonstrukcjeLista =>
+        new[] { new Rekonstrukcja { Id = "", Nazwa = "Wszystkie rekonstrukcje" } }
+            .Concat(_dane.Rekonstrukcje).ToList();
 
     /// <summary>Aktywna rekonstrukcja (null = „Wszystkie”).</summary>
     public string? AktywnaRekonstrukcjaId
     {
-        get => _stan.AktywnaRekonstrukcjaId;
+        get => _stan.AktywnaRekonstrukcjaId ?? "";
         set
         {
-            _stan.AktywnaRekonstrukcjaId = value;
+            _stan.AktywnaRekonstrukcjaId = string.IsNullOrWhiteSpace(value) ? null : value;
             OnPropertyChanged(nameof(AktywnaRekonstrukcjaId));
             OnPropertyChanged(nameof(AktywnaRekonstrukcjaNazwa));
         }
