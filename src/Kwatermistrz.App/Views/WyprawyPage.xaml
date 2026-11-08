@@ -86,12 +86,12 @@
                          CanUserResizeColumns="True" ColumnWidth="Auto"
                          HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Data" Binding="{Binding Data, Converter={StaticResource KonwerterDaty}}" Width="Auto" />
-                    <DataGridTextColumn Header="Miejsce" Binding="{Binding Miejsce}" Width="Auto" />
-                    <DataGridTextColumn Header="Replika główna" Binding="{Binding ReplikaNazwa}" Width="Auto" />
-                    <DataGridTextColumn Header="Zestaw" Binding="{Binding ZestawNazwa}" Width="Auto" />
-                    <DataGridTextColumn Header="Mundur" Binding="{Binding MundurNazwa}" Width="Auto" />
-                    <DataGridTextColumn Header="Komentarz" Binding="{Binding Komentarz}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Data" Binding="{Binding Data, Converter={StaticResource KonwerterDaty}}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Miejsce" Binding="{Binding Miejsce}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Replika główna" Binding="{Binding ReplikaNazwa}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Zestaw" Binding="{Binding ZestawNazwa}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Mundur" Binding="{Binding MundurNazwa}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Komentarz" Binding="{Binding Komentarz}" Width="Auto" />
                     <DataGridTemplateColumn Header="Akcje" Width="70">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
