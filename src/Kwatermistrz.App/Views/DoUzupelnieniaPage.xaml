@@ -28,8 +28,8 @@
                          CanUserResizeColumns="True" ColumnWidth="Auto"
                          HorizontalScrollBarVisibility="Auto">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Rodzaj" Binding="{Binding Rodzaj}" Width="Auto" />
-                <DataGridTextColumn Header="Opis" Binding="{Binding Opis}" Width="Auto" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Rodzaj" Binding="{Binding Rodzaj}" Width="Auto" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Opis" Binding="{Binding Opis}" Width="Auto" />
                 <DataGridTemplateColumn Header="Akcja" Width="140">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
