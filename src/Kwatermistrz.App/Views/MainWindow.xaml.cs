@@ -166,6 +166,14 @@ public partial class MainWindow : FluentWindow
         }
     }
 
+    private void PrzepompujNawigacje()
+    {
+        var klatka = new System.Windows.Threading.DispatcherFrame();
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle,
+            new Action(() => klatka.Continue = false));
+        System.Windows.Threading.Dispatcher.PushFrame(klatka);
+    }
+
     /// <summary>Test wizualnej regresji: podstawowe etykiety pulpitu nie mogą mieć czarnego tekstu w dark mode.</summary>
     public void ZweryfikujKoloryPulpitu()
     {
@@ -268,14 +276,19 @@ public partial class MainWindow : FluentWindow
 
         // Sprawdzamy akcje użytkownika, a nie wyłącznie utworzenie widoków XAML.
         ViewModel.DodajWypraweCommand.Execute(null);
+        PrzepompujNawigacje();
         if (ViewModel.AktualnyEkran != "Wyprawy" || ObszarZawartosci.Content is not WyprawyPage)
-            throw new InvalidOperationException("Przycisk 'Dodaj wyprawę' nie przełącza ekranu.");
+            throw new InvalidOperationException($"Przycisk 'Dodaj wyprawę' nie przełącza ekranu: " +
+                $"VM={ViewModel.AktualnyEkran}, Frame={ObszarZawartosci.Content?.GetType().Name ?? "null"}.");
 
         ViewModel.NawigujCommand.Execute("Bronie");
+        PrzepompujNawigacje();
         if (ViewModel.AktualnyEkran != "Bronie" || ObszarZawartosci.Content is not BroniePage)
-            throw new InvalidOperationException("Komenda nawigacji do Broni nie działa.");
+            throw new InvalidOperationException($"Komenda nawigacji do Broni nie działa: " +
+                $"VM={ViewModel.AktualnyEkran}, Frame={ObszarZawartosci.Content?.GetType().Name ?? "null"}.");
 
         ViewModel.NawigujCommand.Execute("Pulpit");
+        PrzepompujNawigacje();
         if (ViewModel.AktualnyEkran != "Pulpit" ||
             ViewModel.Pulpit.LacznaLiczbaWypraw != 89)
             throw new InvalidOperationException("Nie udało się powrócić do odświeżonego Pulpitu.");
