@@ -168,6 +168,15 @@ public partial class App : Application
         // zmianę i aktualizuje każdy TextBlock bez ponownego budowania ekranu.
         void UstawKolorTekstu(string klucz, System.Windows.Media.Color kolor)
         {
+            // Styles są w oddzielnym MergedDictionary i mogą zachować
+            // referencję do pędzla z Paleta.xaml, mimo późniejszego dodania
+            // klucza o tej samej nazwie do Current.Resources.
+            foreach (var slownik in Current.Resources.MergedDictionaries)
+            {
+                if (slownik.Contains(klucz) &&
+                    slownik[klucz] is System.Windows.Media.SolidColorBrush lokalny && !lokalny.IsFrozen)
+                    lokalny.Color = kolor;
+            }
             if (Current.TryFindResource(klucz) is System.Windows.Media.SolidColorBrush pedzel && !pedzel.IsFrozen)
             {
                 pedzel.Color = kolor;
