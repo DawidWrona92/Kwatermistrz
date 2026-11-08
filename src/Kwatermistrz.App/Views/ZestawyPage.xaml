@@ -4,6 +4,7 @@
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
       xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
+      xmlns:app="clr-namespace:Kwatermistrz.App"
       Title="Zestawy" TextElement.Foreground="{DynamicResource TekstAplikacji}">
     <Page.Resources>
         <conv:KonwerterDaty x:Key="KonwerterDaty" />
@@ -91,7 +92,35 @@
                               IsChecked="{Binding Zestaw.CzySzkic}" />
                 </StackPanel>
 
-                <TextBlock Text="Sloty i warianty" Style="{StaticResource NaglowekSekcji}" Margin="0,8,0,4" />
+                <!-- Dwie odrębne galerie zestawu: dotychczasowe zdjęcia są galerią własnej sylwetki. -->
+                <TextBlock Text="Moje zdjęcia w stroju" Style="{StaticResource NaglowekSekcji}"
+                           Margin="0,14,0,4" />
+                <TextBlock Text="Twoje rzeczywiste sylwetki i konfiguracje, bez limitu zdjęć."
+                           Foreground="{Binding Drugorzedny, Source={x:Static app:App.Kolory}}"
+                           TextWrapping="Wrap" Margin="0,0,0,5" />
+                <controls:GaleriaZdjec Sciezki="{Binding Zestaw.Zdjecia}"
+                                       Serwis="{Binding DataContext.SerwisZdjec, RelativeSource={RelativeSource AncestorType=Page}}"
+                                       Opisy="{Binding Zestaw.OpisyZdjec}"
+                                       WlascicielNazwa="{Binding Zestaw.Nazwa}"
+                                       Zmieniono="GaleriaZdjec_Zmieniono" />
+                <StackPanel Orientation="Horizontal" Margin="0,14,0,4">
+                    <TextBlock Text="Zdjęcia referencyjne" Style="{StaticResource NaglowekSekcji}" />
+                    <TextBlock Margin="10,4,0,0"
+                               Foreground="{Binding Drugorzedny, Source={x:Static app:App.Kolory}}"
+                               Text="{Binding Zestaw.ZdjeciaReferencyjne.Count, StringFormat={}{0}/10}" />
+                </StackPanel>
+                <TextBlock Text="Zdjęcia wzorcowe do rekonstrukcji. Maksymalnie 10. Kliknij, aby powiększyć; prawy przycisk otwiera opis i usuwanie."
+                           TextWrapping="Wrap"
+                           Foreground="{Binding Drugorzedny, Source={x:Static app:App.Kolory}}"
+                           Margin="0,0,0,5" />
+                <controls:GaleriaZdjec Sciezki="{Binding Zestaw.ZdjeciaReferencyjne}"
+                                       Serwis="{Binding DataContext.SerwisZdjec, RelativeSource={RelativeSource AncestorType=Page}}"
+                                       Opisy="{Binding Zestaw.OpisyZdjec}"
+                                       MaksymalnaLiczbaZdjec="10"
+                                       WlascicielNazwa="{Binding Zestaw.Nazwa}"
+                                       Zmieniono="GaleriaZdjec_Zmieniono" />
+
+                <TextBlock Text="Sloty i warianty" Style="{StaticResource NaglowekSekcji}" Margin="0,16,0,4" />
                 <ItemsControl ItemsSource="{Binding Zestaw.Sloty}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
