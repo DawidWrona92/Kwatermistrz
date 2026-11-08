@@ -26,9 +26,16 @@
                          AutoGenerateColumns="False"
                          CanUserAddRows="False"
                          IsReadOnly="False"
-                         HeadersVisibility="Column">
+                         HeadersVisibility="Column" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
+                    <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
                     <DataGridTemplateColumn Header="Akcje" Width="120">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
