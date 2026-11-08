@@ -51,6 +51,53 @@ public sealed class GalerieZestawowTests : IDisposable
     }
 
     [Fact]
+    public void Kwreko_ImportNieNadpisujeIstniejacychZdjecIMigrujeOpisy()
+    {
+        var dane = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        var rekonstrukcja = new Rekonstrukcja { Nazwa = "FSB" };
+        dane.Rekonstrukcje.Add(rekonstrukcja);
+        dane.Zestawy.Add(new Zestaw
+        {
+            Nazwa = "Zestaw z referencją",
+            RekonstrukcjaId = rekonstrukcja.Id,
+            ZdjeciaReferencyjne = new() { "zdjecia/wyglad.png" },
+            OpisyZdjec = new() { ["zdjecia/wyglad.png"] = "Wzorcowe ujęcie" },
+        });
+        var zrodlo = Path.Combine(_katalog, "zrodlo");
+        var katalogZdjec = Path.Combine(zrodlo, "zdjecia");
+        Directory.CreateDirectory(katalogZdjec);
+        File.WriteAllBytes(Path.Combine(katalogZdjec, "wyglad.png"), [1, 2, 3, 4]);
+        var archiwum = Path.Combine(_katalog, "referencje.kwreko");
+        EksportRekonstrukcji.Eksportuj(dane, rekonstrukcja.Id, zrodlo, archiwum);
+
+        var cel = Path.Combine(_katalog, "import");
+        var docelowyKatalog = Path.Combine(cel, "zdjecia");
+        Directory.CreateDirectory(docelowyKatalog);
+        var istniejace = Path.Combine(docelowyKatalog, "wyglad.png");
+        File.WriteAllBytes(istniejace, [7, 8, 9]);
+
+        var import = EksportRekonstrukcji.Wczytaj(archiwum);
+        var skopiowane = EksportRekonstrukcji.WyodrebnijZdjecia(archiwum, cel, import);
+        Assert.Equal(1, skopiowane);
+        Assert.Equal(new byte[] { 7, 8, 9 }, File.ReadAllBytes(istniejace));
+        var zestaw = Assert.Single(import.Zestawy);
+        var nowaSciezka = Assert.Single(zestaw.ZdjeciaReferencyjne);
+        Assert.StartsWith("zdjecia/wyglad-import-", nowaSciezka);
+        Assert.Equal("Wzorcowe ujęcie", zestaw.OpisyZdjec[nowaSciezka]);
+        Assert.Equal(new byte[] { 1, 2, 3, 4 },
+            File.ReadAllBytes(Path.Combine(cel, nowaSciezka.Replace('/', Path.DirectorySeparatorChar))));
+
+        // Ponowny import tej samej treści do nowego katalogu nie powinien
+        // dopisywać kolejnego pliku, gdy lokalny już ma identyczne bajty.
+        var drugi = EksportRekonstrukcji.Wczytaj(archiwum);
+        var cel2 = Path.Combine(_katalog, "identyczne");
+        Directory.CreateDirectory(Path.Combine(cel2, "zdjecia"));
+        File.WriteAllBytes(Path.Combine(cel2, "zdjecia", "wyglad.png"), [1, 2, 3, 4]);
+        Assert.Equal(0, EksportRekonstrukcji.WyodrebnijZdjecia(archiwum, cel2, drugi));
+        Assert.Equal("zdjecia/wyglad.png", Assert.Single(drugi.Zestawy[0].ZdjeciaReferencyjne));
+    }
+
+    [Fact]
     public void Kwreko_EksportIImport_ZawieraWlasneIReferencyjnePlikiIOpisy()
     {
         var dane = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
