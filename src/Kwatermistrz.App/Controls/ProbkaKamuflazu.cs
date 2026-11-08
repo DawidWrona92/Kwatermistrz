@@ -67,7 +67,7 @@ public sealed class ProbkaKamuflazu : FrameworkElement
 
     protected override void OnRender(DrawingContext drawingContext)
     {
-        base.OnRender(dc);
+        base.OnRender(drawingContext);
 
         var w = RenderSize.Width;
         var h = RenderSize.Height;
