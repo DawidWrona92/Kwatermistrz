@@ -166,6 +166,52 @@ public partial class MainWindow : FluentWindow
         }
     }
 
+    /// <summary>Test wizualnej regresji: podstawowe etykiety pulpitu nie mogą mieć czarnego tekstu w dark mode.</summary>
+    public void ZweryfikujKoloryPulpitu()
+    {
+        foreach (var motyw in new[] { Wpf.Ui.Appearance.ApplicationTheme.Dark, Wpf.Ui.Appearance.ApplicationTheme.Light })
+        {
+            Wpf.Ui.Appearance.ApplicationThemeManager.Apply(motyw);
+            PokazEkran("Pulpit");
+            UpdateLayout();
+
+            if (!_strony.TryGetValue("Pulpit", out var pulpit))
+                throw new InvalidOperationException("Nie znaleziono Pulpitu do testu kolorów.");
+
+            var etykiety = ZnajdzTeksty(pulpit)
+                .Where(t => t.Text is "Pulpit" or "Wyprawy łącznie" or "Do zrobienia i sprawdzenia")
+                .ToList();
+            if (etykiety.Count != 3)
+                throw new InvalidOperationException($"Nie znaleziono etykiet Pulpitu: {etykiety.Count}/3.");
+
+            var wzorcowy = Application.Current.TryFindResource("TextFillColorPrimaryBrush")
+                as System.Windows.Media.SolidColorBrush;
+            if (wzorcowy == null)
+                throw new InvalidOperationException("Brak podstawowego pędzla tekstu WPF-UI.");
+
+            foreach (var etykieta in etykiety)
+            {
+                if (etykieta.Foreground is not System.Windows.Media.SolidColorBrush kolor ||
+                    kolor.Color != wzorcowy.Color)
+                    throw new InvalidOperationException(
+                        $"Nieprawidłowy kolor '{etykieta.Text}' w motywie {motyw}.");
+            }
+        }
+        // Po zakończeniu testu motyw ustawiamy tak jak konfiguracja systemowa.
+        Wpf.Ui.Appearance.ApplicationThemeManager.Apply(Wpf.Ui.Appearance.ApplicationTheme.Dark);
+    }
+
+    private static IEnumerable<System.Windows.Controls.TextBlock> ZnajdzTeksty(DependencyObject element)
+    {
+        if (element is System.Windows.Controls.TextBlock tekst)
+            yield return tekst;
+        for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(element); i++)
+        {
+            foreach (var potomny in ZnajdzTeksty(System.Windows.Media.VisualTreeHelper.GetChild(element, i)))
+                yield return potomny;
+        }
+    }
+
     /// <summary>Test regresji: realny import repozytoryjnego Excela po pokazaniu okna.</summary>
     public void ZweryfikujImportPoStarcie(string sciezkaXlsx)
     {
