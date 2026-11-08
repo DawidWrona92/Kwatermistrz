@@ -398,6 +398,35 @@ public partial class MainWindow : FluentWindow
             throw new InvalidOperationException($"Komenda nawigacji do Broni nie działa: " +
                 $"VM={ViewModel.AktualnyEkran}, Frame={ObszarZawartosci.Content?.GetType().Name ?? "null"}.");
 
+        // Regresja: wejście w kartę repliki ładowało readonly Status/Wyprawy
+        // do Run.Text w trybie TwoWay i kończyło się InvalidOperationException.
+        var testowaneRepliki = ViewModel.Repliki.Wiersze.Take(2).ToList();
+        if (testowaneRepliki.Count < 2)
+            throw new InvalidOperationException("Brak dwóch replik do testowania kart.");
+        foreach (var replika in testowaneRepliki)
+        {
+            ViewModel.Repliki.Wybrana = replika;
+            OdswiezKarte();
+            PrzepompujNawigacje();
+            ZawartoscKarty.UpdateLayout();
+            if (ZawartoscKarty.Content is not KartaRepliki karta ||
+                !ReferenceEquals(karta.DataContext, replika) ||
+                !PanelKarty.IsVisible)
+                throw new InvalidOperationException("Wybranie repliki nie otwiera poprawnej karty.");
+
+            foreach (var blok in ZnajdzWizualne<System.Windows.Controls.TextBlock>(karta))
+            {
+                foreach (var run in blok.Inlines.OfType<System.Windows.Documents.Run>())
+                {
+                    var binding = System.Windows.Data.BindingOperations.GetBinding(run,
+                        System.Windows.Documents.Run.TextProperty);
+                    if (binding != null && binding.Mode != System.Windows.Data.BindingMode.OneWay)
+                        throw new InvalidOperationException(
+                            $"Run.Text w karcie repliki ma niebezpieczny tryb: {binding.Path?.Path}.");
+                }
+            }
+        }
+
         // Regresja po zgłoszeniu 08.11: duża lista wyposażenia wcześniej wywoływała
         // InvalidOperationException: nie wolno modyfikować zapieczętowanego Template.
         ViewModel.NawigujCommand.Execute("Wyposazenie");
