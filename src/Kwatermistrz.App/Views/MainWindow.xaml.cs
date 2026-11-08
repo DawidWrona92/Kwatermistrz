@@ -232,14 +232,38 @@ public partial class MainWindow : FluentWindow
                 yield return item;
     }
 
+    // WPF-UI może przetworzyć kliknięcie elementu menu przed zmianą SelectedItem.
+    // Obsługujemy też rzeczywisty klik myszy, nie polegamy wyłącznie na SelectionChanged.
+    private void Nawigacja_PreviewMouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        var element = e.OriginalSource as DependencyObject;
+        while (element != null && !ReferenceEquals(element, Nawigacja))
+        {
+            if (element is NavigationViewItem { Tag: string ekran })
+            {
+                OtworzEkranZMenu(ekran);
+                return;
+            }
+            element = System.Windows.Media.VisualTreeHelper.GetParent(element);
+        }
+    }
+
     private void Nawigacja_SelectionChanged(NavigationView sender, RoutedEventArgs args)
     {
-        if (sender.SelectedItem is not NavigationViewItem item)
+        if (sender.SelectedItem is NavigationViewItem { Tag: string ekran })
+            OtworzEkranZMenu(ekran);
+    }
+
+    private bool _obslugaMenu;
+
+    private void OtworzEkranZMenu(string ekran)
+    {
+        if (ViewModel == null || _obslugaMenu)
             return;
-        var ekran = item.Tag as string;
-        if (ekran == null || ViewModel == null)
-            return;
-        PokazEkran(ekran);
+        _obslugaMenu = true;
+        try
+        {
+            PokazEkran(ekran);
         ViewModel.AktualnyEkran = ekran;
         // nawigacja przez menu czyści flagi ustawione skrótami z pulpitu (FR-104/105)
         WyczyscFlagiFiltru(ekran);
@@ -256,6 +280,11 @@ public partial class MainWindow : FluentWindow
             ViewModel.Raporty.Odswiez();
         if (ekran == "DoUzupelnienia")
             ViewModel.DoUzupelnienia.Odswiez();
+        }
+        finally
+        {
+            _obslugaMenu = false;
+        }
     }
 
     /// <summary>Czyści flagi filtrów ustawiane skrótami z pulpitu — zostają włączone po powrocie przez menu, choć użytkownik oczekiwał pełnej listy.</summary>
