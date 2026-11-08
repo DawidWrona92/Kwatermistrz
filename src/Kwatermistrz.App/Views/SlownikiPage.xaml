@@ -35,7 +35,7 @@
                          CanUserResizeColumns="True" ColumnWidth="Auto"
                          HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
                     <DataGridTemplateColumn Header="Akcje" Width="120">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
