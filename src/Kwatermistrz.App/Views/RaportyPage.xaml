@@ -38,36 +38,43 @@
                      ItemsSource="{Binding RaportBroni}"
                      AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                      HeadersVisibility="Column"
-                     Visibility="{Binding WybranyRaport, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=Bronie}">
+                     Visibility="{Binding WybranyRaport, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=Bronie}" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         HorizontalScrollBarVisibility="Auto">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="#" Binding="{Binding Miejsce}" Width="36" />
-                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
-                <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="70" />
-                <DataGridTextColumn Header="%" Width="60">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="#" Binding="{Binding Miejsce}" Width="Auto" />
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
+                <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="Auto" />
+                <DataGridTextColumn Header="%" Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="Procent" Converter="{StaticResource KonwerterProcentu}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Magazynek" Binding="{Binding TypMagazynka}" Width="90" />
-                <DataGridTextColumn Header="Rola" Binding="{Binding Rola}" Width="120" />
-                <DataGridTextColumn Header="Strona" Binding="{Binding Strona}" Width="90" />
-                <DataGridTextColumn Header="Koszt" Width="90">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Magazynek" Binding="{Binding TypMagazynka}" Width="Auto" />
+                <DataGridTextColumn Header="Rola" Binding="{Binding Rola}" Width="Auto" />
+                <DataGridTextColumn Header="Strona" Binding="{Binding Strona}" Width="Auto" />
+                <DataGridTextColumn Header="Koszt" Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="Koszt" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Cena oryg." Width="90">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Cena oryg." Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="CenaOryginalna" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Dodatki" Width="80">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Dodatki" Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="Dodatki" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Koszt/wyp." Width="80">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Koszt/wyp." Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="KosztNaWyprawe" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
@@ -79,24 +86,31 @@
                      ItemsSource="{Binding RaportUmundurowanie}"
                      AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                      HeadersVisibility="Column"
-                     Visibility="{Binding WybranyRaport, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=Umundurowanie}">
+                     Visibility="{Binding WybranyRaport, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=Umundurowanie}" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         HorizontalScrollBarVisibility="Auto">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
-                <DataGridTextColumn Header="Strona" Binding="{Binding Strona}" Width="90" />
-                <DataGridTextColumn Header="Wzór" Binding="{Binding Wzor}" Width="120" />
-                <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="70" />
-                <DataGridTextColumn Header="%" Width="60">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
+                <DataGridTextColumn Header="Strona" Binding="{Binding Strona}" Width="Auto" />
+                <DataGridTextColumn Header="Wzór" Binding="{Binding Wzor}" Width="Auto" />
+                <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="Auto" />
+                <DataGridTextColumn Header="%" Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="Procent" Converter="{StaticResource KonwerterProcentu}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Koszt" Width="90">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Koszt" Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="Koszt" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Koszt/wyp." Width="90">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Koszt/wyp." Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="KosztNaWyprawe" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
@@ -108,12 +122,19 @@
                      ItemsSource="{Binding RaportLata}"
                      AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                      HeadersVisibility="Column"
-                     Visibility="{Binding WybranyRaport, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=Wyprawy wg lat}">
+                     Visibility="{Binding WybranyRaport, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=Wyprawy wg lat}" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         HorizontalScrollBarVisibility="Auto">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Rok" Binding="{Binding Rok}" Width="80" />
-                <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="90" />
-                <DataGridTextColumn Header="Suma narastająco" Binding="{Binding SumaNarastajaco}" Width="130" />
-                <DataGridTextColumn Header="Średnia na miesiąc" Binding="{Binding SredniaNaMiesiac, StringFormat=0.00}" Width="130" />
+                <DataGridTextColumn Header="Rok" Binding="{Binding Rok}" Width="Auto" />
+                <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="Auto" />
+                <DataGridTextColumn Header="Suma narastająco" Binding="{Binding SumaNarastajaco}" Width="Auto" />
+                <DataGridTextColumn Header="Średnia na miesiąc" Binding="{Binding SredniaNaMiesiac, StringFormat=0.00}" Width="Auto" />
             </DataGrid.Columns>
         </ui:DataGrid>
 
@@ -122,18 +143,25 @@
                      ItemsSource="{Binding RaportUzycia}"
                      AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                      HeadersVisibility="Column"
-                     Visibility="{Binding WybranyRaport, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=Użycie wyposażenia}">
+                     Visibility="{Binding WybranyRaport, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=Użycie wyposażenia}" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         HorizontalScrollBarVisibility="Auto">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
-                <DataGridTextColumn Header="Kategoria" Binding="{Binding Kategoria}" Width="130" />
-                <DataGridTextColumn Header="Użycia" Binding="{Binding Uzycia}" Width="70" />
-                <DataGridTextColumn Header="Cena" Width="90">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
+                <DataGridTextColumn Header="Kategoria" Binding="{Binding Kategoria}" Width="Auto" />
+                <DataGridTextColumn Header="Użycia" Binding="{Binding Uzycia}" Width="Auto" />
+                <DataGridTextColumn Header="Cena" Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="Cena" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Koszt/użycie" Width="90">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Koszt/użycie" Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="KosztNaUzycie" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
@@ -145,12 +173,19 @@
                      ItemsSource="{Binding RaportKoszty}"
                      AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                      HeadersVisibility="Column"
-                     Visibility="{Binding WybranyRaport, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=Koszty}">
+                     Visibility="{Binding WybranyRaport, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=Koszty}" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         HorizontalScrollBarVisibility="Auto">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Grupa" Binding="{Binding Grupa}" Width="120" />
-                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
-                <DataGridTextColumn Header="Kwota" Width="110">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Grupa" Binding="{Binding Grupa}" Width="Auto" />
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
+                <DataGridTextColumn Header="Kwota" Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="Kwota" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
@@ -162,27 +197,34 @@
                      ItemsSource="{Binding RaportZestawy}"
                      AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                      HeadersVisibility="Column"
-                     Visibility="{Binding WybranyRaport, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=Zestawy}">
+                     Visibility="{Binding WybranyRaport, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=Zestawy}" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         HorizontalScrollBarVisibility="Auto">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
-                <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="70" />
-                <DataGridTextColumn Header="%" Width="60">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
+                <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="Auto" />
+                <DataGridTextColumn Header="%" Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="Procent" Converter="{StaticResource KonwerterProcentu}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Ostatnie" Width="90">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Ostatnie" Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="OstatnieUzycie" Converter="{StaticResource KonwerterDaty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Koszt zestawu" Width="100">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Koszt zestawu" Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="KosztZestawu" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Koszt/wyp." Width="90">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Koszt/wyp." Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="KosztNaWyprawe" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
@@ -194,11 +236,18 @@
                      ItemsSource="{Binding RaportStan}"
                      AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                      HeadersVisibility="Column"
-                     Visibility="{Binding WybranyRaport, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=Stan replik}">
+                     Visibility="{Binding WybranyRaport, Converter={x:Static conv:KonwerterRowneDoWidocznosci.Instance}, ConverterParameter=Stan replik}" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         HorizontalScrollBarVisibility="Auto">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
-                <DataGridTextColumn Header="Liczba" Width="120">
-                    <DataGridTextColumn.Binding>
+                <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
+                <DataGridTextColumn Header="Liczba" Width="Auto">
+                    <DataGridTextColumn.Binding Width="Auto">
                         <Binding Path="Liczba" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
