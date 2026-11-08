@@ -107,7 +107,7 @@
                     <TextBlock Text="Zdjęcia referencyjne" Style="{StaticResource NaglowekSekcji}" />
                     <TextBlock Margin="10,4,0,0"
                                Foreground="{Binding Drugorzedny, Source={x:Static app:App.Kolory}}"
-                               Text="{Binding Zestaw.ZdjeciaReferencyjne.Count, StringFormat={}{0}/10}" />
+                               Text="{Binding DataContext.LicznikReferencji, RelativeSource={RelativeSource AncestorType=Page}, Mode=OneWay}" />
                 </StackPanel>
                 <TextBlock Text="Zdjęcia wzorcowe do rekonstrukcji. Maksymalnie 10. Kliknij, aby powiększyć; prawy przycisk otwiera opis i usuwanie."
                            TextWrapping="Wrap"
