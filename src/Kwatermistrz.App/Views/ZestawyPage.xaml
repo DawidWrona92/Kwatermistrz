@@ -51,12 +51,12 @@
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Wyprawy" Binding="{Binding Wyprawy}" Width="Auto" />
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="%" Width="Auto">
-                        <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}".Binding Width="Auto">
+                        <DataGridTextColumn.Binding>
                             <Binding Path="Procent" Converter="{StaticResource KonwerterProcentu}" />
                         </DataGridTextColumn.Binding>
                     </DataGridTextColumn>
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Ostatnie" Width="Auto">
-                        <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}".Binding Width="Auto">
+                        <DataGridTextColumn.Binding>
                             <Binding Path="OstatnieUzycie" Converter="{StaticResource KonwerterDaty}" />
                         </DataGridTextColumn.Binding>
                     </DataGridTextColumn>
