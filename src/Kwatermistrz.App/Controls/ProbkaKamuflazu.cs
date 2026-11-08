@@ -1,50 +1,101 @@
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
 using Kwatermistrz.Core.Model;
 
 namespace Kwatermistrz.App.Controls;
 
-/// <summary>Próbka wzoru kamuflażu — siatka 2x2 kolorów (jedyny kolorowy element interfejsu, §10.2).</summary>
-public class ProbkaKamuflazu : Control
+/// <summary>
+/// Lekka próbka wzoru kamuflażu 1–4 kolorów. Rysuje bez szablonu ControlTemplate:
+/// DataGrid wielokrotnie zmienia DataContext wirtualizowanych wierszy, a już użyty
+/// FrameworkTemplate jest zapieczętowany i nie wolno modyfikować jego VisualTree.
+/// </summary>
+public sealed class ProbkaKamuflazu : FrameworkElement
 {
+    private static readonly Brush KolorDomyslny = Brushes.LightGray;
+    private Brush[] _kolory = [KolorDomyslny];
+
     public static readonly DependencyProperty WzorProperty = DependencyProperty.Register(
         nameof(Wzor), typeof(WzorKamuflazu), typeof(ProbkaKamuflazu),
-        new PropertyMetadata(null, OnWzorChanged));
+        new FrameworkPropertyMetadata(null,
+            FrameworkPropertyMetadataOptions.AffectsRender, OnWzorChanged));
 
-    /// <summary>Wzór kamuflażu do pokazania.</summary>
+    /// <summary>Wzór do pokazania; null oznacza neutralną próbkę.</summary>
     public WzorKamuflazu? Wzor
     {
         get => (WzorKamuflazu?)GetValue(WzorProperty);
         set => SetValue(WzorProperty, value);
     }
 
-    static ProbkaKamuflazu()
+    public ProbkaKamuflazu()
     {
-        DefaultStyleKeyProperty.OverrideMetadata(typeof(ProbkaKamuflazu), new FrameworkPropertyMetadata(typeof(ProbkaKamuflazu)));
+        Width = 24;
+        Height = 16;
+        SnapsToDevicePixels = true;
     }
 
     private static void OnWzorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is ProbkaKamuflazu kontrolka)
-            kontrolka.Rysuj();
+        var kontrolka = (ProbkaKamuflazu)d;
+        var kolory = (e.NewValue as WzorKamuflazu)?.KoloryProbki;
+        kontrolka._kolory = kolory == null || kolory.Count == 0
+            ? [KolorDomyslny]
+            : kolory.Take(4).Select(UtworzPedzel).ToArray();
+        // AffectsRender automatycznie invaliduje wizualizację, bez zmiany szablonu.
     }
 
-    private void Rysuj()
+    private static Brush UtworzPedzel(string? wartosc)
     {
-        Template = new ControlTemplate(typeof(ProbkaKamuflazu));
-        var grid = new FrameworkElementFactory(typeof(Grid));
-        var kolory = Wzor?.KoloryProbki.Count > 0 ? Wzor.KoloryProbki : new List<string> { "#CDD0CA" };
-        var liczba = Math.Min(kolory.Count, 4);
-        for (var i = 0; i < liczba; i++)
+        if (string.IsNullOrWhiteSpace(wartosc))
+            return KolorDomyslny;
+
+        try
         {
-            var prostokat = new FrameworkElementFactory(typeof(Border));
-            prostokat.SetValue(Grid.RowProperty, i / 2);
-            prostokat.SetValue(Grid.ColumnProperty, i % 2);
-            prostokat.SetValue(Border.BackgroundProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString(kolory[i])));
-            grid.AppendChild(prostokat);
+            var kolor = (Color)ColorConverter.ConvertFromString(wartosc);
+            var pedzel = new SolidColorBrush(kolor);
+            pedzel.Freeze();
+            return pedzel;
         }
-        Template.VisualTree = grid;
-        ApplyTemplate();
+        catch (FormatException)
+        {
+            return KolorDomyslny;
+        }
+        catch (NotSupportedException)
+        {
+            return KolorDomyslny;
+        }
+    }
+
+    protected override void OnRender(DrawingContext dc)
+    {
+        base.OnRender(dc);
+
+        var w = RenderSize.Width;
+        var h = RenderSize.Height;
+        if (w <= 0 || h <= 0)
+            return;
+
+        var polowaW = w / 2;
+        var polowaH = h / 2;
+        switch (_kolory.Length)
+        {
+            case 1:
+                dc.DrawRectangle(_kolory[0], null, new Rect(0, 0, w, h));
+                break;
+            case 2:
+                dc.DrawRectangle(_kolory[0], null, new Rect(0, 0, polowaW, h));
+                dc.DrawRectangle(_kolory[1], null, new Rect(polowaW, 0, w - polowaW, h));
+                break;
+            case 3:
+                dc.DrawRectangle(_kolory[0], null, new Rect(0, 0, polowaW, polowaH));
+                dc.DrawRectangle(_kolory[1], null, new Rect(polowaW, 0, w - polowaW, polowaH));
+                dc.DrawRectangle(_kolory[2], null, new Rect(0, polowaH, w, h - polowaH));
+                break;
+            default:
+                dc.DrawRectangle(_kolory[0], null, new Rect(0, 0, polowaW, polowaH));
+                dc.DrawRectangle(_kolory[1], null, new Rect(polowaW, 0, w - polowaW, polowaH));
+                dc.DrawRectangle(_kolory[2], null, new Rect(0, polowaH, polowaW, h - polowaH));
+                dc.DrawRectangle(_kolory[3], null, new Rect(polowaW, polowaH, w - polowaW, h - polowaH));
+                break;
+        }
     }
 }
