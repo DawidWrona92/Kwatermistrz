@@ -315,10 +315,21 @@ public partial class MainWindow : FluentWindow
                 wiersz.Zestaw.Zdjecia.Count != własnaPoczatkowa + 1)
                 throw new InvalidOperationException("Dodawanie własnego zdjęcia nie działa.");
 
-            var ileDodac = Math.Min(2, 10 - refsPoczatkowe);
+            var ileDodac = Math.Max(0, 10 - refsPoczatkowe);
             if (referencje.DodajPliki(Enumerable.Repeat(plik, ileDodac)) != ileDodac ||
-                wiersz.Zestaw.ZdjeciaReferencyjne.Count != refsPoczatkowe + ileDodac)
-                throw new InvalidOperationException("Dodawanie referencji nie działa.");
+                wiersz.Zestaw.ZdjeciaReferencyjne.Count != 10)
+                throw new InvalidOperationException("Dodawanie referencji do limitu 10 nie działa.");
+
+            // Gdy galeria jest pełna, przycisk dodawania musi zniknąć,
+            // ale żaden zapisany obraz nie może zostać automatycznie usunięty.
+            referencje.UpdateLayout();
+            var panelMiniatur = referencje.Template?.FindName("PART_Kontener", referencje)
+                as System.Windows.Controls.Panel;
+            if (panelMiniatur == null ||
+                panelMiniatur.Children.OfType<System.Windows.Controls.Button>().Any())
+                throw new InvalidOperationException("Pełna galeria referencji nadal pozwala dodać zdjęcie.");
+            if (ViewModel.Zestawy.LicznikReferencji != "10/10")
+                throw new InvalidOperationException("Licznik referencji nie odświeżył się po dodawaniu.");
             var opisSciezka = wiersz.Zestaw.ZdjeciaReferencyjne.Last();
             wiersz.Zestaw.OpisyZdjec[opisSciezka] = "Zdjęcie referencyjne — test";
             ViewModel.Zestawy.ZapiszGalerie();
