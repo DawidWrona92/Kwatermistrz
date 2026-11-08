@@ -84,7 +84,14 @@
                          IsReadOnly="True"
                          SelectionMode="Single"
                          SelectedItem="{Binding Wybrany}"
-                         HeadersVisibility="Column">
+                         HeadersVisibility="Column" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
                     <DataGridTemplateColumn Header="" Width="30">
                         <DataGridTemplateColumn.CellTemplate>
@@ -94,7 +101,7 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                     <!-- NFR-08: próbka wzoru zawsze ma obok nazwę (tekst), tooltip z nazwą przy najechaniu -->
-                    <DataGridTemplateColumn Header="Wzór" Width="110">
+                    <DataGridTemplateColumn Header="Wzór" Width="Auto">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -125,7 +132,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Firma" Binding="{Binding Firma}" Width="120" />
+                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Firma" Binding="{Binding Firma}" Width="Auto" />
                     <DataGridTemplateColumn Header="Zdjęcie" Width="56">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -135,11 +142,11 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
-                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Miejsce" Binding="{Binding MiejsceId}" Width="110" />
-                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Użycia" Binding="{Binding Uzycia}" Width="70" />
-                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Status" Binding="{Binding Status}" Width="90" />
-                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Komentarz" Binding="{Binding Komentarz}" Width="160" />
+                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Miejsce" Binding="{Binding MiejsceId}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Użycia" Binding="{Binding Uzycia}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Status" Binding="{Binding Status}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource CzytelnyTekstTabeli}" Header="Komentarz" Binding="{Binding Komentarz}" Width="Auto" />
                 </DataGrid.Columns>
             </ui:DataGrid>
 
