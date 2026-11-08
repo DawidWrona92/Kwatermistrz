@@ -3,7 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
-      Title="Broń">
+      Title="Broń" TextElement.Foreground="{DynamicResource TekstAplikacji}">
     <Page.Resources>
         <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
         <conv:KonwerterProcentu x:Key="KonwerterProcentu" />

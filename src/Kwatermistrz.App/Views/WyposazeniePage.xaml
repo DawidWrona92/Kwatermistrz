@@ -4,7 +4,7 @@
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
       xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
-      Title="Wyposażenie">
+      Title="Wyposażenie" TextElement.Foreground="{DynamicResource TekstAplikacji}">
     <Page.Resources>
         <conv:KonwerterMiniatury x:Key="KonwerterMiniatury" />
         <conv:KonwerterNazwySlownika x:Key="KonwerterNazwySlownika" />

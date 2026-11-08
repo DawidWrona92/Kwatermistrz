@@ -4,7 +4,7 @@
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
       xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
-      Title="Pulpit">
+      Title="Pulpit" TextElement.Foreground="{DynamicResource TekstAplikacji}">
     <Page.Resources>
         <conv:KonwerterDaty x:Key="KonwerterDaty" />
         <conv:KonwerterWaluty x:Key="KonwerterWaluty" />

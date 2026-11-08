@@ -5,7 +5,7 @@
       xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
       xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
       xmlns:sys="clr-namespace:System;assembly=System.Runtime"
-      Title="Raporty">
+      Title="Raporty" TextElement.Foreground="{DynamicResource TekstAplikacji}">
     <Page.Resources>
         <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
         <conv:KonwerterProcentu x:Key="KonwerterProcentu" />
