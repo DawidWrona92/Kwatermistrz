@@ -17,10 +17,11 @@
         <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding NawigujCommand}" CommandParameter="Wyprawy" />
         <KeyBinding Key="F" Modifiers="Ctrl" Command="{Binding FokusujSzukanieCommand}" />
     </Window.InputBindings>
-    <Grid>
+    <Grid TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Pasek górny: wyszukiwanie, przełącznik rekonstrukcji, "Dodaj wyprawę" (FR-103, §10.4) -->
@@ -104,6 +105,7 @@
             </Grid.ColumnDefinitions>
 
             <ui:NavigationView x:Name="Nawigacja" Grid.Column="0"
+                               PreviewMouseLeftButtonUp="Nawigacja_PreviewMouseLeftButtonUp"
                                PaneDisplayMode="Left"
                                IsBackButtonVisible="Collapsed"
                                IsPaneToggleVisible="True"
@@ -196,5 +198,13 @@
                 </Grid>
             </Border>
         </Grid>
+        <Border Grid.Row="2" Padding="12,5"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+            <TextBlock Text="{Binding Komunikat, TargetNullValue=Gotowy do pracy}"
+                       TextTrimming="CharacterEllipsis"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       ToolTip="{Binding Komunikat}" />
+        </Border>
     </Grid>
 </ui:FluentWindow>
