@@ -194,7 +194,10 @@ public partial class MainWindow : FluentWindow
                 if (etykieta.Foreground is not System.Windows.Media.SolidColorBrush kolor ||
                     kolor.Color != wzorcowy.Color)
                     throw new InvalidOperationException(
-                        $"Nieprawidłowy kolor '{etykieta.Text}' w motywie {motyw}.");
+                        $"Nieprawidłowy kolor '{etykieta.Text}' w motywie {motyw}: " +
+                        $"Fore={etykieta.Foreground}, expected={wzorcowy.Color}, " +
+                        $"Page={pulpit.GetValue(System.Windows.Documents.TextElement.ForegroundProperty)}, " +
+                        $"style={etykieta.Style?.TargetType}.");
             }
         }
         // Po zakończeniu testu motyw ustawiamy tak jak konfiguracja systemowa.
