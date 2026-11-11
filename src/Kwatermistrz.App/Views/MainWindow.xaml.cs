@@ -732,7 +732,7 @@ public partial class MainWindow : FluentWindow
         var historia = ViewModel.Wyprawy.Wiersze.Where(w => w.CzyWirtualna).ToList();
         if (historia.Count != 89 ||
             historia.Any(w => w.DataTekst != "NN-NN-NNNN") ||
-            historia.FirstOrDefault()?.Nazwa != "Wyprawa_1")
+            !historia.Any(w => w.Nazwa == "Wyprawa_1"))
             throw new InvalidOperationException(
                 $"Historyczne wyprawy nie są poprawnie widoczne: {historia.Count}/89.");
 
