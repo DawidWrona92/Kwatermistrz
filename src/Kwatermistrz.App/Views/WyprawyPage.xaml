@@ -16,7 +16,11 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Wyprawy" Style="{StaticResource TytulEkranu}" />
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <TextBlock Text="Wyprawy" Style="{StaticResource TytulEkranu}" />
+            <TextBlock Margin="18,5,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       Text="Nierozpoznane wydarzenia: Wyprawa_N / NN-NN-NNNN. Uzupełnij w zakładce Konflikty." />
+        </StackPanel>
 
         <!-- Szybkie dodawanie (FR-802) -->
         <Border Grid.Row="1" Style="{StaticResource Karta}" Padding="10" Margin="0,8,0,8">
@@ -87,7 +91,10 @@
                          CanUserResizeColumns="True" ColumnWidth="*"
                          HorizontalScrollBarVisibility="Auto" controls:ProporcjonalneKolumny.Wlaczone="True">
                 <DataGrid.Columns>
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Data" Binding="{Binding Data, Converter={StaticResource KonwerterDaty}}" Width="1.3*" MinWidth="110" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa"
+                                        Binding="{Binding Nazwa}" Width="1.2*" MinWidth="135" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Data"
+                                        Binding="{Binding DataTekst}" Width="1.3*" MinWidth="125" />
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Miejsce" Binding="{Binding Miejsce}" Width="1.6*" MinWidth="170" />
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Replika główna" Binding="{Binding ReplikaNazwa}" Width="2.1*" MinWidth="150" />
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Zestaw" Binding="{Binding ZestawNazwa}" Width="1.6*" MinWidth="145" />
@@ -96,7 +103,8 @@
                     <DataGridTemplateColumn Header="Akcje" Width="85" MinWidth="85">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <ui:Button Appearance="Danger" ToolTip="Usuń wyprawę"
+                                <ui:Button Appearance="Danger" ToolTip="Usuń wyprawę; nierozpoznaną historię uzupełnij w Konfliktach"
+                                           IsEnabled="{Binding CzyZapisana}"
                                            Command="{Binding DataContext.UsunCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                            CommandParameter="{Binding}">
                                     <ui:SymbolIcon Symbol="Dismiss24" />
