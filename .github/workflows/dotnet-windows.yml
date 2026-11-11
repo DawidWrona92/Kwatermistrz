@@ -35,3 +35,41 @@ jobs:
 
       - name: Testy Core
         run: dotnet test tests/Kwatermistrz.Core.Tests/Kwatermistrz.Core.Tests.csproj --configuration Release --no-build
+
+
+      - name: Publikuj gotową aplikację Windows x64 (bez wymagania .NET)
+        run: >
+          dotnet publish src/Kwatermistrz.App/Kwatermistrz.App.csproj
+          --configuration Release --runtime win-x64 --self-contained true
+          -p:PublishSingleFile=false -p:PublishTrimmed=false
+          --output dist/Kwatermistrz
+
+      - name: Dodaj instrukcję do paczki testowej
+        shell: pwsh
+        run: |
+          @'
+          Kwatermistrz — wersja testowa Windows 64-bit
+          
+          1. Rozpakuj cały pobrany artefakt do osobnego folderu.
+          2. Uruchom Kwatermistrz.exe (nie przenoś samego EXE).
+          3. Nie musisz instalować Visual Studio ani .NET SDK.
+          
+          UWAGA: Aplikacja korzysta ze zwykłego katalogu danych:
+          %APPDATA%\Kwatermistrz
+          
+          PRZED URUCHOMIENIEM wykonaj kopię CAŁEGO tego katalogu,
+          łącznie z dane.json, kopią zapasową i zdjęciami.
+          To build testowy PR, nie wydanie stabilne.
+          
+          Wyprawy 1.1 i Import 1.2 — wymagają ręcznej akceptacji.
+          Instrukcje testów są w docs/testy-wypraw-1.1.md
+          i docs/testy-import-1.2.md w repozytorium.
+          '@ | Set-Content -Path dist/Kwatermistrz/PRZECZYTAJ-PRZED-STARTEM.txt -Encoding UTF8
+
+      - name: Udostępnij paczkę Kwatermistrz Windows x64
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kwatermistrz-Windows-x64-TEST
+          path: dist/Kwatermistrz/
+          if-no-files-found: error
+          retention-days: 30
