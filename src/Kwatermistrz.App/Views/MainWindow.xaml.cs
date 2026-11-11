@@ -511,9 +511,55 @@ public partial class MainWindow : FluentWindow
             var kolumnaMiejsca = tabela.Columns
                 .OfType<System.Windows.Controls.DataGridTextColumn>()
                 .SingleOrDefault(k => Equals(k.Header, "Miejsce"));
-            if (kolumnaMiejsca?.Binding is not System.Windows.Data.MultiBinding)
+            if (kolumnaMiejsca?.Binding is not System.Windows.Data.Binding bindingMiejsca ||
+                bindingMiejsca.Path?.Path != nameof(WierszPrzedmiotu.MiejsceNazwa))
                 throw new InvalidOperationException(
-                    "Wyposażenie nadal wyświetla wewnętrzne ID miejsca zamiast nazwy.");
+                    "Wyposażenie nie używa nazwy miejsca wyliczonej przez model wiersza.");
+            foreach (var przedmiot in ViewModel!.Wyposazenie.Wiersze)
+                if (!string.IsNullOrWhiteSpace(przedmiot.MiejsceId) &&
+                    string.Equals(przedmiot.MiejsceNazwa, przedmiot.MiejsceId, StringComparison.Ordinal))
+                    throw new InvalidOperationException("Tabela pokazuje techniczne ID zamiast nazwy miejsca.");
+
+            var kolumnaNazwaDoPomiaru = tabela.Columns
+                .OfType<System.Windows.Controls.DataGridTextColumn>()
+                .Single(k => Equals(k.Header, "Nazwa"));
+            if (kolumnaNazwaDoPomiaru.MinWidth < 200 ||
+                kolumnaMiejsca.MinWidth < 180 || tabela.Columns[0].MinWidth < 60)
+                throw new InvalidOperationException("Minimalne szerokości kolumn wyposażenia są za małe.");
+            var tekst = new System.Windows.Controls.TextBlock
+            {
+                Style = (Style)FindResource("WierszTabeliTekst"),
+                Text = "Bardzo długa nazwa przedmiotu",
+            };
+            if (tekst.TextTrimming != TextTrimming.CharacterEllipsis ||
+                tekst.TextWrapping != TextWrapping.NoWrap)
+                throw new InvalidOperationException("Długi tekst w tabelach nie jest skracany wielokropkiem.");
+
+            var vm = ViewModel.Wyposazenie;
+            var pierwszy = vm.Wiersze.First();
+            var drugi = vm.Wiersze.Skip(1).First();
+            var menuWiersza = widok.ZbudujMenuKontekstowe(pierwszy);
+            var wpisy = menuWiersza.Items.OfType<System.Windows.Controls.MenuItem>().ToList();
+            if (!wpisy.Any(x => Equals(x.Header, "Usuń ten przedmiot…") &&
+                                  ReferenceEquals(x.CommandParameter, pierwszy)) ||
+                !wpisy.Any(x => Equals(x.Header, "Duplikuj ten przedmiot") &&
+                                  ReferenceEquals(x.CommandParameter, pierwszy)) ||
+                !wpisy.Any(x => Equals(x.Header, "Dodaj przedmiot w kategorii")))
+                throw new InvalidOperationException("PPM na wierszu nie pokazuje kompletu operacji.");
+
+            // Zaznaczenia checkboxami są niezależne od wiersza klikniętego PPM.
+            pierwszy.Zaznaczony = true;
+            drugi.Zaznaczony = true;
+            if (vm.LiczbaZaznaczonych != 2)
+                throw new InvalidOperationException("Licznik zaznaczonych checkboxami nie działa.");
+            var menuDlaDrugiego = widok.ZbudujMenuKontekstowe(drugi);
+            var wpisyDrugiego = menuDlaDrugiego.Items.OfType<System.Windows.Controls.MenuItem>().ToList();
+            if (!wpisyDrugiego.Any(x => Equals(x.Header, "Usuń zaznaczone (2)…")) ||
+                !wpisyDrugiego.Any(x => Equals(x.Header, "Usuń ten przedmiot…") &&
+                                        ReferenceEquals(x.CommandParameter, drugi)))
+                throw new InvalidOperationException("Menu myli usuwanie jednego przedmiotu z grupą.");
+            pierwszy.Zaznaczony = false;
+            drugi.Zaznaczony = false;
 
             var checkbox = ZnajdzWizualne<System.Windows.Controls.CheckBox>(tabela)
                 .FirstOrDefault()
