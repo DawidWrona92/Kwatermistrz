@@ -105,8 +105,18 @@
                          CanUserResizeColumns="True" ColumnWidth="*"
                          HorizontalScrollBarVisibility="Auto" controls:ProporcjonalneKolumny.Wlaczone="True">
             <DataGrid.Columns>
-                <DataGridCheckBoxColumn Header="Por." Width="36"
-                                         Binding="{Binding ZaznaczonaDoPorownania, Mode=TwoWay}" />
+                <!-- Stałe minimum jak w Wyposażeniu: DataGridCheckBoxColumn 36px
+                     obcinał checkbox przy pierwszym renderze w WPF UI. -->
+                <DataGridTemplateColumn Header="Por." Width="64" MinWidth="64" CanUserResize="False">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding ZaznaczonaDoPorownania, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                      MinWidth="24" MinHeight="24" Padding="0" Margin="5,2"
+                                      ToolTip="Zaznacz replikę do porównania" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="#" Binding="{Binding MiejsceWRankingu}" Width="0.55*" MinWidth="75" />
                 <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding NazwaPelna}" Width="2.6*" MinWidth="215" />
                 <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Strona" Binding="{Binding NazwyStron}" Width="1.25*" MinWidth="135" />
