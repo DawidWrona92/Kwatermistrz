@@ -206,15 +206,17 @@ public static class ImporterPakietuKonfiguracji
                 switch (d.Akcja)
                 {
                     case AkcjaWartosci.DodajNowa:
+                        var noweId = lokalne.Any(w => w.Id == idPakietu)
+                            ? Guid.NewGuid().ToString("N") : idPakietu;
                         var kopia = new WartoscSlownika
                         {
-                            Id = idPakietu,
+                            Id = noweId,
                             Nazwa = d.WartoscPakietu.Nazwa,
                             Aliasy = new List<string>(d.WartoscPakietu.Aliasy),
                             Semantyka = d.WartoscPakietu.Semantyka,
                         };
                         lokalne.Add(kopia);
-                        mapa[idPakietu] = kopia.Id;
+                        mapa[idPakietu] = noweId;
                         break;
                     case AkcjaWartosci.ScalZIstniejaca when d.Istniejaca != null:
                         // Podgląd może wskazywać na oryginalną bazę. Zawsze modyfikuj
@@ -248,15 +250,17 @@ public static class ImporterPakietuKonfiguracji
             switch (d.Akcja)
             {
                 case AkcjaWartosci.DodajNowa:
+                    var idWzoru = dane.Slowniki.Wzory.Any(w => w.Id == d.WartoscPakietu.Id)
+                        ? Guid.NewGuid().ToString("N") : d.WartoscPakietu.Id;
                     dane.Slowniki.Wzory.Add(new WzorKamuflazu
                     {
-                        Id = d.WartoscPakietu.Id,
+                        Id = idWzoru,
                         Nazwa = d.WartoscPakietu.Nazwa,
                         Aliasy = new List<string>(d.WartoscPakietu.Aliasy),
                         KoloryProbki = new List<string>(d.WartoscPakietu.KoloryProbki),
                         CzyKolorJednolity = d.WartoscPakietu.CzyKolorJednolity,
                     });
-                    mapaWzorow[d.WartoscPakietu.Id] = d.WartoscPakietu.Id;
+                    mapaWzorow[d.WartoscPakietu.Id] = idWzoru;
                     break;
                 case AkcjaWartosci.ScalZIstniejaca when d.Istniejaca != null:
                     var wzorScalenia = dane.Slowniki.Wzory.FirstOrDefault(w => w.Id == d.Istniejaca.Id)
@@ -273,14 +277,16 @@ public static class ImporterPakietuKonfiguracji
             switch (d.Akcja)
             {
                 case AkcjaWartosci.DodajNowa:
+                    var idKategorii = dane.Slowniki.Kategorie.Any(k => k.Id == d.WartoscPakietu.Id)
+                        ? Guid.NewGuid().ToString("N") : d.WartoscPakietu.Id;
                     dane.Slowniki.Kategorie.Add(new Kategoria
                     {
-                        Id = d.WartoscPakietu.Id,
+                        Id = idKategorii,
                         Nazwa = d.WartoscPakietu.Nazwa,
                         CzyNosnik = d.WartoscPakietu.CzyNosnik,
                         Kolejnosc = d.WartoscPakietu.Kolejnosc,
                     });
-                    mapaKategorii[d.WartoscPakietu.Id] = d.WartoscPakietu.Id;
+                    mapaKategorii[d.WartoscPakietu.Id] = idKategorii;
                     break;
                 case AkcjaWartosci.ScalZIstniejaca when d.Istniejaca != null:
                     var kategoriaScalenia = dane.Slowniki.Kategorie.FirstOrDefault(k => k.Id == d.Istniejaca.Id)
@@ -295,9 +301,11 @@ public static class ImporterPakietuKonfiguracji
             switch (d.Akcja)
             {
                 case AkcjaRekonstrukcji.DodajNowa:
+                    var idRekonstrukcji = dane.Rekonstrukcje.Any(r => r.Id == d.Pakiet.Id)
+                        ? Guid.NewGuid().ToString("N") : d.Pakiet.Id;
                     dane.Rekonstrukcje.Add(new Rekonstrukcja
                     {
-                        Id = d.Pakiet.Id,
+                        Id = idRekonstrukcji,
                         Nazwa = d.Pakiet.Nazwa,
                         Okres = d.Pakiet.Okres,
                         StronaId = Mapuj(mapySlownikow, "Strony", d.Pakiet.StronaId),
@@ -342,9 +350,11 @@ public static class ImporterPakietuKonfiguracji
         {
             if (d.Akcja != AkcjaSzablonuKarty.DodajNowy)
                 continue;
+            var idSzablonu = dane.SzablonyKart.Any(s => s.Id == d.Pakiet.Id)
+                ? Guid.NewGuid().ToString("N") : d.Pakiet.Id;
             dane.SzablonyKart.Add(new SzablonKarty
             {
-                Id = d.Pakiet.Id,
+                Id = idSzablonu,
                 Nazwa = d.Pakiet.Nazwa,
                 NapedId = Mapuj(mapySlownikow, "Napedy", d.Pakiet.NapedId),
                 Parametry = d.Pakiet.Parametry.Select(p => new ParametrKarty
