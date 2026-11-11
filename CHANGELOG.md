@@ -1,3 +1,15 @@
+## Historia wypraw i konflikty — jeden uzgadniany rejestr (2026-11-11)
+
+- Importowane liczniki roczne są teraz widoczne na ekranie Wyprawy jako anonimowe `Wyprawa_1`, `Wyprawa_2` itd. Data nieznana jest prezentowana jako `NN-NN-NNNN`, a znany rok zostaje zachowany. Nazwy nie dublują się po rozpoznaniu wpisu.
+- Nowa zakładka `Konflikty`: użytkownik może wskazać poprawną datę, replikę, zestaw lub brakujące miejsce wyposażenia. Nie wybieramy relacji na podstawie heurystyk i nie zapisujemy sztucznych dat.
+- `RejestrWypraw` uzgadnia sumy historyczne z arkusza rocznego i kart replik jako dwie projekcje TEJ SAMEJ historii. Zidentyfikowana wyprawa przenosi dokładnie jedno wystąpienie do listy zdarzeń i w razie potrzeby pomniejsza użyte liczniki historyczne replik i wyposażenia.
+- Cofnięcie przypisania przywraca historyczne wystąpienia i wcześniej pomniejszone liczniki. Częściowe dane można uzupełnić później; zapisywane są atomowo w JSON.
+- Raporty lat, pulpit i indeks obliczeniowy odczytują sumy z tego samego rejestru. Zapisane wyprawy bez konkretnej daty nie są traktowane jako 1 stycznia roku 0001.
+- Zgodność wsteczna: oryginalne liczniki pozostają źródłem anonimowych wypraw do czasu rozpoznania; stare `dane.json` i `.kwreko` nie wymagają destrukcyjnej migracji.
+- Testy: import źródłowego arkusza (89 wypraw), numeracja, zgodność sum, korekta historycznych liczników, zapis/odczyt, cofnięcie oraz smoke WPF z nową zakładką.
+
+---
+
 ## Wyposażenie — poprawa pierwszego renderowania tabel (2026-11-11)
 
 - Naprawiono ucięte pola zaznaczenia: kolumna selekcji ma teraz 64 px, a checkbox co najmniej 24×24 px i margines, dzięki czemu cały element mieści się w komórce.
