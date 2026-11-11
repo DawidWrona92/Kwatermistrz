@@ -23,6 +23,16 @@ public partial class UstawieniaViewModel : ObservableObject
         _magazyn = magazyn;
     }
 
+    /// <summary>Ustawienia są odczytywane zawsze z jednego dokumentu danych.</summary>
+    public void Odswiez()
+    {
+        OnPropertyChanged(nameof(IndeksMotywu));
+        OnPropertyChanged(nameof(DniBezTestu));
+        OnPropertyChanged(nameof(MaksymalnyBokZdjecia));
+        OnPropertyChanged(nameof(ZachowajOryginalZdjecia));
+        OnPropertyChanged(nameof(WersjaRegul));
+    }
+
     /// <summary>Wybrany motyw (FR-1006): 0 = systemowy, 1 = jasny, 2 = ciemny.</summary>
     public int IndeksMotywu
     {
