@@ -155,6 +155,12 @@
                             <ui:SymbolIcon Symbol="ClipboardTask24" />
                         </ui:NavigationViewItem.Icon>
                     </ui:NavigationViewItem>
+                    <ui:NavigationViewItem Content="Konflikty" Tag="Konflikty"
+                                           ToolTip="Uzgadnianie historycznych wypraw i nieznanych miejsc">
+                        <ui:NavigationViewItem.Icon>
+                            <ui:SymbolIcon Symbol="ClipboardTask24" />
+                        </ui:NavigationViewItem.Icon>
+                    </ui:NavigationViewItem>
                 </ui:NavigationView.MenuItems>
                 <ui:NavigationView.FooterMenuItems>
                     <ui:NavigationViewItem Content="Słowniki" Tag="Slowniki">
