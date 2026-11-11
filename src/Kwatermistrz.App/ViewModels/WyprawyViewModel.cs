@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kwatermistrz.App.Services;
 using Kwatermistrz.Core.Model;
+using Kwatermistrz.Core.Obliczenia;
 using Kwatermistrz.Core.Storage;
 
 namespace Kwatermistrz.App.ViewModels;
@@ -67,7 +68,7 @@ public partial class WyprawyViewModel : ObservableObject
 
     /// <summary>Lata dostępne w filtrze (historyczne + zapisane wyprawy).</summary>
     public IReadOnlyList<int> Lata => _dane.Ustawienia.HistoryczneWyprawyWgRok.Keys
-        .Concat(_dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(w => w.Data.Year))
+        .Concat(_dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(RejestrWypraw.Rok))
         .Distinct()
         .OrderByDescending(y => y)
         .ToList();
@@ -76,26 +77,44 @@ public partial class WyprawyViewModel : ObservableObject
     public void Odswiez()
     {
         var kalk = _kalkulator.Kalkulator();
-        var zapytanie = _dane.Wyprawy.Where(w => !w.CzyUsunieta).AsEnumerable();
+        // Historyczne agregaty pochodzą z tego samego rejestru, z którego
+        // pobieramy sumy roczne i raporty. Nie zapisujemy fikcyjnych dat.
+        var zapisane = _dane.Wyprawy.Where(w => !w.CzyUsunieta)
+            .Select(w => (Wyprawa: w, CzyWirtualna: false));
+        var historia = RejestrWypraw.Nierozpoznane(_dane)
+            .Select(h => (Wyprawa: new Wyprawa
+            {
+                Id = h.Id,
+                NazwaHistoryczna = h.Nazwa,
+                RokHistoryczny = h.Rok,
+                CzyHistoryczna = true,
+                Data = default,
+            }, CzyWirtualna: true));
+        var zapytanie = zapisane.Concat(historia).AsEnumerable();
         if (_stan.AktywnaRekonstrukcjaId != null)
-            zapytanie = zapytanie.Where(w => w.RekonstrukcjaId == null || w.RekonstrukcjaId == _stan.AktywnaRekonstrukcjaId);
+            zapytanie = zapytanie.Where(p => p.Wyprawa.RekonstrukcjaId == null ||
+                p.Wyprawa.RekonstrukcjaId == _stan.AktywnaRekonstrukcjaId);
         if (FiltrRok != null)
-            zapytanie = zapytanie.Where(w => w.Data.Year == FiltrRok);
+            zapytanie = zapytanie.Where(p => RejestrWypraw.Rok(p.Wyprawa) == FiltrRok);
         if (FiltrReplikaId != null)
-            zapytanie = zapytanie.Where(w => w.ReplikaGlownaId == FiltrReplikaId);
+            zapytanie = zapytanie.Where(p => p.Wyprawa.ReplikaGlownaId == FiltrReplikaId);
         if (FiltrZestawId != null)
-            zapytanie = zapytanie.Where(w => w.ZestawId == FiltrZestawId);
+            zapytanie = zapytanie.Where(p => p.Wyprawa.ZestawId == FiltrZestawId);
         var tekst = Normalizacja.Przytnij(FiltrTekst);
         if (tekst != null)
         {
             var szukane = Normalizacja.TekstDoPorownania(tekst);
-            zapytanie = zapytanie.Where(w =>
-                (w.Miejsce != null && Normalizacja.TekstDoPorownania(w.Miejsce).Contains(szukane)) ||
-                (w.Komentarz != null && Normalizacja.TekstDoPorownania(w.Komentarz).Contains(szukane)));
+            zapytanie = zapytanie.Where(p =>
+                (p.Wyprawa.Miejsce != null && Normalizacja.TekstDoPorownania(p.Wyprawa.Miejsce).Contains(szukane)) ||
+                (p.Wyprawa.Komentarz != null && Normalizacja.TekstDoPorownania(p.Wyprawa.Komentarz).Contains(szukane)) ||
+                (p.Wyprawa.NazwaHistoryczna != null &&
+                    Normalizacja.TekstDoPorownania(p.Wyprawa.NazwaHistoryczna).Contains(szukane)));
         }
         Wiersze.Clear();
-        foreach (var w in zapytanie.OrderByDescending(w => w.Data))
+        foreach (var wpis in zapytanie.OrderByDescending(p => RejestrWypraw.Rok(p.Wyprawa))
+                     .ThenByDescending(p => p.Wyprawa.Data))
         {
+            var w = wpis.Wyprawa;
             var replika = w.ReplikaGlownaId != null
                 ? _dane.Repliki.FirstOrDefault(r => r.Id == w.ReplikaGlownaId)?.ModelProducenta
                 : null;
@@ -106,7 +125,7 @@ public partial class WyprawyViewModel : ObservableObject
             var mundur = mundurId != null
                 ? _dane.Przedmioty.FirstOrDefault(p => p.Id == mundurId)?.Nazwa
                 : null;
-            Wiersze.Add(new WierszWyprawy(w, replika, zestaw, mundur));
+            Wiersze.Add(new WierszWyprawy(w, replika, zestaw, mundur, wpis.CzyWirtualna));
         }
         OnPropertyChanged(nameof(Lata));
     }
@@ -122,7 +141,7 @@ public partial class WyprawyViewModel : ObservableObject
     private void Wybierz(WierszWyprawy? wiersz)
     {
         Wybrana = wiersz;
-        if (wiersz != null)
+        if (wiersz != null && !wiersz.CzyWirtualna)
             _wplywSprzedEdycji[wiersz.Wyprawa.Id] = _kalkulator.Kalkulator().WplywNaLicznikiHistoryczne(wiersz.Wyprawa);
     }
 
@@ -279,7 +298,7 @@ public partial class WyprawyViewModel : ObservableObject
     [RelayCommand]
     private void ZapiszWybrana()
     {
-        if (Wybrana == null)
+        if (Wybrana == null || Wybrana.CzyWirtualna)
             return;
         var wyprawa = Wybrana.Wyprawa;
         // korekta sprzed edycji jest cofana po migawce z momentu otwarcia edycji (pola mogą być już zmienione)
@@ -303,7 +322,7 @@ public partial class WyprawyViewModel : ObservableObject
     [RelayCommand]
     private void Usun(WierszWyprawy? wiersz)
     {
-        if (wiersz == null)
+        if (wiersz == null || wiersz.CzyWirtualna)
             return;
         wiersz.Wyprawa.CzyUsunieta = true;
         CofnijOdliczenie(wiersz.Wyprawa);
