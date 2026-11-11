@@ -99,9 +99,11 @@ public partial class MainWindow : FluentWindow
         if (!_strony.TryGetValue(ekran, out var strona))
             return;
         if (!ReferenceEquals(ObszarZawartosci.Content, strona))
+        {
             ObszarZawartosci.Navigate(strona);
-        if (ekran == "Pulpit" && ViewModel?.Pulpit != null)
-            ViewModel.Pulpit.Odswiez();
+            // Identyczne odświeżanie dla przejść z menu, skrótów i wyszukiwarki.
+            OdswiezEkran(ekran);
+        }
         // karta po prawej pokazuje wybrany element (FR-204/FR-302, §10.4)
         if (ViewModel == null)
             return;
@@ -111,6 +113,25 @@ public partial class MainWindow : FluentWindow
             PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana });
         else
             UkryjKarte();
+    }
+
+    private void OdswiezEkran(string ekran)
+    {
+        if (ViewModel == null)
+            return;
+        switch (ekran)
+        {
+            case "Pulpit": ViewModel.Pulpit.Odswiez(); break;
+            case "Slowniki": ViewModel.Slowniki.Odswiez(); break;
+            case "Rekonstrukcje": ViewModel.Rekonstrukcje.Odswiez(); break;
+            case "Ustawienia": ViewModel.Ustawienia.Odswiez(); break;
+            case "Bronie": ViewModel.Repliki.Odswiez(); break;
+            case "Wyposazenie": ViewModel.Wyposazenie.Odswiez(); break;
+            case "Zestawy": ViewModel.Zestawy.Odswiez(); break;
+            case "Wyprawy": ViewModel.Wyprawy.Odswiez(); break;
+            case "Raporty": ViewModel.Raporty.Odswiez(); break;
+            case "DoUzupelnienia": ViewModel.DoUzupelnienia.Odswiez(); break;
+        }
     }
 
     /// <summary>Odświeża kartę po prawej po zmianie wyboru (FR-204, FR-302).</summary>
@@ -159,23 +180,10 @@ public partial class MainWindow : FluentWindow
         var ekran = item.Tag as string;
         if (ekran == null || ViewModel == null)
             return;
+        // Filtry ustawione przez skróty pulpitu nie mogą przeżyć powrotu do menu.
+        WyczyscFlagiFiltru(ekran);
         PokazEkran(ekran);
         ViewModel.AktualnyEkran = ekran;
-        // nawigacja przez menu czyści flagi ustawione skrótami z pulpitu (FR-104/105)
-        WyczyscFlagiFiltru(ekran);
-        // przy zmianie ekranu odświeżamy dane ekranu docelowego
-        if (ekran == "Wyposazenie")
-            ViewModel.Wyposazenie.Odswiez();
-        if (ekran == "Bronie")
-            ViewModel.Repliki.Odswiez();
-        if (ekran == "Wyprawy")
-            ViewModel.Wyprawy.Odswiez();
-        if (ekran == "Zestawy")
-            ViewModel.Zestawy.Odswiez();
-        if (ekran == "Raporty")
-            ViewModel.Raporty.Odswiez();
-        if (ekran == "DoUzupelnienia")
-            ViewModel.DoUzupelnienia.Odswiez();
     }
 
     /// <summary>Czyści flagi filtrów ustawiane skrótami z pulpitu — zostają włączone po powrocie przez menu, choć użytkownik oczekiwał pełnej listy.</summary>
