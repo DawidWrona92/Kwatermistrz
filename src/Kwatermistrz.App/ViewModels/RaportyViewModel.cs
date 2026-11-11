@@ -187,7 +187,7 @@ public partial class RaportyViewModel : ObservableObject
 
         // słupki: wyprawy wg lat (BR-07)
         var lata = _dane.Ustawienia.HistoryczneWyprawyWgRok.Keys
-            .Concat(_dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(w => w.Data.Year))
+            .Concat(_dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(Kwatermistrz.Core.Obliczenia.RejestrWypraw.Rok))
             .Distinct()
             .OrderBy(y => y);
         foreach (var rok in lata)
@@ -361,7 +361,7 @@ public partial class RaportyViewModel : ObservableObject
         RaportLata.Clear();
         var pierwsza = kalk.DataPierwszejWyprawy();
         var lata = _dane.Ustawienia.HistoryczneWyprawyWgRok.Keys
-            .Concat(_dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(w => w.Data.Year))
+            .Concat(_dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(Kwatermistrz.Core.Obliczenia.RejestrWypraw.Rok))
             .Distinct()
             .OrderBy(y => y);
         var suma = 0;
