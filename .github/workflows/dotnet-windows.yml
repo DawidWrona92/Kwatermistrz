@@ -1,0 +1,38 @@
+name: Kwatermistrz — build i testy
+
+on:
+  push:
+    branches:
+      - main
+      - fix/audit-ui-consistency-20261111
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Kompilacja WPF i testy Core (.NET 10)
+    runs-on: windows-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Pobierz kod
+        uses: actions/checkout@v4
+
+      - name: Zainstaluj .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore Kwatermistrz.slnx
+
+      - name: Build (Release)
+        run: dotnet build Kwatermistrz.slnx --configuration Release --no-restore
+
+      - name: Testy Core
+        run: dotnet test tests/Kwatermistrz.Core.Tests/Kwatermistrz.Core.Tests.csproj --configuration Release --no-build
