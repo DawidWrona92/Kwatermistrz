@@ -50,6 +50,13 @@ public partial class SlownikiViewModel : ObservableObject
     [ObservableProperty]
     private WartoscSlownika? _wybranaWartosc;
 
+    /// <summary>Po imporcie/odtworzeniu odświeża dane źródłowe słownika.</summary>
+    public void Odswiez()
+    {
+        WybranaWartosc = null;
+        OnPropertyChanged(nameof(Wartosci));
+    }
+
     private string Wybranego() => WybranySlownik;
 
     partial void OnWybranySlownikChanged(string value)
