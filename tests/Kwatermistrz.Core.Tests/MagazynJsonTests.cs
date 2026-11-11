@@ -198,4 +198,59 @@ public class MagazynJsonTests : IDisposable
         Assert.Equal(2, powiadomienia);
     }
 
+
+    [Fact]
+    public void UszkodzoneObaPliki_BlokujeZapisINieNadpisujeOryginalu()
+    {
+        var sciezka = Path.Combine(_katalog, "dane.json");
+        var bak = sciezka + ".bak";
+        File.WriteAllText(sciezka, "{zniszczony");
+        File.WriteAllText(bak, "także uszkodzony");
+        var magazyn = new MagazynJson(_katalog);
+        var (zastępcze, kontrola) = magazyn.WczytajZKontrola();
+
+        Assert.False(kontrola.CzyPoprawne);
+        Assert.True(magazyn.OchronaPrzedNadpisaniem);
+        Assert.Throws<InvalidOperationException>(() => magazyn.ZapiszDebounce(zastępcze));
+        Assert.Throws<InvalidOperationException>(() => magazyn.Zapisz(zastępcze));
+        Assert.Equal("{zniszczony", File.ReadAllText(sciezka));
+        Assert.Equal("także uszkodzony", File.ReadAllText(bak));
+    }
+
+    [Fact]
+    public void RecoveryZBak_PierwszyZapisNieNadpisujeDobrejKopiiUszkodzonymGlownym()
+    {
+        var magazyn = new MagazynJson(_katalog);
+        var dane = magazyn.Wczytaj();
+        dane.Repliki.Add(new Replika { Id = "historyczna", ModelProducenta = "Dawna" });
+        magazyn.Zapisz(dane);
+        magazyn.Zapisz(dane);
+        var kopia = magazyn.SciezkaPliku + ".bak";
+        var dobryJson = File.ReadAllText(kopia);
+        File.WriteAllText(magazyn.SciezkaPliku, "{zniszczony");
+
+        var nowaInstancja = new MagazynJson(_katalog);
+        var (odzyskane, kontrola) = nowaInstancja.WczytajZKontrola();
+        Assert.False(kontrola.CzyPoprawne);
+        Assert.False(nowaInstancja.OchronaPrzedNadpisaniem);
+        Assert.Equal("historyczna", Assert.Single(odzyskane.Repliki).Id);
+        nowaInstancja.Zapisz(odzyskane);
+
+        Assert.Equal(dobryJson, File.ReadAllText(kopia));
+        Assert.Equal("historyczna", Assert.Single(nowaInstancja.Wczytaj().Repliki).Id);
+    }
+
+    [Fact]
+    public void PrzywracanieZPliku_OdrzucaDuplikatyId()
+    {
+        var plik = Path.Combine(_katalog, "duplikaty.json");
+        File.WriteAllText(plik, """
+            { "SchemaVersion": 1, "Repliki": [
+                { "Id": "to-samo", "ModelProducenta": "A" },
+                { "Id": "to-samo", "ModelProducenta": "B" }
+            ] }
+            """);
+        Assert.Throws<InvalidDataException>(() => MagazynJson.WczytajZPliku(plik));
+    }
+
 }
