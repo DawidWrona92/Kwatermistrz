@@ -25,9 +25,9 @@
             <!-- Prawdziwe kolumny Grid (nie StackPanel); użytkownik może złapać
                  splitter i rozszerzyć listę bez zmiany wielkości całego okna. -->
             <ColumnDefinition x:Name="KolumnaListyZestawow"
-                              Width="420" MinWidth="300" MaxWidth="900" />
+                              Width="2*" MinWidth="320" MaxWidth="900" />
             <ColumnDefinition Width="7" />
-            <ColumnDefinition Width="*" MinWidth="300" />
+            <ColumnDefinition Width="3*" MinWidth="320" />
         </Grid.ColumnDefinitions>
 
         <!-- Lewy panel wypełnia dostępną wysokość, tabela przewija się wewnątrz. -->
