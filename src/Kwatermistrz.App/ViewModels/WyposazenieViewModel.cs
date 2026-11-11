@@ -111,6 +111,9 @@ public partial class WyposazenieViewModel : ObservableObject
     [ObservableProperty]
     private bool _tylkoBezUzycia;
 
+    /// <summary>Wymagamy wybrania kategorii przed utworzeniem przedmiotu.</summary>
+    public bool MoznaDodac => WybranaKategoria != null;
+
     /// <summary>Licznik pozycji na liście.</summary>
     public int LiczbaWierszy => Wiersze.Count;
 
@@ -129,6 +132,13 @@ public partial class WyposazenieViewModel : ObservableObject
     /// <summary>Odświeża listę po zmianie danych/filtrów.</summary>
     public void Odswiez()
     {
+        // Przy wymianie bazy (np. przywracanie kopii) filtr kategorii może
+        // wskazywać na usuniętą pozycję. Wyłącz filtr, nie zostawiaj pustej listy.
+        if (WybranaKategoria != null && !_dane.Slowniki.Kategorie.Any(k => k.Id == WybranaKategoria.Id))
+        {
+            WybranaKategoria = null;
+            return; // setter odświeża widok z pełnym katalogiem
+        }
         // indeks obliczeniowy budowany raz na odświeżenie — O(P·W) zamiast O(P²·W) przy NFR-04
         var indeks = new IndeksObliczeniowy(_dane);
         var zapytanie = _dane.Przedmioty.AsEnumerable();
@@ -150,13 +160,25 @@ public partial class WyposazenieViewModel : ObservableObject
         }
         if (TylkoBezUzycia)
             zapytanie = zapytanie.Where(p => indeks.UzyciaPrzedmiotu(p) == 0);
+        var wybranyId = Wybrany?.Id;
+        var zaznaczoneId = Wiersze.Where(w => w.Zaznaczony).Select(w => w.Id).ToHashSet(StringComparer.Ordinal);
         Wiersze.Clear();
         var kategorie = _dane.Slowniki.Kategorie.ToDictionary(k => k.Id, k => k.CzyNosnik);
         foreach (var p in zapytanie.OrderBy(p => p.Nazwa, StringComparer.CurrentCulture))
-            Wiersze.Add(new WierszPrzedmiotu(p, indeks.UzyciaPrzedmiotu(p))
+        {
+            var wiersz = new WierszPrzedmiotu(p, indeks.UzyciaPrzedmiotu(p))
             {
                 CzyNosnik = kategorie.TryGetValue(p.KategoriaId, out var nosnik) && nosnik,
-            });
+                Zaznaczony = zaznaczoneId.Contains(p.Id),
+            };
+            wiersz.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(WierszPrzedmiotu.Zaznaczony))
+                    OnPropertyChanged(nameof(LiczbaZaznaczonych));
+            };
+            Wiersze.Add(wiersz);
+        }
+        Wybrany = Wiersze.FirstOrDefault(w => w.Id == wybranyId);
         OnPropertyChanged(nameof(LiczbaWierszy));
         OnPropertyChanged(nameof(LiczbaZaznaczonych));
     }
@@ -175,7 +197,11 @@ public partial class WyposazenieViewModel : ObservableObject
             Odswiez();
     }
 
-    partial void OnWybranaKategoriaChanged(Kategoria? value) => Odswiez();
+    partial void OnWybranaKategoriaChanged(Kategoria? value)
+    {
+        OnPropertyChanged(nameof(MoznaDodac));
+        Odswiez();
+    }
     partial void OnFiltrTekstChanged(string value) => Odswiez();
     partial void OnPokazSprzedaneChanged(bool value) => Odswiez();
     partial void OnTylkoBezUzyciaChanged(bool value) { if (_zawieszoneOdswiezanie == 0) Odswiez(); }

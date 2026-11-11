@@ -84,6 +84,16 @@ public partial class App : Application
         Magazyn = new MagazynJson(KatalogDanych);
         var (dane, kontrola) = Magazyn.WczytajZKontrola();
         Dane = dane;
+        if (Magazyn.OchronaPrzedNadpisaniem)
+        {
+            System.Windows.MessageBox.Show(
+                kontrola.Komunikat + "\n\nAplikacja zostanie zamknięta, aby nie utracić istniejących danych. " +
+                "Wyszukaj kopię w folderze: " + Path.Combine(KatalogDanych, "kopie"),
+                "Kwatermistrz — zabezpieczenie bazy",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            Shutdown();
+            return;
+        }
 
         var services = new ServiceCollection();
         services.AddSingleton(dane);

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Kwatermistrz.Core.Model;
 
 /// <summary>Wartość pola karty technicznej z trzema stanami (FR-404).</summary>
@@ -239,6 +241,14 @@ public class ElementWariantu
     public string? NazwaSzkicu { get; set; }
 }
 
+/// <summary>Składnik rzeczywiście wykonanej korekty historycznej: replika, mundur lub rok.
+/// Dodatek opcjonalny; stare JSON-y bez tego pola są poprawne.</summary>
+public class SkladnikKorektyHistorycznej
+{
+    public string Rodzaj { get; set; } = "";
+    public string Id { get; set; } = "";
+}
+
 /// <summary>Wyprawa (rozdział 6.5, FR-801).</summary>
 public class Wyprawa
 {
@@ -255,6 +265,10 @@ public class Wyprawa
     /// <summary>Prawda, gdy wyprawa została już odliczona od liczników historycznych (FR-807) —
     /// korekta jest wtedy aktywna i odwracalna (usunięcie/przywrócenie/edycja ją cofa/powtarza).</summary>
     public bool OdliczonaOdLicznikow { get; set; }
+    /// <summary>Trwały skład wykonanej korekty: niezależny od późniejszych zmian zestawu.
+    /// Null oznacza stary rekord bez migawki (backward compatibility).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<SkladnikKorektyHistorycznej>? SkladnikiKorekty { get; set; }
     public string? Komentarz { get; set; }
     public List<string> Zdjecia { get; set; } = new();
     public bool CzyUsunieta { get; set; }

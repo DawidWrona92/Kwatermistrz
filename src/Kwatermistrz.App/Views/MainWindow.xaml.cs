@@ -21,11 +21,14 @@ public partial class MainWindow : FluentWindow
     {
         if (ViewModel == null)
             return;
+        ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         if (DataContext is MainWindowViewModel vm && vm.Pulpit != null)
         {
             vm.Pulpit.Odswiez();
             // karty skrótowe pulpitu (FR-104) i ranking (FR-105) — przejście do listy z filtrem
             vm.Pulpit.PrzejdzDo += PrzejdzZPulpitu;
+            vm.DoUzupelnienia.PrzejdzDo += (ekran, rekordId) =>
+                OtworzWynik(new WynikSzukania { Ekran = ekran, RekordId = rekordId });
         }
         // globalne wyszukiwanie (FR-1201): wyniki pod polem, Enter otwiera pierwszy
         PoleSzukania.TextChanged += (_, _) =>
@@ -60,6 +63,18 @@ public partial class MainWindow : FluentWindow
         ZaznaczNawigacje(ekran);
     }
 
+    /// <summary>Synchronizuje programową nawigację (skróty, przyciski ViewModelu) z widocznym Frame i menu.</summary>
+    private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(MainWindowViewModel.AktualnyEkran) || ViewModel == null)
+            return;
+        var ekran = ViewModel.AktualnyEkran;
+        if (!_strony.ContainsKey(ekran))
+            return;
+        PokazEkran(ekran);
+        ZaznaczNawigacje(ekran);
+    }
+
     private void ZarejestrujStrony()
     {
         var vm = ViewModel!;
@@ -84,16 +99,39 @@ public partial class MainWindow : FluentWindow
         if (!_strony.TryGetValue(ekran, out var strona))
             return;
         if (!ReferenceEquals(ObszarZawartosci.Content, strona))
+        {
             ObszarZawartosci.Navigate(strona);
-        if (ekran == "Pulpit" && ViewModel?.Pulpit != null)
-            ViewModel.Pulpit.Odswiez();
+            // Identyczne odświeżanie dla przejść z menu, skrótów i wyszukiwarki.
+            OdswiezEkran(ekran);
+        }
         // karta po prawej pokazuje wybrany element (FR-204/FR-302, §10.4)
         if (ViewModel == null)
             return;
         if (ekran == "Wyposazenie" && ViewModel.Wyposazenie.Wybrany != null)
             PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany });
-        if (ekran == "Bronie" && ViewModel.Repliki.Wybrana != null)
+        else if (ekran == "Bronie" && ViewModel.Repliki.Wybrana != null)
             PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana });
+        else
+            UkryjKarte();
+    }
+
+    private void OdswiezEkran(string ekran)
+    {
+        if (ViewModel == null)
+            return;
+        switch (ekran)
+        {
+            case "Pulpit": ViewModel.Pulpit.Odswiez(); break;
+            case "Slowniki": ViewModel.Slowniki.Odswiez(); break;
+            case "Rekonstrukcje": ViewModel.Rekonstrukcje.Odswiez(); break;
+            case "Ustawienia": ViewModel.Ustawienia.Odswiez(); break;
+            case "Bronie": ViewModel.Repliki.Odswiez(); break;
+            case "Wyposazenie": ViewModel.Wyposazenie.Odswiez(); break;
+            case "Zestawy": ViewModel.Zestawy.Odswiez(); break;
+            case "Wyprawy": ViewModel.Wyprawy.Odswiez(); break;
+            case "Raporty": ViewModel.Raporty.Odswiez(); break;
+            case "DoUzupelnienia": ViewModel.DoUzupelnienia.Odswiez(); break;
+        }
     }
 
     /// <summary>Odświeża kartę po prawej po zmianie wyboru (FR-204, FR-302).</summary>
@@ -105,6 +143,14 @@ public partial class MainWindow : FluentWindow
             PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany });
         else if (ViewModel.AktualnyEkran == "Bronie" && ViewModel.Repliki.Wybrana != null)
             PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana });
+        else
+            UkryjKarte();
+    }
+
+    private void UkryjKarte()
+    {
+        ZawartoscKarty.Content = null;
+        PanelKarty.Visibility = Visibility.Collapsed;
     }
 
     private void ZaznaczNawigacje(string ekran)
@@ -134,23 +180,10 @@ public partial class MainWindow : FluentWindow
         var ekran = item.Tag as string;
         if (ekran == null || ViewModel == null)
             return;
+        // Filtry ustawione przez skróty pulpitu nie mogą przeżyć powrotu do menu.
+        WyczyscFlagiFiltru(ekran);
         PokazEkran(ekran);
         ViewModel.AktualnyEkran = ekran;
-        // nawigacja przez menu czyści flagi ustawione skrótami z pulpitu (FR-104/105)
-        WyczyscFlagiFiltru(ekran);
-        // przy zmianie ekranu odświeżamy dane ekranu docelowego
-        if (ekran == "Wyposazenie")
-            ViewModel.Wyposazenie.Odswiez();
-        if (ekran == "Bronie")
-            ViewModel.Repliki.Odswiez();
-        if (ekran == "Wyprawy")
-            ViewModel.Wyprawy.Odswiez();
-        if (ekran == "Zestawy")
-            ViewModel.Zestawy.Odswiez();
-        if (ekran == "Raporty")
-            ViewModel.Raporty.Odswiez();
-        if (ekran == "DoUzupelnienia")
-            ViewModel.DoUzupelnienia.Odswiez();
     }
 
     /// <summary>Czyści flagi filtrów ustawiane skrótami z pulpitu — zostają włączone po powrocie przez menu, choć użytkownik oczekiwał pełnej listy.</summary>
@@ -181,7 +214,7 @@ public partial class MainWindow : FluentWindow
 
     private void ZamknijPanelKarty_Click(object sender, RoutedEventArgs e)
     {
-        PanelKarty.Visibility = Visibility.Collapsed;
+        UkryjKarte();
     }
 
     /// <summary>Przejście z karty pulpitu (FR-104) lub rankingu (FR-105): ekran + filtr/wybór rekordu.</summary>

@@ -23,6 +23,16 @@ public partial class UstawieniaViewModel : ObservableObject
         _magazyn = magazyn;
     }
 
+    /// <summary>Ustawienia są odczytywane zawsze z jednego dokumentu danych.</summary>
+    public void Odswiez()
+    {
+        OnPropertyChanged(nameof(IndeksMotywu));
+        OnPropertyChanged(nameof(DniBezTestu));
+        OnPropertyChanged(nameof(MaksymalnyBokZdjecia));
+        OnPropertyChanged(nameof(ZachowajOryginalZdjecia));
+        OnPropertyChanged(nameof(WersjaRegul));
+    }
+
     /// <summary>Wybrany motyw (FR-1006): 0 = systemowy, 1 = jasny, 2 = ciemny.</summary>
     public int IndeksMotywu
     {
@@ -143,16 +153,9 @@ public partial class UstawieniaViewModel : ObservableObject
             // przed nadpisaniem: kopia bieżących danych (FR-1107)
             _magazyn.Zapisz(_dane);
             _magazyn.UtworzKopieZapasowa(_dane);
-            _dane.Slowniki = dane.Slowniki;
-            _dane.Przedmioty = dane.Przedmioty;
-            _dane.Repliki = dane.Repliki;
-            _dane.Zestawy = dane.Zestawy;
-            _dane.Wyprawy = dane.Wyprawy;
-            _dane.Rekonstrukcje = dane.Rekonstrukcje;
-            _dane.SzablonyKart = dane.SzablonyKart;
-            _dane.Zadania = dane.Zadania;
-            _dane.Ustawienia = dane.Ustawienia;
-            _dane.CzyPierwszeUruchomienie = dane.CzyPierwszeUruchomienie;
+            // Wspólny dokument i istniejące rekordy o tych samych Id pozostają
+            // tymi samymi obiektami. Pozostałe ekrany nie pracują na starej bazie.
+            TransakcjaDanych.Zastap(_dane, dane);
             // zdjęcia z katalogu kopii (obok wybranego dane.json) — nadpisują lokalne
             var katalogKopii = Path.GetDirectoryName(dialog.FileName);
             if (katalogKopii != null && Directory.Exists(Path.Combine(katalogKopii, "zdjecia")))
@@ -167,7 +170,7 @@ public partial class UstawieniaViewModel : ObservableObject
             }
             _magazyn.Zapisz(_dane);
             ZastosujMotyw();
-            Komunikat = "Przywrócono dane z kopii. Odśwież ekrany (F5 lub przełącz ponownie), aby zobaczyć przywrócone dane.";
+            Komunikat = "Przywrócono dane z kopii. Wszystkie ekrany zostały odświeżone.";
             OnPropertyChanged(nameof(IndeksMotywu));
             OnPropertyChanged(nameof(DniBezTestu));
             DanePrzywrocone?.Invoke();

@@ -4,6 +4,7 @@
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
       xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
+      xmlns:model="clr-namespace:Kwatermistrz.Core.Model;assembly=Kwatermistrz.Core"
       Title="Zestawy">
     <Page.Resources>
         <conv:KonwerterDaty x:Key="KonwerterDaty" />
@@ -112,7 +113,7 @@
                                                         CornerRadius="4" Padding="6" Margin="0,2">
                                                     <StackPanel>
                                                         <StackPanel Orientation="Horizontal">
-                                                            <RadioButton GroupName="Domyslny" Content="Domyślny"
+                                                            <RadioButton GroupName="{Binding DataContext.Id, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Content="Domyślny"
                                                                          Checked="Domyslny_Checked">
                                                                 <RadioButton.IsChecked>
                                                                     <MultiBinding Converter="{x:Static conv:KonwerterRowneIdWariantu.Instance}">
@@ -124,10 +125,10 @@
                                                             <CheckBox Content="Puste (celowo brak)" Margin="12,0,0,0"
                                                                       IsChecked="{Binding CzyPuste}" VerticalAlignment="Center" />
                                                             <ui:Button Margin="8,0,0,0" Content="Dodaj element"
-                                                                       Command="{Binding DataContext.DataContext.DodajElementCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                       Command="{Binding DataContext.DodajElementCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                        CommandParameter="{Binding}" />
                                                             <ui:Button Margin="4,0,0,0" Appearance="Danger"
-                                                                       Command="{Binding DataContext.DataContext.UsunWariantCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                       Command="{Binding DataContext.UsunWariantCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                        CommandParameter="{Binding}">
                                                                 <ui:SymbolIcon Symbol="Dismiss24" />
                                                             </ui:Button>
@@ -136,21 +137,31 @@
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate>
                                                                     <StackPanel Orientation="Horizontal" Margin="0,2">
-                                                                        <ComboBox MinWidth="110" SelectedValue="{Binding Typ}">
-                                                                            <ComboBoxItem Content="Przedmiot" Tag="0" />
-                                                                            <ComboBoxItem Content="Replika" Tag="1" />
-                                                                            <ComboBoxItem Content="Konfiguracja" Tag="3" ToolTip="Nazwana konfiguracja nośnika (FR-208)" />
+                                                                        <ComboBox MinWidth="110" SelectedValue="{Binding Typ, Mode=TwoWay}" SelectedValuePath="Tag">
+                                                                            <ComboBoxItem Content="Przedmiot" Tag="{x:Static model:TypElementu.Przedmiot}" />
+                                                                            <ComboBoxItem Content="Replika" Tag="{x:Static model:TypElementu.Replika}" />
+                                                                            <ComboBoxItem Content="Komplet" Tag="{x:Static model:TypElementu.Komplet}" />
+                                                                            <ComboBoxItem Content="Konfiguracja" Tag="{x:Static model:TypElementu.KonfiguracjaNosnika}" ToolTip="Nazwana konfiguracja nośnika (FR-208)" />
                                                                         </ComboBox>
                                                                         <ComboBox MinWidth="220" Margin="8,0,0,0"
-                                                                                  ItemsSource="{Binding DataContext.DataContext.DataContext.Przedmioty, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                                                  SelectedValue="{Binding ElementId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
+                                                                                  ItemsSource="{Binding DataContext.Przedmioty, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                                  SelectedValue="{Binding ElementId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa"
+                                                                                  Visibility="{Binding Typ, Converter={StaticResource KonwerterRowneTyp}, ConverterParameter=0}" />
+                                                                        <ComboBox MinWidth="220" Margin="8,0,0,0"
+                                                                                  ItemsSource="{Binding DataContext.Repliki, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                                  SelectedValue="{Binding ElementId}" SelectedValuePath="Id" DisplayMemberPath="ModelProducenta"
+                                                                                  Visibility="{Binding Typ, Converter={StaticResource KonwerterRowneTyp}, ConverterParameter=1}" />
+                                                                        <ComboBox MinWidth="220" Margin="8,0,0,0"
+                                                                                  ItemsSource="{Binding DataContext.Przedmioty, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                                  SelectedValue="{Binding ElementId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa"
+                                                                                  Visibility="{Binding Typ, Converter={StaticResource KonwerterRowneTyp}, ConverterParameter=2}" />
                                                                         <!-- Konfiguracje nośnika jako element wariantu (FR-208) -->
                                                                         <ComboBox MinWidth="220" Margin="8,0,0,0"
-                                                                                  ItemsSource="{Binding DataContext.DataContext.DataContext.KonfiguracjeNosnikow, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                                  ItemsSource="{Binding DataContext.KonfiguracjeNosnikow, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                                   SelectedValue="{Binding ElementId}" SelectedValuePath="Id" DisplayMemberPath="NazwaPelna"
                                                                                   Visibility="{Binding Typ, Converter={StaticResource KonwerterRowneTyp}, ConverterParameter=3}" />
                                                                         <ui:Button Margin="4,0,0,0" Appearance="Danger"
-                                                                                   Command="{Binding DataContext.DataContext.DataContext.UsunElementCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                                   Command="{Binding DataContext.UsunElementCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                                    CommandParameter="{Binding}">
                                                                             <ui:SymbolIcon Symbol="Dismiss24" />
                                                                         </ui:Button>

@@ -39,11 +39,11 @@ public static class CzyscicielReferencji
         }
         foreach (var z in dane.Zestawy)
             foreach (var element in ElementyZestawu(z))
-                if (element.Typ == TypElementu.Przedmiot && element.ElementId == przedmiotId)
+                if ((element.Typ == TypElementu.Przedmiot || element.Typ == TypElementu.Komplet) && element.ElementId == przedmiotId)
                     element.ElementId = "";
         foreach (var w in dane.Wyprawy)
             foreach (var element in w.SkladReczny)
-                if (element.Typ == TypElementu.Przedmiot && element.ElementId == przedmiotId)
+                if ((element.Typ == TypElementu.Przedmiot || element.Typ == TypElementu.Komplet) && element.ElementId == przedmiotId)
                     element.ElementId = "";
         dane.Zadania.RemoveAll(z => z.DotyczyTyp == "Przedmiot" && z.DotyczyId == przedmiotId);
     }

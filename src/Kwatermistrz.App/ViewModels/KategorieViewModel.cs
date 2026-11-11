@@ -20,6 +20,8 @@ public partial class KategorieViewModel : ObservableObject
     /// <summary>Kategorie w kolejności (FR-201).</summary>
     public IReadOnlyList<Kategoria> Kategorie => _dane.Slowniki.Kategorie.OrderBy(k => k.Kolejnosc).ToList();
 
+    public void Odswiez() => OnPropertyChanged(nameof(Kategorie));
+
     /// <summary>Nowa nazwa kategorii.</summary>
     [ObservableProperty]
     private string _nowaNazwa = "";

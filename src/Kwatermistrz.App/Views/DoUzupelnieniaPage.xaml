@@ -23,12 +23,19 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Rodzaj" Binding="{Binding Rodzaj}" Width="180" />
                 <DataGridTextColumn Header="Opis" Binding="{Binding Opis}" Width="*" />
-                <DataGridTemplateColumn Header="Akcja" Width="140">
+                <DataGridTemplateColumn Header="Akcje" Width="220">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <ui:Button Content="Przejrzyj i potwierdź" Appearance="Primary"
-                                       Command="{Binding DataContext.PotwierdzCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                       CommandParameter="{Binding}" />
+                            <StackPanel Orientation="Horizontal">
+                                <ui:Button Content="Otwórz" Appearance="Primary" Margin="0,0,6,0"
+                                           IsEnabled="{Binding MoznaOtworzyc}"
+                                           Command="{Binding DataContext.PrzejrzyjCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                           CommandParameter="{Binding}" />
+                                <ui:Button Content="Potwierdź" ToolTip="Potwierdź po sprawdzeniu danych"
+                                           IsEnabled="{Binding MoznaPotwierdzic}"
+                                           Command="{Binding DataContext.PotwierdzCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                           CommandParameter="{Binding}" />
+                            </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
