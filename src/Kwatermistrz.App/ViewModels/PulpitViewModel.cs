@@ -39,7 +39,7 @@ public partial class PulpitViewModel : ObservableObject
         LacznaLiczbaWypraw = indeks.LacznaLiczbaWypraw;
         WyprawyWRoku = kalk.WyprawyWRoku(DateOnly.FromDateTime(DateTime.Today).Year);
         DataPierwszejWyprawy = kalk.DataPierwszejWyprawy();
-        var ostatnia = _dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(w => (DateOnly?)w.Data).Max();
+        var ostatnia = _dane.Wyprawy.Where(w => !w.CzyUsunieta && w.Data != default).Select(w => (DateOnly?)w.Data).Max();
         DataOstatniejWyprawy = ostatnia;
         DniOdOstatniej = ostatnia != null ? DateOnly.FromDateTime(DateTime.Today).DayNumber - ostatnia.Value.DayNumber : null;
         Kafelki = BudujKafelki(kalk, ostatnia);
@@ -176,11 +176,11 @@ public partial class PulpitViewModel : ObservableObject
                 : null;
             kafelki.Add(new KafelekWyprawy
             {
-                Rok = wyprawa.Data.Year,
+                Rok = Kwatermistrz.Core.Obliczenia.RejestrWypraw.Rok(wyprawa),
                 CzyHistoryczny = false,
                 WyprawaId = wyprawa.Id,
                 MundurId = mundurId,
-                Etykieta = $"{wyprawa.Data:dd.MM.yyyy}{(replika != null ? $" — {replika}" : "")}{(zestaw != null ? $" — {zestaw}" : "")}",
+                Etykieta = $"{(wyprawa.Data == default ? "NN-NN-NNNN" : wyprawa.Data.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture))}{(replika != null ? $" — {replika}" : "")}{(zestaw != null ? $" — {zestaw}" : "")}",
             });
         }
         // kafelki historyczne neutralne, w liczbie zgodnej z licznikiem roku (FR-102)
