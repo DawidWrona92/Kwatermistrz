@@ -230,114 +230,132 @@ public static class CzytnikCsv
 {
     public static ArkuszXlsx Wczytaj(string sciezka)
     {
-        // kodowanie: UTF-8 z BOM lub czysty UTF-8; polskie CSV z Excela bywa w Windows-1250
         var bajty = File.ReadAllBytes(sciezka);
         var tekst = WykryjKodowanie(bajty);
-        // pola w cudzysłowie mogą zawierać nowe linie (RFC 4180) — czytamy jako pola, nie linie
-        var pola = ParsujCalkowicie(tekst);
-        return WczytajZPamieci(pola);
+        // Podział rekordów musi uwzględniać pola wielowierszowe i separatory w cudzysłowach.
+        return WczytajZPamieci(ParsujCalkowicie(tekst));
     }
 
-    /// <summary>Wykrywa kodowanie: BOM UTF-8, potem heurystyka (polskie znaki jako UTF-8 vs pojedyncze bajty Windows-1250).</summary>
+    /// <summary>UTF-8 (z/bez BOM) oraz starsze polskie pliki CP1250.</summary>
     internal static string WykryjKodowanie(byte[] bajty)
     {
         if (bajty.Length >= 3 && bajty[0] == 0xEF && bajty[1] == 0xBB && bajty[2] == 0xBF)
             return System.Text.Encoding.UTF8.GetString(bajty, 3, bajty.Length - 3);
         var jakoUtf8 = System.Text.Encoding.UTF8.GetString(bajty);
-        // błędna sekwencja zastępcza (U+FFFD) oznacza, że to nie UTF-8
         if (!jakoUtf8.Contains('�'))
             return jakoUtf8;
+        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
         return System.Text.Encoding.GetEncoding(1250).GetString(bajty);
     }
 
-    /// <summary>Parsuje cały tekst CSV na pola z podziałem na wiersze; cudzysłowy jak w RFC 4180 (w tym nowe linie w polu).</summary>
+    /// <summary>
+    /// Dzieli CSV na kompletne rekordy, zachowując oryginalne cudzysłowy.
+    /// Inaczej separator w "nazwie; z przecinkiem" po podziale staje się dodatkową kolumną.
+    /// </summary>
     internal static List<string> ParsujCalkowicie(string tekst)
     {
-        var wiersze = new List<string>();
-        var biezacy = new System.Text.StringBuilder();
-        var wCudzyslowiu = false;
+        var wynik = new List<string>();
+        var rekord = new System.Text.StringBuilder();
+        var cytat = false;
         for (var i = 0; i < tekst.Length; i++)
         {
             var znak = tekst[i];
-            if (wCudzyslowiu)
+            if (znak == '"')
             {
-                if (znak == '"')
+                rekord.Append('"');
+                if (cytat && i + 1 < tekst.Length && tekst[i + 1] == '"')
                 {
-                    if (i + 1 < tekst.Length && tekst[i + 1] == '"')
-                    {
-                        biezacy.Append('"');
-                        i++;
-                    }
-                    else
-                        wCudzyslowiu = false;
+                    rekord.Append('"');
+                    i++;
                 }
                 else
-                    biezacy.Append(znak);
+                    cytat = !cytat;
             }
-            else if (znak == '"')
-                wCudzyslowiu = true;
-            else if (znak == '\n' || znak == '\r')
+            else if (!cytat && (znak == '\r' || znak == '\n'))
             {
-                // \r\n jako jedna nowa linia
                 if (znak == '\r' && i + 1 < tekst.Length && tekst[i + 1] == '\n')
                     i++;
-                wiersze.Add(biezacy.ToString());
-                biezacy.Clear();
+                wynik.Add(rekord.ToString());
+                rekord.Clear();
             }
             else
-                biezacy.Append(znak);
+                rekord.Append(znak);
         }
-        if (biezacy.Length > 0)
-            wiersze.Add(biezacy.ToString());
-        return wiersze;
+        if (cytat)
+            throw new InvalidDataException("Plik CSV zawiera niedomknięte cudzysłowy.");
+        if (rekord.Length > 0)
+            wynik.Add(rekord.ToString());
+        return wynik;
     }
 
     public static ArkuszXlsx WczytajZPamieci(IEnumerable<string> linie)
     {
-        var wszystkie = linie.ToList();
-        var separator = wszystkie.FirstOrDefault(l => l != null && (l.Contains(';') || l.Contains(','))) is { } pierwsza
-            ? (pierwsza.Contains(';') ? ';' : ',')
-            : ';';
+        var rekordy = linie.ToList();
+        var pierwszy = rekordy.FirstOrDefault(r => !string.IsNullOrWhiteSpace(r)) ?? "";
+        var separator = WykryjSeparator(pierwszy);
         var arkusz = new ArkuszXlsx { Nazwa = "CSV" };
-        for (var i = 0; i < wszystkie.Count; i++)
-            arkusz.Wiersze.Add(new WierszXlsx { Numer = i + 1, Komorki = ParsujLinie(wszystkie[i], separator) });
+        for (var i = 0; i < rekordy.Count; i++)
+            arkusz.Wiersze.Add(new WierszXlsx
+            {
+                Numer = i + 1,
+                Komorki = ParsujLinie(rekordy[i], separator),
+            });
         return arkusz;
     }
 
-    private static List<string?> ParsujLinie(string linia, char separator)
+    private static char WykryjSeparator(string pierwszy)
+    {
+        var przecinki = 0;
+        var sredniki = 0;
+        var cytat = false;
+        for (var i = 0; i < pierwszy.Length; i++)
+        {
+            var znak = pierwszy[i];
+            if (znak == '"')
+            {
+                if (cytat && i + 1 < pierwszy.Length && pierwszy[i + 1] == '"')
+                    i++;
+                else
+                    cytat = !cytat;
+            }
+            else if (!cytat)
+            {
+                if (znak == ',')
+                    przecinki++;
+                else if (znak == ';')
+                    sredniki++;
+            }
+        }
+        return przecinki > sredniki ? ',' : ';';
+    }
+
+    private static List<string?> ParsujLinie(string rekord, char separator)
     {
         var wynik = new List<string?>();
-        var biezace = new System.Text.StringBuilder();
-        var wCudzyslowiu = false;
-        for (var i = 0; i < linia.Length; i++)
+        var pole = new System.Text.StringBuilder();
+        var cytat = false;
+        for (var i = 0; i < rekord.Length; i++)
         {
-            var znak = linia[i];
-            if (wCudzyslowiu)
+            var znak = rekord[i];
+            if (znak == '"')
             {
-                if (znak == '"')
+                if (cytat && i + 1 < rekord.Length && rekord[i + 1] == '"')
                 {
-                    if (i + 1 < linia.Length && linia[i + 1] == '"')
-                    {
-                        biezace.Append('"');
-                        i++;
-                    }
-                    else
-                        wCudzyslowiu = false;
+                    pole.Append('"');
+                    i++;
                 }
                 else
-                    biezace.Append(znak);
+                    cytat = !cytat;
             }
-            else if (znak == '"')
-                wCudzyslowiu = true;
-            else if (znak == separator)
+            else if (!cytat && znak == separator)
             {
-                wynik.Add(biezace.Length == 0 ? null : biezace.ToString());
-                biezace.Clear();
+                wynik.Add(pole.Length == 0 ? null : pole.ToString());
+                pole.Clear();
             }
             else
-                biezace.Append(znak);
+                pole.Append(znak);
         }
-        wynik.Add(biezace.Length == 0 ? null : biezace.ToString());
+        wynik.Add(pole.Length == 0 ? null : pole.ToString());
         return wynik;
     }
 }
