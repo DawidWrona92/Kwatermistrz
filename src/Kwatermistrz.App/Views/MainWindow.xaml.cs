@@ -438,15 +438,72 @@ public partial class MainWindow : FluentWindow
                     tabela.AlternationCount < 2)
                     throw new InvalidOperationException($"Tabela {ekran} nie ma poprawnego wyglądu/resize.");
 
+                if (!tabela.ColumnWidth.IsStar)
+                    throw new InvalidOperationException($"Tabela {ekran} nie rozciąga kolumn proporcjonalnie.");
+
                 foreach (var kolumna in tabela.Columns.OfType<System.Windows.Controls.DataGridTextColumn>())
                 {
-                    if (!kolumna.Width.IsAuto)
+                    if (!kolumna.Width.IsStar || kolumna.MinWidth < 40)
                         throw new InvalidOperationException(
-                            $"Kolumna tekstowa '{kolumna.Header}' w {ekran} nie dopasowuje się do zawartości.");
+                            $"Kolumna tekstowa '{kolumna.Header}' w {ekran} nie skaluje się z oknem.");
                 }
             }
         }
         PokazEkran("Pulpit");
+    }
+
+    /// <summary>
+    /// Windows UI test: szerokość raportu należy rozdzielić na wszystkie kolumny,
+    /// a nie zostawiać pusty obszar po ostatniej, jak w zgłoszonym zrzucie.
+    /// </summary>
+    public void ZweryfikujProporcjonalneKolumny()
+    {
+        PokazEkran("Raporty");
+        PrzepompujNawigacje();
+        UpdateLayout();
+
+        if (ObszarZawartosci.Content is not RaportyPage widok)
+            throw new InvalidOperationException("Brak ekranu Raportów do testu układu.");
+
+        // Używamy widocznej tabeli z co najmniej pięcioma kolumnami danych,
+        // niezależnie od wybranego rodzaju raportu.
+        var tabela = ZnajdzWizualne<System.Windows.Controls.DataGrid>(widok)
+            .FirstOrDefault(d => d.IsVisible && d.Columns.Count(c => c is System.Windows.Controls.DataGridTextColumn) >= 5)
+            ?? throw new InvalidOperationException("Nie znaleziono widocznej tabeli raportowej.");
+
+        var szerokoscWyjsciowa = tabela.Width;
+        try
+        {
+            tabela.Width = 950;
+            tabela.UpdateLayout();
+            PrzepompujNawigacje();
+            var kolumny = tabela.Columns
+                .Where(c => c.Visibility == Visibility.Visible && c.Width.IsStar)
+                .ToList();
+            if (kolumny.Count < 5)
+                throw new InvalidOperationException("Za mało kolumn z proporcjonalną szerokością.");
+
+            var waskie = kolumny.Select(c => c.ActualWidth).ToArray();
+            tabela.Width = 1350;
+            tabela.UpdateLayout();
+            PrzepompujNawigacje();
+            var szerokie = kolumny.Select(c => c.ActualWidth).ToArray();
+            var rosnie = kolumny.Where((_, i) => szerokie[i] > waskie[i] + 12).Count();
+            if (rosnie < 4)
+                throw new InvalidOperationException(
+                    $"Po poszerzeniu Raportów rośnie tylko {rosnie}/{kolumny.Count} kolumn.");
+
+            var zajeta = kolumny.Sum(c => c.ActualWidth);
+            if (zajeta < tabela.ActualWidth - 45)
+                throw new InvalidOperationException(
+                    $"Kolumny Raportów nie wypełniają tabeli: {zajeta:F0} z {tabela.ActualWidth:F0} px.");
+        }
+        finally
+        {
+            tabela.Width = szerokoscWyjsciowa;
+            tabela.UpdateLayout();
+            PokazEkran("Pulpit");
+        }
     }
 
     /// <summary>Test regresji: realny import repozytoryjnego Excela po pokazaniu okna.</summary>
