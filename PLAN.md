@@ -2,7 +2,7 @@
 
 **Aktualna wersja:** 1.0.3  
 **Aktualny etap:** 1 — Poprawki  
-**Następne zadanie:** 1.1 — Wyprawy  
+**Następne zadanie:** 1.1 — Wyprawy (w trakcie)  
 **Stan prac:** poprawki z audytu są w roboczym [PR #5](https://github.com/DawidWrona92/Kwatermistrz/pull/5); wymagają kompilacji i testów przed scaleniem.
 
 > Ten plik jest główną listą zadań projektu. Aktualizujemy go po zakończeniu każdego punktu.
@@ -41,6 +41,7 @@
 2. Jedno zadanie = jeden jasno opisany zakres zmian, testy i commit (lub osobny PR, gdy zakres jest większy).
 3. Zaznaczamy `[x]` **dopiero po sprawdzeniu działania**; sam napisany kod nie oznacza ukończonego zadania.
 4. Po każdym zadaniu aktualizujemy **Następne zadanie** i ten plik. Nowe błędy dopisujemy do odpowiedniego etapu.
-5. Nie zmieniamy reguł obliczeń ani schematu zapisanych danych bez testów zgodności i planu migracji.
+5. **Backward compatibility bazy jest obowiązkowa.** Każda nowa wersja musi poprawnie czytać istniejące pliki `dane.json` (w tym starsze formaty), zachować ich identyfikatory, historię, zdjęcia, powiązania i liczniki. Nie wolno po cichu wyzerować, nadpisać ani przeliczyć danych historycznych.
+6. Zmiana schematu lub reguł obliczeń wymaga testów zgodności na starej bazie, scenariusza migracji, kopii zapasowej przed migracją oraz możliwości odzyskania danych. **W zadaniu 1.1 nie zmieniamy schematu JSON.**
 
 **Szczegóły aktualnego audytu:** [docs/audyt-2026-11-11.md](docs/audyt-2026-11-11.md).
