@@ -135,7 +135,10 @@ public partial class App : Application
             mainWindow.ZweryfikujTabeleIPasekTytulu();
             mainWindow.ZweryfikujProporcjonalneKolumny();
             if (e.Args.Length >= 2 && !string.IsNullOrWhiteSpace(e.Args[1]))
+            {
                 mainWindow.ZweryfikujGalerieZestawu();
+                mainWindow.ZweryfikujPierwszyRenderWyposazenia();
+            }
             mainWindow.ZweryfikujJednoZaznaczenieMenu();
             mainWindow.ZweryfikujKoloryPulpitu();
             mainWindow.Close();
