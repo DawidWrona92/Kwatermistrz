@@ -50,6 +50,7 @@ public static class ProporcjonalneKolumny
     {
         private readonly DataGrid _tabela;
         private readonly Dictionary<DataGridColumn, double> _wagi = new();
+        private readonly Dictionary<DataGridColumn, double> _ostatniAutomat = new();
         private readonly HashSet<DataGridColumn> _reczne = new();
         private readonly DependencyPropertyDescriptor _szerokosc =
             DependencyPropertyDescriptor.FromProperty(DataGridColumn.WidthProperty, typeof(DataGridColumn))
@@ -84,6 +85,7 @@ public static class ProporcjonalneKolumny
             foreach (var kolumna in _wagi.Keys)
                 _szerokosc.RemoveValueChanged(kolumna, UzytkownikZmienilSzerokosc);
             _wagi.Clear();
+            _ostatniAutomat.Clear();
             _reczne.Clear();
         }
 
@@ -161,6 +163,20 @@ public static class ProporcjonalneKolumny
             if (pionowyPasek != null && pionowyPasek.Visibility == Visibility.Visible)
                 dostepna -= pionowyPasek.ActualWidth;
 
+            // DataGridColumn.Width nie zawsze emituje natychmiastowe powiadomienie
+            // DependencyPropertyDescriptor przy zmianie przez separator/klawiaturę.
+            // Przed własnym przeliczeniem porównujemy wartość z ostatnią nadaną
+            // przez automat, aby nie nadpisywać ręcznej korekty użytkownika.
+            foreach (var kolumna in _wagi.Keys)
+            {
+                if (_reczne.Contains(kolumna) ||
+                    !_ostatniAutomat.TryGetValue(kolumna, out var poprzednia) ||
+                    !kolumna.Width.IsAbsolute)
+                    continue;
+                if (Math.Abs(kolumna.Width.Value - poprzednia) > 0.5)
+                    _reczne.Add(kolumna);
+            }
+
             var stale = _tabela.Columns.Where(k =>
                     k.Visibility == Visibility.Visible && (!_wagi.ContainsKey(k) || _reczne.Contains(k)))
                 .Sum(k => Math.Max(k.MinWidth, k.ActualWidth));
@@ -186,6 +202,7 @@ public static class ProporcjonalneKolumny
                     // Nie przeliczaj przy niezmienionym wymiarze — mniej pracy dla WPF.
                     if (Math.Abs(kolumna.ActualWidth - szerokosc) > 0.5)
                         kolumna.Width = new DataGridLength(szerokosc, DataGridLengthUnitType.Pixel);
+                    _ostatniAutomat[kolumna] = kolumna.Width.Value;
                 }
                 _ostatniaSzerokosc = calkowita;
             }
