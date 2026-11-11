@@ -207,7 +207,7 @@ public static class EksporterXlsx
         foreach (var w in dane.Wyprawy.Where(w => !w.CzyUsunieta).OrderBy(w => w.Data))
         {
             arkusz.Wiersze.Add(new WierszEksportu(
-                w.Data.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture),
+                w.Data == default ? "NN-NN-NNNN" : w.Data.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture),
                 w.Miejsce,
                 w.ReplikaGlownaId != null ? dane.Repliki.FirstOrDefault(r => r.Id == w.ReplikaGlownaId)?.ModelProducenta : null,
                 w.ZestawId != null ? dane.Zestawy.FirstOrDefault(z => z.Id == w.ZestawId)?.Nazwa : null,
