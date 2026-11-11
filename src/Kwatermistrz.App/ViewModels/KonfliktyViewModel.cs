@@ -27,6 +27,7 @@ public partial class KonfliktyViewModel : ObservableObject
 {
     private readonly DaneAplikacji _dane;
     private readonly MagazynJson _magazyn;
+    public event Action? DaneUzgodnione;
 
     public KonfliktyViewModel(DaneAplikacji dane, MagazynJson magazyn)
     {
