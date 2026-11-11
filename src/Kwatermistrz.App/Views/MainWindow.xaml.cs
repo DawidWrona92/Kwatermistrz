@@ -537,13 +537,16 @@ public partial class MainWindow : FluentWindow
                 .Single(k => Equals(k.Header, "Komentarz"));
             kolumnaNazwa.Width = new System.Windows.Controls.DataGridLength(260);
             PrzepompujNawigacje();
+            var nazwaPrzed = kolumnaNazwa.ActualWidth;
             var komentarzPrzed = kolumnaKomentarz.ActualWidth;
             okno.Width = 1850;
             okno.UpdateLayout();
             PrzepompujNawigacje();
             if (Math.Abs(kolumnaNazwa.ActualWidth - 260) > 2)
                 throw new InvalidOperationException(
-                    "Zmiana rozmiaru okna nadpisuje ręcznie wybraną szerokość kolumny.");
+                    $"Zmiana rozmiaru okna nadpisuje ręcznie wybraną szerokość kolumny: " +
+                    $"przed={nazwaPrzed:F1}, po={kolumnaNazwa.ActualWidth:F1}, " +
+                    $"Width={kolumnaNazwa.Width}, okno={okno.ActualWidth:F0}.");
             if (kolumnaKomentarz.ActualWidth < komentarzPrzed + 10)
                 throw new InvalidOperationException(
                     "Pozostałe kolumny nie wykorzystują przestrzeni po poszerzeniu okna.");
