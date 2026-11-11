@@ -337,6 +337,7 @@ public partial class WyprawyViewModel : ObservableObject
         _magazyn.ZapiszDebounce(_dane);
         Nowa = new Wyprawa { Data = DateOnly.FromDateTime(DateTime.Today), ZestawId = nowa.ZestawId };
         Odswiez();
+        Wybrana = Wiersze.FirstOrDefault(w => w.Id == nowa.Id);
     }
 
     /// <summary>Zapisuje szkic; w przypadku błędu oryginał zostaje bez zmian.</summary>
@@ -411,7 +412,11 @@ public partial class WyprawyViewModel : ObservableObject
             return;
         }
         _magazyn.ZapiszDebounce(_dane);
-        Odswiez();
+        if (PokazUsuniete)
+            PokazUsuniete = false; // Przejdź do listy aktywnych, żeby użytkownik widział wynik.
+        else
+            Odswiez();
+        Wybrana = Wiersze.FirstOrDefault(w => w.Id == wiersz.Id);
     }
 
     /// <summary>Nazwa repliki po Id.</summary>
