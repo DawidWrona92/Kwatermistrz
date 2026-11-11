@@ -458,74 +458,62 @@ public partial class MainWindow : FluentWindow
     /// </summary>
     public void ZweryfikujProporcjonalneKolumny()
     {
-        // Zmieniamy także aktualną nawigację VM, nie tylko Frame.
-        // Poprzedni smoke może jeszcze kończyć asynchroniczne Navigate(Pulpit).
-        ViewModel!.NawigujCommand.Execute("Raporty");
-        PokazEkran("Raporty");
-        for (var proba = 0; proba < 12 &&
-             ObszarZawartosci.Content is not RaportyPage; proba++)
-        {
-            var klatka = new System.Windows.Threading.DispatcherFrame();
-            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle,
-                new Action(() => klatka.Continue = false));
-            System.Windows.Threading.Dispatcher.PushFrame(klatka);
-        }
-        UpdateLayout();
-
-        if (ObszarZawartosci.Content is not RaportyPage widok)
-            throw new InvalidOperationException(
-                $"Brak ekranu Raportów do testu układu (aktywny: " +
-                $"{ObszarZawartosci.Content?.GetType().Name ?? "null"}, " +
-                $"VM: {ViewModel.AktualnyEkran}).");
-
-        // Dokładnie ten raport, którego zrzut użytkownik załączył:
-        // Umundurowanie z siedmioma kolumnami danych.
+        // Izolowane okno hostuje prawdziwy RaportyPage. Frame.Navigate ma własną
+        // kolejkę i potrafi przełączać poprzednią stronę w trakcie pomiaru;
+        // UI test ma badać resize, a nie wyścig kolejki nawigacji.
+        var poprzedniRaport = ViewModel!.Raporty.WybranyRaport;
         ViewModel.Raporty.WybranyRaport = "Umundurowanie";
-        PrzepompujNawigacje();
-        widok.UpdateLayout();
-        var tabela = ZnajdzWizualne<System.Windows.Controls.DataGrid>(widok)
-            .FirstOrDefault(d => d.IsVisible && d.Columns.Count(c => c is System.Windows.Controls.DataGridTextColumn) >= 5)
-            ?? throw new InvalidOperationException("Nie znaleziono widocznej tabeli raportowej.");
-
-        var szerokoscWyjsciowa = tabela.Width;
+        var widok = new RaportyPage { DataContext = ViewModel.Raporty };
+        var okno = new Window
+        {
+            Title = "Kwatermistrz — test szerokości kolumn",
+            Owner = this,
+            ShowInTaskbar = false,
+            WindowStartupLocation = WindowStartupLocation.Manual,
+            Left = 30,
+            Top = 30,
+            Width = 950,
+            Height = 650,
+            Content = widok,
+        };
         try
         {
-            tabela.Width = 950;
-            tabela.InvalidateMeasure();
-            widok.UpdateLayout();
+            okno.Show();
             PrzepompujNawigacje();
-            tabela.UpdateLayout();
+            okno.UpdateLayout();
+
+            var tabela = ZnajdzWizualne<System.Windows.Controls.DataGrid>(widok)
+                .SingleOrDefault(d => d.IsVisible &&
+                    d.Columns.Count(c => c is System.Windows.Controls.DataGridTextColumn) == 7)
+                ?? throw new InvalidOperationException("Nie załadowano siedmiu kolumn raportu Umundurowanie.");
             var kolumny = tabela.Columns
                 .Where(c => c.Visibility == Visibility.Visible && c.Width.IsStar)
                 .ToList();
-            if (kolumny.Count < 5)
-                throw new InvalidOperationException("Za mało kolumn z proporcjonalną szerokością.");
+            if (kolumny.Count != 7)
+                throw new InvalidOperationException("Raport Umundurowanie nie ma 7 elastycznych kolumn.");
 
             var waskie = kolumny.Select(c => c.ActualWidth).ToArray();
-            tabela.Width = 1350;
-            tabela.InvalidateMeasure();
-            widok.UpdateLayout();
+            var szerokoscWaska = tabela.ActualWidth;
+            okno.Width = 1350;
+            okno.UpdateLayout();
             PrzepompujNawigacje();
-            tabela.UpdateLayout();
+            okno.UpdateLayout();
             var szerokie = kolumny.Select(c => c.ActualWidth).ToArray();
             var rosnie = kolumny.Where((_, i) => szerokie[i] > waskie[i] + 12).Count();
             if (rosnie < 4)
                 throw new InvalidOperationException(
                     $"Po poszerzeniu Raportów rośnie tylko {rosnie}/{kolumny.Count} kolumn; " +
-                    $"tabela={tabela.ActualWidth:F0}px, Width={tabela.Width:F0}, " +
+                    $"tabela: {szerokoscWaska:F0} -> {tabela.ActualWidth:F0} px; " +
                     $"przed=[{string.Join(", ", waskie.Select(w => w.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)))}], " +
                     $"po=[{string.Join(", ", szerokie.Select(w => w.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)))}].");
 
-            var zajeta = kolumny.Sum(c => c.ActualWidth);
-            if (zajeta < tabela.ActualWidth - 45)
-                throw new InvalidOperationException(
-                    $"Kolumny Raportów nie wypełniają tabeli: {zajeta:F0} z {tabela.ActualWidth:F0} px.");
+            if (kolumny.Sum(c => c.ActualWidth) < tabela.ActualWidth - 45)
+                throw new InvalidOperationException("Po rozszerzeniu okna kolumny nie wypełniają szerokości tabeli.");
         }
         finally
         {
-            tabela.Width = szerokoscWyjsciowa;
-            tabela.UpdateLayout();
-            PokazEkran("Pulpit");
+            okno.Close();
+            ViewModel.Raporty.WybranyRaport = poprzedniRaport;
         }
     }
 
