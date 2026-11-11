@@ -153,11 +153,30 @@ public static class EksportRekonstrukcji
             // strażnik zip-slip: plik musi leżeć w katalogu danych; porównanie bez wielkości liter — Windows (NTFS) ich nie rozróżnia
             if (!pelna.StartsWith(katalogPelny + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
                 continue;
+            // Zdjęcia odbiorcy mają pierwszeństwo: import nie może nadpisywać istniejących plików
+            // nawet gdy dwa eksporty używają identycznej ścieżki względnej.
+            if (string.IsNullOrWhiteSpace(wzgledna) || wpis.FullName.EndsWith("/", StringComparison.Ordinal)
+                || File.Exists(pelna))
+                continue;
             Directory.CreateDirectory(Path.GetDirectoryName(pelna)!);
-            using var zrodlo = wpis.Open();
-            using var docel = File.Create(pelna);
-            zrodlo.CopyTo(docel);
-            liczba++;
+            var tymczasowy = pelna + ".import-" + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                using (var zrodlo = wpis.Open())
+                using (var docel = new FileStream(tymczasowy, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    zrodlo.CopyTo(docel);
+                // Atomowo: bez nadpisywania. Przerwany import nie zostawia częściowego zdjęcia pod nazwą docelową.
+                if (!File.Exists(pelna))
+                {
+                    File.Move(tymczasowy, pelna);
+                    liczba++;
+                }
+            }
+            finally
+            {
+                if (File.Exists(tymczasowy))
+                    File.Delete(tymczasowy);
+            }
         }
         return liczba;
     }
