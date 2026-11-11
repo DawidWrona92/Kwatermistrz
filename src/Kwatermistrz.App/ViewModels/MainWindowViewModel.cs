@@ -238,7 +238,22 @@ public partial class MainWindowViewModel : ObservableObject
         get => _stan.AktywnaRekonstrukcjaId ?? "";
         set
         {
-            _stan.AktywnaRekonstrukcjaId = string.IsNullOrWhiteSpace(value) ? null : value;
+            var noweId = string.IsNullOrWhiteSpace(value) ? null : value;
+            if (string.Equals(_stan.AktywnaRekonstrukcjaId, noweId, StringComparison.Ordinal))
+                return;
+
+            _stan.AktywnaRekonstrukcjaId = noweId;
+            // Nie wystarcza OnPropertyChanged: każda lista buforuje wiersze
+            // obliczone dla poprzedniej rekonstrukcji. Odświeżamy bez zmiany
+            // ItemsSource samego ComboBox (RekonstrukcjeLista), żeby nie wywołać
+            // ponownie SelectionChanged i nie resetować wybranego filtra.
+            Pulpit.Odswiez();
+            Wyposazenie.Odswiez();
+            Repliki.Odswiez();
+            Zestawy.Odswiez();
+            Wyprawy.Odswiez();
+            Raporty.Odswiez();
+            DoUzupelnienia.Odswiez();
             OnPropertyChanged(nameof(AktywnaRekonstrukcjaId));
             OnPropertyChanged(nameof(AktywnaRekonstrukcjaNazwa));
         }
