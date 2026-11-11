@@ -39,6 +39,11 @@ public static class TransakcjaDanych
         if (ReferenceEquals(cel, nowyStan))
             return;
 
+        // Weryfikacja CAŁEGO grafu przed rozpoczęciem przepisywania czegokolwiek.
+        // Duplikat Id w późniejszej kolekcji nie może przerwać commitu w połowie.
+        SprawdzUnikalneId(cel);
+        SprawdzUnikalneId(nowyStan);
+
         ScalWgId(cel.Przedmioty, nowyStan.Przedmioty, p => p.Id);
         ScalWgId(cel.Repliki, nowyStan.Repliki, r => r.Id);
         ScalWgId(cel.Zestawy, nowyStan.Zestawy, z => z.Id);
@@ -53,6 +58,37 @@ public static class TransakcjaDanych
         cel.WersjaRegul = nowyStan.WersjaRegul;
         cel.CzyPierwszeUruchomienie = nowyStan.CzyPierwszeUruchomienie;
         cel.OstatniaZmiana = DateTime.Now;
+    }
+
+    private static void SprawdzUnikalneId(DaneAplikacji dane)
+    {
+        static void Sprawdz<T>(IEnumerable<T> elementy, Func<T, string> id, string nazwa)
+        {
+            var duplikaty = elementy.GroupBy(id, StringComparer.Ordinal)
+                .Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+            if (duplikaty.Count > 0)
+                throw new InvalidDataException(
+                    $"Duplikaty identyfikatorów w {nazwa}: {string.Join(", ", duplikaty)}");
+        }
+
+        Sprawdz(dane.Przedmioty, x => x.Id, "Przedmioty");
+        Sprawdz(dane.Repliki, x => x.Id, "Repliki");
+        Sprawdz(dane.Zestawy, x => x.Id, "Zestawy");
+        Sprawdz(dane.Wyprawy, x => x.Id, "Wyprawy");
+        Sprawdz(dane.Rekonstrukcje, x => x.Id, "Rekonstrukcje");
+        Sprawdz(dane.Zadania, x => x.Id, "Zadania");
+        Sprawdz(dane.SzablonyKart, x => x.Id, "Szablony kart");
+        Sprawdz(dane.Slowniki.Strony, x => x.Id, "Słownik stron");
+        Sprawdz(dane.Slowniki.Wzory, x => x.Id, "Wzory");
+        Sprawdz(dane.Slowniki.Miejsca, x => x.Id, "Miejsca");
+        Sprawdz(dane.Slowniki.Role, x => x.Id, "Role");
+        Sprawdz(dane.Slowniki.TypyMagazynkow, x => x.Id, "Typy magazynków");
+        Sprawdz(dane.Slowniki.Napedy, x => x.Id, "Napędy");
+        Sprawdz(dane.Slowniki.StanyReplik, x => x.Id, "Stany replik");
+        Sprawdz(dane.Slowniki.Pochodzenie, x => x.Id, "Pochodzenie");
+        Sprawdz(dane.Slowniki.RodzajeKosztow, x => x.Id, "Rodzaje kosztów");
+        Sprawdz(dane.Slowniki.RodzajeZadan, x => x.Id, "Rodzaje zadań");
+        Sprawdz(dane.Slowniki.Kategorie, x => x.Id, "Kategorie");
     }
 
     private static void ScalSlowniki(Slowniki cel, Slowniki nowe)
