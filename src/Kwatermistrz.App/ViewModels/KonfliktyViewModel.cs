@@ -168,6 +168,7 @@ public partial class KonfliktyViewModel : ObservableObject
             }
             _magazyn.Zapisz(_dane);
             Odswiez();
+            DaneUzgodnione?.Invoke();
         }
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
         {
