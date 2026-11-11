@@ -154,7 +154,9 @@ public partial class WyposazenieViewModel : ObservableObject
             w.PropertyChanged -= ZaznaczenieWierszaZmienione;
         Wiersze.Clear();
         var kategorie = _dane.Slowniki.Kategorie.ToDictionary(k => k.Id, k => k.CzyNosnik);
-        var miejsca = _dane.Slowniki.Miejsca.ToDictionary(m => m.Id, m => m.Nazwa);
+        var miejsca = _dane.Slowniki.Miejsca
+            .GroupBy(m => m.Id)
+            .ToDictionary(g => g.Key, g => g.First().Nazwa);
         foreach (var p in zapytanie.OrderBy(p => p.Nazwa, StringComparer.CurrentCulture))
         {
             var nazwaMiejsca = string.IsNullOrWhiteSpace(p.MiejsceId) ? "—" :
@@ -231,6 +233,7 @@ public partial class WyposazenieViewModel : ObservableObject
         TylkoBezUzycia = false;
         var przedmiot = new Przedmiot { KategoriaId = kategoria.Id };
         _dane.Przedmioty.Add(przedmiot);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
         Wybrany = Wiersze.FirstOrDefault(w => w.Id == przedmiot.Id);
     }
@@ -312,9 +315,11 @@ public partial class WyposazenieViewModel : ObservableObject
         if (wiersz == null)
             return;
         var odpowiedz = System.Windows.MessageBox.Show(
+            System.Windows.Application.Current.MainWindow,
             $"Usunąć przedmiot „{wiersz.Przedmiot.Nazwa}”?\n\n" +
             "Przedmiot zostanie odłączony od kompletu i nośnika oraz usunięty z konfiguracji i zestawów.",
-            "Kwatermistrz", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
+            "Potwierdź usunięcie jednego przedmiotu", System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning, System.Windows.MessageBoxResult.No);
         if (odpowiedz != System.Windows.MessageBoxResult.Yes)
             return;
         CzyscicielReferencji.UsunReferencjePrzedmiotu(_dane, wiersz.Przedmiot.Id);
