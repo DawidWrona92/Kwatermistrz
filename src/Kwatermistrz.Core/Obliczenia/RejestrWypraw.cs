@@ -15,15 +15,39 @@ public static class RejestrWypraw
     public static IReadOnlyList<PozycjaHistoryczna> Nierozpoznane(DaneAplikacji dane)
     {
         var wynik = new List<PozycjaHistoryczna>();
-        var nr = 0;
-        foreach (var (rok, liczba) in dane.Ustawienia.HistoryczneWyprawyWgRok
-                     .Where(p => p.Value > 0).OrderBy(p => p.Key))
-            for (var i = 0; i < Math.Min(liczba, 100000); i++)
+        var znaneWgRoku = dane.Wyprawy
+            .Where(w => !w.CzyUsunieta && w.CzyHistoryczna && w.RokHistoryczny is not null)
+            .GroupBy(w => w.RokHistoryczny!.Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        // Zakres numerów danego roku jest stały, nawet po rozpoznaniu kilku
+        // jego wypraw. Inaczej Wyprawa_1 byłaby nadawana ponownie po zapisaniu
+        // pierwszego anonimowego rekordu.
+        var lata = dane.Ustawienia.HistoryczneWyprawyWgRok.Keys
+            .Concat(znaneWgRoku.Keys).Distinct().OrderBy(x => x);
+        var poprzednieLata = 0;
+        foreach (var rok in lata)
+        {
+            dane.Ustawienia.HistoryczneWyprawyWgRok.TryGetValue(rok, out var nierozpoznane);
+            znaneWgRoku.TryGetValue(rok, out var znane);
+            var zakres = Math.Max(0, nierozpoznane) + (znane?.Count ?? 0);
+            var zajete = (znane ?? new List<Wyprawa>())
+                .Select(w => w.NazwaHistoryczna)
+                .Where(n => n != null && n.StartsWith("Wyprawa_", StringComparison.Ordinal))
+                .Select(n => int.TryParse(n!["Wyprawa_".Length..], out var numer) ? numer : -1)
+                .ToHashSet();
+            var dodane = 0;
+            for (var i = 1; i <= zakres && dodane < nierozpoznane && i <= 100000; i++)
             {
-                nr++;
+                var numer = poprzednieLata + i;
+                if (zajete.Contains(numer))
+                    continue;
                 wynik.Add(new PozycjaHistoryczna(
-                    $"hist:{rok}:{i + 1}", $"Wyprawa_{nr}", rok, nr));
+                    $"hist:{rok}:{i}", $"Wyprawa_{numer}", rok, numer));
+                dodane++;
             }
+            poprzednieLata += zakres;
+        }
         return wynik;
     }
 
