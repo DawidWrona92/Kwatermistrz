@@ -308,7 +308,7 @@ public partial class WyprawyViewModel : ObservableObject
         if (wiersz == null)
             return;
         var odpowiedz = System.Windows.MessageBox.Show(
-            $"Usunąć wyprawę z dnia {wiersz.Wyprawa.Data:dd.MM.yyyy}?\\nMożna ją później przywrócić.",
+            $"Usunąć wyprawę z dnia {wiersz.Wyprawa.Data:dd.MM.yyyy}?\nMożna ją później przywrócić.",
             "Kwatermistrz", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
         if (odpowiedz != System.Windows.MessageBoxResult.Yes)
             return;
