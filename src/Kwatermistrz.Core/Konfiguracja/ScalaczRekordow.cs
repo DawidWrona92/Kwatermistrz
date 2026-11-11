@@ -24,8 +24,14 @@ public static class ScalaczRekordow
         var mapaReplik = new Dictionary<string, string>(StringComparer.Ordinal);
         var mapaZestawow = new Dictionary<string, string>(StringComparer.Ordinal);
         var mapaSlotowSzablonu = new Dictionary<string, string>(StringComparer.Ordinal);
+        var noweRekonstrukcje = new List<Rekonstrukcja>();
+        var nowePrzedmioty = new List<Przedmiot>();
+        var noweRepliki = new List<Replika>();
+        var noweZestawy = new List<Zestaw>();
+        var noweZadania = new List<Zadanie>();
+        var noweWyprawy = new List<Wyprawa>();
 
-        pominiete += ScalListy(docelowe.Rekonstrukcje, eksport.Rekonstrukcje, r => r.Id, mapaRekonstrukcji);
+        pominiete += ScalListy(docelowe.Rekonstrukcje, eksport.Rekonstrukcje, r => r.Id, mapaRekonstrukcji, noweRekonstrukcje);
         // sloty szablonu: mapa po Id (sloty zestawów wskazują SzablonSlotId — musi wskazywać lokalny slot)
         foreach (var rekEksport in eksport.Rekonstrukcje)
             if (mapaRekonstrukcji.TryGetValue(rekEksport.Id, out var rekLokalna))
@@ -36,29 +42,32 @@ public static class ScalaczRekordow
                     if (slotLokalny != null)
                         mapaSlotowSzablonu[slotEksport.Id] = slotLokalny.Id;
                 }
-        pominiete += ScalListy(docelowe.Przedmioty, eksport.Przedmioty, p => p.Id, mapaPrzedmiotow);
-        pominiete += ScalListy(docelowe.Repliki, eksport.Repliki, r => r.Id, mapaReplik);
-        pominiete += ScalListy(docelowe.Zestawy, eksport.Zestawy, z => z.Id, mapaZestawow);
-        pominiete += ScalListy(docelowe.Zadania, eksport.Zadania, z => z.Id, new Dictionary<string, string>(StringComparer.Ordinal));
-        pominiete += ScalListy(docelowe.Wyprawy, eksport.Wyprawy, w => w.Id, new Dictionary<string, string>(StringComparer.Ordinal));
+        pominiete += ScalListy(docelowe.Przedmioty, eksport.Przedmioty, p => p.Id, mapaPrzedmiotow, nowePrzedmioty);
+        pominiete += ScalListy(docelowe.Repliki, eksport.Repliki, r => r.Id, mapaReplik, noweRepliki);
+        pominiete += ScalListy(docelowe.Zestawy, eksport.Zestawy, z => z.Id, mapaZestawow, noweZestawy);
+        pominiete += ScalListy(docelowe.Zadania, eksport.Zadania, z => z.Id, new Dictionary<string, string>(StringComparer.Ordinal), noweZadania);
+        pominiete += ScalListy(docelowe.Wyprawy, eksport.Wyprawy, w => w.Id, new Dictionary<string, string>(StringComparer.Ordinal), noweWyprawy);
 
-        // przemapuj referencje we wszystkich rekordach lokalnych (tak\u017ce ju\u017c istniej\u0105cych \u2014 ich s\u0142owniki mog\u0142y si\u0119 zmieni\u0107)
-        foreach (var p in docelowe.Przedmioty)
+        // ZMIENIAMY WYŁĄCZNIE NOWO ZAIMPORTOWANE REKORDY.
+        // Mapy pakietu zawierają Id obcego źródła, a nie pełny słownik lokalnej bazy.
+        // Przepisanie wszystkich lokalnych rekordów zerowałoby ich kategorie i referencje.
+        foreach (var p in nowePrzedmioty)
             PrzemapujPrzedmiot(p, mapy, mapaPrzedmiotow, mapaRekonstrukcji);
-        foreach (var r in docelowe.Repliki)
+        foreach (var r in noweRepliki)
             PrzemapujReplika(r, mapy, mapaRekonstrukcji);
-        foreach (var z in docelowe.Zestawy)
+        foreach (var z in noweZestawy)
             PrzemapujZestaw(z, mapy, mapaRekonstrukcji, mapaPrzedmiotow, mapaReplik, mapaSlotowSzablonu);
-        foreach (var w in docelowe.Wyprawy)
+        foreach (var w in noweWyprawy)
             PrzemapujWyprawe(w, mapaRekonstrukcji, mapaReplik, mapaZestawow, mapaPrzedmiotow);
-        foreach (var z in docelowe.Zadania)
+        foreach (var z in noweZadania)
             PrzemapujZadanie(z, mapy, mapaPrzedmiotow, mapaReplik, mapaZestawow);
 
         return new WynikScalania(pominiete);
     }
 
     /// <summary>Pomija rekordy o Id ju\u017c istniej\u0105cym; nowe dopisuje i zapisuje w mapie. Zwraca liczb\u0119 pomini\u0119tych.</summary>
-    private static int ScalListy<T>(List<T> docelowa, List<T> eksport, Func<T, string> klucz, Dictionary<string, string> mapa) where T : class
+    private static int ScalListy<T>(List<T> docelowa, List<T> eksport, Func<T, string> klucz,
+        Dictionary<string, string> mapa, List<T> dodane) where T : class
     {
         var istniejace = docelowa.Select(klucz).ToHashSet(StringComparer.Ordinal);
         var pominiete = 0;
@@ -72,6 +81,7 @@ public static class ScalaczRekordow
             }
             istniejace.Add(id);
             docelowa.Add(rekord);
+            dodane.Add(rekord);
             mapa[id] = id;
         }
         return pominiete;
