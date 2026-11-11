@@ -458,12 +458,25 @@ public partial class MainWindow : FluentWindow
     /// </summary>
     public void ZweryfikujProporcjonalneKolumny()
     {
+        // Zmieniamy także aktualną nawigację VM, nie tylko Frame.
+        // Poprzedni smoke może jeszcze kończyć asynchroniczne Navigate(Pulpit).
+        ViewModel!.NawigujCommand.Execute("Raporty");
         PokazEkran("Raporty");
-        PrzepompujNawigacje();
+        for (var proba = 0; proba < 12 &&
+             ObszarZawartosci.Content is not RaportyPage; proba++)
+        {
+            var klatka = new System.Windows.Threading.DispatcherFrame();
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle,
+                new Action(() => klatka.Continue = false));
+            System.Windows.Threading.Dispatcher.PushFrame(klatka);
+        }
         UpdateLayout();
 
         if (ObszarZawartosci.Content is not RaportyPage widok)
-            throw new InvalidOperationException("Brak ekranu Raportów do testu układu.");
+            throw new InvalidOperationException(
+                $"Brak ekranu Raportów do testu układu (aktywny: " +
+                $"{ObszarZawartosci.Content?.GetType().Name ?? "null"}, " +
+                $"VM: {ViewModel.AktualnyEkran}).");
 
         // Używamy widocznej tabeli z co najmniej pięcioma kolumnami danych,
         // niezależnie od wybranego rodzaju raportu.
