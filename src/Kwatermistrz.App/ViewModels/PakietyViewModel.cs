@@ -316,18 +316,21 @@ public partial class PakietyViewModel : ObservableObject
                 ImporterPakietuKonfiguracji.Zastosuj(robocza, _podglad);
                 return true;
             });
+            _magazyn.ZapiszDebounce(_dane);
             _magazyn.Zapisz(_dane);
             Komunikat = $"Zaimportowano: {_podglad.LiczbaWartosciDoDodania} nowych wartości, " +
                 $"{_podglad.LiczbaWartosciDoScalenia} scalonych, {_podglad.LiczbaRekonstrukcjiDoDodania} rekonstrukcji, " +
                 $"{_podglad.LiczbaSzablonowDoDodania} szablonów kart.";
-            DaneZmienione?.Invoke();
             _podglad = null;
             Wiersze.Clear();
             SciezkaPakietu = "";
             InfoPakietu = "";
+            OnPropertyChanged(nameof(MaPodglad));
+            DaneZmienione?.Invoke();
         }
         catch (Exception ex)
         {
+            UniewaznijPodgladPoZmianieDanych();
             Komunikat = "Błąd importu: " + ex.Message;
         }
     }
