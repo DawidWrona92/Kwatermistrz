@@ -513,8 +513,8 @@ public partial class MainWindow : FluentWindow
                 throw new InvalidOperationException(
                     $"Po poszerzeniu Raportów rośnie tylko {rosnie}/{kolumny.Count} kolumn; " +
                     $"tabela={tabela.ActualWidth:F0}px, Width={tabela.Width:F0}, " +
-                    $"przed=[{string.Join(", ", waskie.Select(w => w.ToString("F0")))}], " +
-                    $"po=[{string.Join(", ", szerokie.Select(w => w.ToString("F0")))}].");
+                    $"przed=[{string.Join(", ", waskie.Select(w => w.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)))}], " +
+                    $"po=[{string.Join(", ", szerokie.Select(w => w.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)))}].");
 
             var zajeta = kolumny.Sum(c => c.ActualWidth);
             if (zajeta < tabela.ActualWidth - 45)
