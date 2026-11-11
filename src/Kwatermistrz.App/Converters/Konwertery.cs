@@ -63,6 +63,21 @@ public class KonwerterNazwySlownika : IValueConverter
         => Binding.DoNothing;
 }
 
+/// <summary>Id oraz słownik przekazane przez MultiBinding → czytelna nazwa zamiast GUID.</summary>
+public sealed class KonwerterNazwySlownikaMulti : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values.Length >= 2 && values[0] is string id &&
+            values[1] is IEnumerable<WartoscSlownika> slownik)
+            return slownik.FirstOrDefault(w => w.Id == id)?.Nazwa ?? "";
+        return "";
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
 /// <summary>Wiele Id → nazwy połączone przecinkiem.</summary>
 public class KonwerterNazwSlownikaWiele : IValueConverter
 {
