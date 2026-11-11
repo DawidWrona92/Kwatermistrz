@@ -135,8 +135,7 @@ public class MagazynJson
     {
         var json = File.ReadAllText(sciezka);
         var dane = DeserializujZMigracja(json) ?? throw new InvalidDataException("Pusty dokument");
-        if (dane.SchemaVersion > AktualnaWersjaSchematu)
-            throw new InvalidDataException("Dane pochodzą z nowszej wersji aplikacji");
+        Waliduj(dane); // także ręcznie wskazany backup musi spełniać warunki integralności
         Migruj(dane);
         return dane;
     }
