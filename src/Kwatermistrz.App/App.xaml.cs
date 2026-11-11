@@ -94,6 +94,7 @@ public partial class App : Application
         services.AddSingleton<WyprawyViewModel>();
         services.AddSingleton<RaportyViewModel>();
         services.AddSingleton<DoUzupelnieniaViewModel>();
+        services.AddSingleton<KonfliktyViewModel>();
         services.AddSingleton<SzukanieViewModel>();
         _provider = services.BuildServiceProvider();
 
