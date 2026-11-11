@@ -65,7 +65,7 @@
             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
                 <ComboBox MinWidth="90" ItemsSource="{Binding Lata}"
                           SelectedItem="{Binding FiltrRok}" ToolTip="Rok" />
-                <ComboBox MinWidth="160" Margin="8,0,0,0" ItemsSource="{Binding Repliki}"
+                <ComboBox MinWidth="160" Margin="8,0,0,0" ItemsSource="{Binding ReplikiHistoryczne}"
                           SelectedValue="{Binding FiltrReplikaId}" SelectedValuePath="Id" DisplayMemberPath="ModelProducenta"
                           ToolTip="Replika" />
                 <ComboBox MinWidth="160" Margin="8,0,0,0" ItemsSource="{Binding Zestawy}"
@@ -94,7 +94,7 @@
                                   SelectedValue="{Binding ZestawEdycjiId, Mode=TwoWay}"
                                   SelectedValuePath="Id" DisplayMemberPath="Nazwa"
                                   ToolTip="Zestaw wyprawy" />
-                        <ComboBox Width="175" Margin="0,0,8,8" ItemsSource="{Binding Repliki}"
+                        <ComboBox Width="175" Margin="0,0,8,8" ItemsSource="{Binding ReplikiHistoryczne}"
                                   SelectedValue="{Binding Edytowana.ReplikaGlownaId, Mode=TwoWay}"
                                   SelectedValuePath="Id" DisplayMemberPath="ModelProducenta"
                                   ToolTip="Replika główna" />
