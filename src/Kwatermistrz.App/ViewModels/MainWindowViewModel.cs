@@ -58,6 +58,7 @@ public partial class MainWindowViewModel : ObservableObject
         // po przywróceniu danych z kopii wszystkie ekrany odświeżają listy (FR-1107)
         ustawienia.DanePrzywrocone += OdswiezWszystkieEkrany;
         import.DaneZaimportowane += OdswiezWszystkieEkrany;
+        konflikty.DaneUzgodnione += OdswiezWszystkieEkrany;
     }
 
     /// <summary>Odświeża wszystkie ekrany po imporcie, konfiguracji początkowej i przywróceniu kopii.</summary>
