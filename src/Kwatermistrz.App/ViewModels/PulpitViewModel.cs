@@ -177,10 +177,10 @@ public partial class PulpitViewModel : ObservableObject
             kafelki.Add(new KafelekWyprawy
             {
                 Rok = Kwatermistrz.Core.Obliczenia.RejestrWypraw.Rok(wyprawa),
-                CzyHistoryczny = false,
+                CzyHistoryczny = wyprawa.CzyHistoryczna,
                 WyprawaId = wyprawa.Id,
                 MundurId = mundurId,
-                Etykieta = $"{(wyprawa.Data == default ? "NN-NN-NNNN" : wyprawa.Data.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture))}{(replika != null ? $" — {replika}" : "")}{(zestaw != null ? $" — {zestaw}" : "")}",
+                Etykieta = $"{(wyprawa.NazwaHistoryczna != null ? wyprawa.NazwaHistoryczna + " — " : "")}{(wyprawa.Data == default ? "NN-NN-NNNN" : wyprawa.Data.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture))}{(replika != null ? $" — {replika}" : "")}{(zestaw != null ? $" — {zestaw}" : "")}",
             });
         }
         // Identyczna projekcja anonimowych zdarzeń co w Wyprawach i Konfliktach:
