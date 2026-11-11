@@ -36,8 +36,8 @@
                          CanUserResizeColumns="True" ColumnWidth="*"
                          HorizontalScrollBarVisibility="Auto" controls:ProporcjonalneKolumny.Wlaczone="True">
                 <DataGrid.Columns>
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="2.6*" MinWidth="155" />
-                    <DataGridTemplateColumn Header="Akcje" Width="120">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="2.6*" MinWidth="215" />
+                    <DataGridTemplateColumn Header="Akcje" Width="120" MinWidth="85">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <ui:Button Content="Usuń" Appearance="Danger"

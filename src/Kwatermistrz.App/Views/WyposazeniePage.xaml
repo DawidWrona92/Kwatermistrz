@@ -142,8 +142,8 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Firma" Binding="{Binding Firma}" Width="1.25*" MinWidth="155" />
-                    <DataGridTemplateColumn Header="Zdjęcie" Width="56">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Firma" Binding="{Binding Firma}" Width="1.25*" MinWidth="170" />
+                    <DataGridTemplateColumn Header="Zdjęcie" Width="70" MinWidth="70">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <!-- Miniatura pierwszego zdjęcia (FR-211 [S]) -->
@@ -156,7 +156,7 @@
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Miejsce"
                                         Binding="{Binding MiejsceNazwa, Mode=OneWay}" Width="1.6*" MinWidth="185" />
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Użycia" Binding="{Binding Uzycia}" Width="0.95*" MinWidth="75" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Status" Binding="{Binding Status}" Width="1.25*" MinWidth="125" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Status" Binding="{Binding Status}" Width="1.25*" MinWidth="135" />
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Komentarz" Binding="{Binding Komentarz}" Width="2.5*" MinWidth="220" />
                 </DataGrid.Columns>
             </ui:DataGrid>

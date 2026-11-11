@@ -67,14 +67,14 @@
                          CanUserResizeColumns="True" ColumnWidth="*"
                          HorizontalScrollBarVisibility="Auto" controls:ProporcjonalneKolumny.Wlaczone="True">
                 <DataGrid.Columns>
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="2.6*" MinWidth="155" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="2.6*" MinWidth="215" />
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Wyprawy" Binding="{Binding Wyprawy}" Width="0.95*" MinWidth="75" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="%" Width="0.65*" MinWidth="58">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="%" Width="0.65*" MinWidth="75">
                         <DataGridTextColumn.Binding>
                             <Binding Path="Procent" Converter="{StaticResource KonwerterProcentu}" />
                         </DataGridTextColumn.Binding>
                     </DataGridTextColumn>
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Ostatnie" Width="1.3*" MinWidth="100">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Ostatnie" Width="1.3*" MinWidth="110">
                         <DataGridTextColumn.Binding>
                             <Binding Path="OstatnieUzycie" Converter="{StaticResource KonwerterDaty}" />
                         </DataGridTextColumn.Binding>

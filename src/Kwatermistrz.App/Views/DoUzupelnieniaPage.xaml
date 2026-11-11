@@ -29,8 +29,8 @@
                          CanUserResizeColumns="True" ColumnWidth="*"
                          HorizontalScrollBarVisibility="Auto" controls:ProporcjonalneKolumny.Wlaczone="True">
             <DataGrid.Columns>
-                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Rodzaj" Binding="{Binding Rodzaj}" Width="1.25*" MinWidth="90" />
-                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Opis" Binding="{Binding Opis}" Width="2.5*" MinWidth="145" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Rodzaj" Binding="{Binding Rodzaj}" Width="1.25*" MinWidth="145" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Opis" Binding="{Binding Opis}" Width="2.5*" MinWidth="215" />
                 <DataGridTemplateColumn Header="Akcja" Width="140">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
