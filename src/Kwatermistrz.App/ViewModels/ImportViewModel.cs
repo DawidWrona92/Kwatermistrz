@@ -149,6 +149,7 @@ public partial class ImportViewModel : ObservableObject
                 ImporterKwatermistrz.Zastosuj(Podglad, robocza);
                 return true;
             });
+            _magazyn.ZapiszDebounce(_dane);
             _magazyn.Zapisz(_dane);
             Podglad = null;
             Sciezka = "";
@@ -403,6 +404,7 @@ public partial class ImportViewModel
             }).ToList();
             _magazyn.UtworzKopieZapasowa(_dane);
             var liczba = TransakcjaDanych.Wykonaj(_dane, robocza => ImporterOgolny.Zastosuj(robocza, wybrane));
+            _magazyn.ZapiszDebounce(_dane);
             _magazyn.Zapisz(_dane);
             UniewaznijPodgladOgolny();
             Komunikat = $"Zaimportowano {liczba} przedmiotów. Rekordy mają znacznik „z importu, do przeglądu”.";
