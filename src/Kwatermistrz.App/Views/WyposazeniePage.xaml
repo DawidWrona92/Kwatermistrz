@@ -8,6 +8,7 @@
     <Page.Resources>
         <conv:KonwerterMiniatury x:Key="KonwerterMiniatury" />
         <conv:KonwerterNazwySlownika x:Key="KonwerterNazwySlownika" />
+        <conv:KonwerterNazwySlownikaMulti x:Key="KonwerterNazwySlownikaMulti" />
         <conv:KonwerterNazwSlownikaWiele x:Key="KonwerterNazwSlownikaWiele" />
         <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
         <conv:KonwerterNieRowneNull x:Key="KonwerterNieRowneNull" />
@@ -142,7 +143,15 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="2.6*" MinWidth="155" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Miejsce" Binding="{Binding MiejsceId}" Width="1.6*" MinWidth="120" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Miejsce" Width="1.6*" MinWidth="120">
+                        <DataGridTextColumn.Binding>
+                            <MultiBinding Converter="{StaticResource KonwerterNazwySlownikaMulti}" Mode="OneWay">
+                                <Binding Path="MiejsceId" />
+                                <Binding Path="DataContext.Slowniki.Miejsca"
+                                         RelativeSource="{RelativeSource AncestorType=Page}" />
+                            </MultiBinding>
+                        </DataGridTextColumn.Binding>
+                    </DataGridTextColumn>
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Użycia" Binding="{Binding Uzycia}" Width="0.95*" MinWidth="75" />
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Status" Binding="{Binding Status}" Width="1.25*" MinWidth="90" />
                     <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Komentarz" Binding="{Binding Komentarz}" Width="2.5*" MinWidth="145" />
