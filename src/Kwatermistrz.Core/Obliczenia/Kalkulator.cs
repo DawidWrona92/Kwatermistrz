@@ -61,10 +61,9 @@ public class Kalkulator
     /// <summary>BR-02: łączna liczba wypraw = suma wypraw wszystkich replik, także do sprzedaży i sprzedanych.</summary>
     public int LacznaLiczbaWypraw()
     {
-        var suma = _dane.Repliki.Sum(r => WyprawyRepliki(r));
-        // wyprawy bez repliki głównej (gdy szablon tego nie wymaga) liczą się osobno
-        suma += _dane.Wyprawy.Count(w => !w.CzyUsunieta && w.ReplikaGlownaId == null);
-        return suma;
+        // Liczniki z arkusza „wg lat” oraz z kart replik odnoszą się do
+        // tych samych wydarzeń — sumowanie obu zawyżałoby historię.
+        return RejestrWypraw.LacznaLiczbaWypraw(_dane);
     }
 
     /// <summary>BR-03: procent wypraw repliki względem łącznej liczby wypraw. Przy zerowej sumie wynosi 0.</summary>
@@ -111,14 +110,14 @@ public class Kalkulator
     public int WyprawyWRoku(int rok)
     {
         var historyczne = _dane.Ustawienia.HistoryczneWyprawyWgRok.TryGetValue(rok, out var h) ? h : 0;
-        var zapisane = _dane.Wyprawy.Count(w => !w.CzyUsunieta && w.Data.Year == rok);
+        var zapisane = _dane.Wyprawy.Count(w => !w.CzyUsunieta && RejestrWypraw.Rok(w) == rok);
         return historyczne + zapisane;
     }
 
     /// <summary>BR-15: data pierwszej wyprawy = ustawienie (z importu) albo najwcześniejsza zapisana wyprawa.</summary>
     public DateOnly? DataPierwszejWyprawy()
     {
-        var zapisane = _dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(w => (DateOnly?)w.Data).Min();
+        var zapisane = _dane.Wyprawy.Where(w => !w.CzyUsunieta && w.Data != default).Select(w => (DateOnly?)w.Data).Min();
         var ustawienie = _dane.Ustawienia.DataPierwszejWyprawy;
         if (zapisane == null)
             return ustawienie;
