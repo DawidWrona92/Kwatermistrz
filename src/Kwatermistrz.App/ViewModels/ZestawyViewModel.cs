@@ -43,7 +43,12 @@ public partial class ZestawyViewModel : ObservableObject
     public string LicznikReferencji => $"{Wybrany?.Zestaw.ZdjeciaReferencyjne.Count ?? 0}/10";
 
     partial void OnWybranyChanged(WierszZestawu? value)
-        => OnPropertyChanged(nameof(LicznikReferencji));
+    {
+        OnPropertyChanged(nameof(LicznikReferencji));
+        // Binding SelectedItem w DataGrid zmienia Wybrany bez wywoływania WybierzCommand.
+        // Odświeżaj pakowanie także dla zwykłego kliknięcia rekordu.
+        OdswiezPakowanie();
+    }
 
     /// <summary>Filtr tekstowy.</summary>
     [ObservableProperty]
@@ -93,12 +98,17 @@ public partial class ZestawyViewModel : ObservableObject
             var szukane = Normalizacja.TekstDoPorownania(tekst);
             zapytanie = zapytanie.Where(z => Normalizacja.TekstDoPorownania(z.Nazwa).Contains(szukane));
         }
+        // Po zmianie filtra / powrocie do strony / zapisie zachowaj wybraną kartę.
+        // Wcześniej Clear() gubiło SelectedItem i użytkownik widział pusty edytor.
+        var wybraneId = Wybrany?.Id;
         Wiersze.Clear();
         foreach (var z in zapytanie.OrderBy(z => z.Nazwa, StringComparer.CurrentCulture))
         {
             var (wyprawy, procent, ostatnie) = kalk.StatystykiZestawu(z);
             Wiersze.Add(new WierszZestawu(z, wyprawy, procent, ostatnie));
         }
+        Wybrany = Wiersze.FirstOrDefault(w => w.Id == wybraneId)
+            ?? Wiersze.FirstOrDefault();
     }
 
     partial void OnFiltrTekstChanged(string value) => Odswiez();
@@ -109,7 +119,6 @@ public partial class ZestawyViewModel : ObservableObject
     private void Wybierz(WierszZestawu? wiersz)
     {
         Wybrany = wiersz;
-        OdswiezPakowanie();
         if (wiersz != null)
         {
             wiersz.Zestaw.ZnacznikZImportu = false;
