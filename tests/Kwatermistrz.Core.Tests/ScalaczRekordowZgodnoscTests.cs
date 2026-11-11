@@ -92,4 +92,56 @@ public class ScalaczRekordowZgodnoscTests
         Assert.Equal(przedmiot.KategoriaId, Assert.Single(dane.Przedmioty).KategoriaId);
         Assert.Equal(8, Assert.Single(dane.Przedmioty).LicznikHistoryczny);
     }
+
+    [Fact]
+    public void WspolnaRekonstrukcjaOInnymId_NieDublujeProfiluIRemapujeSloty()
+    {
+        var lokalna = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        var lokalnySlot = new SlotSzablonu { Id = "slot-lokalny", Nazwa = "Broń główna" };
+        lokalna.Rekonstrukcje.Add(new Rekonstrukcja
+        {
+            Id = "rek-lokalna", Nazwa = "Oddział historyczny",
+            SzablonSlotow = new() { lokalnySlot },
+        });
+        var eksport = new DaneAplikacji();
+        eksport.Rekonstrukcje.Add(new Rekonstrukcja
+        {
+            Id = "rek-import", Nazwa = "oddział HISTORYCZNY",
+            SzablonSlotow = new()
+            {
+                new SlotSzablonu { Id = "slot-import", Nazwa = "Broń główna" },
+            },
+        });
+        var zestaw = new Zestaw
+        {
+            Id = "z-import",
+            RekonstrukcjaId = "rek-import",
+            Sloty = new()
+            {
+                new SlotZestawu
+                {
+                    Id = "slot-zestawu",
+                    SzablonSlotId = "slot-import",
+                    Nazwa = "Broń główna",
+                },
+            },
+        };
+        eksport.Zestawy.Add(zestaw);
+        eksport.Wyprawy.Add(new Wyprawa
+        {
+            Id = "w-import", Data = new DateOnly(2020, 5, 2),
+            RekonstrukcjaId = "rek-import", ZestawId = "z-import",
+        });
+
+        ScalaczRekordow.Scal(lokalna, eksport, new ImporterPakietuKonfiguracji.MapyId());
+
+        var rek = Assert.Single(lokalna.Rekonstrukcje);
+        Assert.Equal("rek-lokalna", rek.Id);
+        Assert.Equal("slot-lokalny", Assert.Single(rek.SzablonSlotow).Id);
+        Assert.Equal("rek-lokalna", Assert.Single(lokalna.Zestawy).RekonstrukcjaId);
+        Assert.Equal("slot-lokalny", Assert.Single(lokalna.Zestawy).Sloty.Single().SzablonSlotId);
+        Assert.Equal("rek-lokalna", Assert.Single(lokalna.Wyprawy).RekonstrukcjaId);
+        Assert.Equal(1, lokalna.SchemaVersion);
+    }
+
 }
