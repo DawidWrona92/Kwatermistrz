@@ -6,6 +6,9 @@
       Title="Wyprawy">
     <Page.Resources>
         <conv:KonwerterDaty x:Key="KonwerterDaty" />
+        <conv:KonwerterDateOnlyDatePicker x:Key="DatePickerDateOnly" />
+        <conv:KonwerterNieRowneNull x:Key="WidoczneGdyNieNull" />
+        <conv:KonwerterBoolToVisibility x:Key="WidoczneGdyTrue" />
         <conv:KonwerterNazwySlownika x:Key="KonwerterNazwySlownika" />
     </Page.Resources>
     <Grid Margin="8">
@@ -18,7 +21,7 @@
         <TextBlock Grid.Row="0" Text="Wyprawy" Style="{StaticResource TytulEkranu}" />
 
         <!-- Szybkie dodawanie (FR-802) -->
-        <Border Grid.Row="1" Style="{StaticResource Karta}" Padding="10" Margin="0,8,0,8">
+        <Border x:Name="FormularzNowejWyprawy" Grid.Row="1" Style="{StaticResource Karta}" Padding="10" Margin="0,8,0,8">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -28,7 +31,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <DatePicker Grid.Column="0" SelectedDate="{Binding Nowa.Data}" ToolTip="Data (wymagana)" />
+                <DatePicker Grid.Column="0" SelectedDate="{Binding Nowa.Data, Converter={StaticResource DatePickerDateOnly}, Mode=TwoWay}" ToolTip="Data (wymagana)" />
                 <ComboBox Grid.Column="1" MinWidth="160" Margin="8,0,0,0"
                           ItemsSource="{Binding Zestawy}"
                           SelectedValue="{Binding Nowa.ZestawId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa"
@@ -43,7 +46,7 @@
                 <ui:TextBox Grid.Column="4" MinWidth="140" Margin="8,0,0,0"
                             Text="{Binding Nowa.Komentarz}" PlaceholderText="Komentarz…" />
                 <ui:Button Grid.Column="5" Margin="8,0,0,0" Appearance="Primary"
-                           Command="{Binding DodajWypraweCommand}" ToolTip="Dodaj wyprawę (Enter)">
+                           Command="{Binding DodajWypraweCommand}" ToolTip="Dodaj wyprawę z wypełnionego formularza">
                     <StackPanel Orientation="Horizontal">
                         <ui:SymbolIcon Symbol="Add24" />
                         <TextBlock Text="Dodaj" Margin="6,0,0,0" />
@@ -55,6 +58,7 @@
         <!-- Filtry + lista (FR-808) -->
         <Grid Grid.Row="2">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
@@ -69,8 +73,62 @@
                           ToolTip="Zestaw" />
                 <ui:TextBox MinWidth="160" Margin="8,0,0,0" PlaceholderText="Filtr…"
                             Text="{Binding FiltrTekst, UpdateSourceTrigger=PropertyChanged}" />
+                <CheckBox Content="Pokaż usunięte" Margin="12,0,0,0" VerticalAlignment="Center"
+                          IsChecked="{Binding PokazUsuniete, Mode=TwoWay}"
+                          ToolTip="Wyświetla usunięte wyprawy, które można przywrócić" />
             </StackPanel>
-            <ui:DataGrid Grid.Row="1"
+
+            <!-- Edycja wybranego wiersza: wszystkie pola są kopiami, zapis jest jawny. -->
+            <Border Grid.Row="1" Style="{StaticResource Karta}" Padding="10" Margin="0,0,0,8"
+                    Visibility="{Binding Edytowana, Converter={StaticResource WidoczneGdyNieNull}}">
+                <StackPanel>
+                    <TextBlock Text="Edycja zaznaczonej wyprawy" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <WrapPanel>
+                        <DatePicker Width="145" Margin="0,0,8,8" ToolTip="Data wyprawy"
+                                    SelectedDate="{Binding Edytowana.Data, Converter={StaticResource DatePickerDateOnly}, Mode=TwoWay}" />
+                        <ComboBox Width="175" Margin="0,0,8,8" ItemsSource="{Binding Rekonstrukcje}"
+                                  SelectedValue="{Binding Edytowana.RekonstrukcjaId, Mode=TwoWay}"
+                                  SelectedValuePath="Id" DisplayMemberPath="Nazwa"
+                                  ToolTip="Rekonstrukcja" />
+                        <ComboBox Width="175" Margin="0,0,8,8" ItemsSource="{Binding Zestawy}"
+                                  SelectedValue="{Binding ZestawEdycjiId, Mode=TwoWay}"
+                                  SelectedValuePath="Id" DisplayMemberPath="Nazwa"
+                                  ToolTip="Zestaw wyprawy" />
+                        <ComboBox Width="175" Margin="0,0,8,8" ItemsSource="{Binding Repliki}"
+                                  SelectedValue="{Binding Edytowana.ReplikaGlownaId, Mode=TwoWay}"
+                                  SelectedValuePath="Id" DisplayMemberPath="ModelProducenta"
+                                  ToolTip="Replika główna" />
+                        <ui:TextBox Width="180" Margin="0,0,8,8" PlaceholderText="Miejsce…"
+                                    Text="{Binding Edytowana.Miejsce, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <ui:TextBox Width="210" Margin="0,0,8,8" PlaceholderText="Komentarz…"
+                                    Text="{Binding Edytowana.Komentarz, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </WrapPanel>
+                    <Expander Header="Warianty wybranego zestawu" Margin="0,0,0,8">
+                        <ScrollViewer MaxHeight="125" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding WariantyEdycji}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
+                                            <TextBlock Text="{Binding NazwaSlotu}" Width="160" VerticalAlignment="Center" />
+                                            <ComboBox Width="310" ItemsSource="{Binding Opcje}"
+                                                      SelectedValue="{Binding WybranyWariantId, Mode=TwoWay}"
+                                                      SelectedValuePath="Id" DisplayMemberPath="Opis"
+                                                      ToolTip="Wariant zapisany dla tej wyprawy" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Expander>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <ui:Button Command="{Binding AnulujEdycjeCommand}" Margin="0,0,8,0"
+                                   Content="Anuluj zmiany" ToolTip="Odrzuć zmiany bez zapisywania" />
+                        <ui:Button Command="{Binding ZapiszWybranaCommand}" Appearance="Primary"
+                                   Content="Zapisz zmiany" ToolTip="Zapisz edytowaną wyprawę" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            <ui:DataGrid Grid.Row="2"
                          ItemsSource="{Binding Wiersze}"
                          AutoGenerateColumns="False"
                          CanUserAddRows="False"
@@ -85,14 +143,21 @@
                     <DataGridTextColumn Header="Zestaw" Binding="{Binding ZestawNazwa}" Width="140" />
                     <DataGridTextColumn Header="Mundur" Binding="{Binding MundurNazwa}" Width="140" />
                     <DataGridTextColumn Header="Komentarz" Binding="{Binding Komentarz}" Width="160" />
-                    <DataGridTemplateColumn Header="Akcje" Width="70">
+                    <DataGridTemplateColumn Header="Akcje" Width="115">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <ui:Button Appearance="Danger" ToolTip="Usuń wyprawę"
-                                           Command="{Binding DataContext.UsunCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                           CommandParameter="{Binding}">
-                                    <ui:SymbolIcon Symbol="Dismiss24" />
-                                </ui:Button>
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:Button Appearance="Danger" Content="Usuń"
+                                               Visibility="{Binding CzyAktywna, Converter={StaticResource WidoczneGdyTrue}}"
+                                               ToolTip="Usuń wyprawę (można ją przywrócić)"
+                                               Command="{Binding DataContext.UsunCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                               CommandParameter="{Binding}" />
+                                    <ui:Button Content="Przywróć"
+                                               Visibility="{Binding CzyUsunieta, Converter={StaticResource WidoczneGdyTrue}}"
+                                               ToolTip="Przywróć usuniętą wyprawę"
+                                               Command="{Binding DataContext.PrzywrocCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                               CommandParameter="{Binding}" />
+                                </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
