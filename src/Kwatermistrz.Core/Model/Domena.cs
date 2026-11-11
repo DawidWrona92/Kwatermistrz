@@ -256,6 +256,10 @@ public class Wyprawa
     public string? NazwaHistoryczna { get; set; }
     /// <summary>Prawda dla historycznej wyprawy, nie dla zwykłego, nowego wpisu.</summary>
     public bool CzyHistoryczna { get; set; }
+    /// <summary>Id repliki, której historyczny licznik obniżono podczas identyfikacji.</summary>
+    public string? HistorycznieOdliczonaReplikaId { get; set; }
+    /// <summary>Id przedmiotów z pomniejszonym historycznym licznikiem; zapis do bezpiecznego cofnięcia.</summary>
+    public List<string> HistorycznieOdliczonePrzedmiotyId { get; set; } = new();
     public string? RekonstrukcjaId { get; set; }
     public string? Miejsce { get; set; }
     public string? ReplikaGlownaId { get; set; }
