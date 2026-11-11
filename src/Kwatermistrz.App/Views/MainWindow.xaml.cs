@@ -21,6 +21,7 @@ public partial class MainWindow : FluentWindow
     {
         if (ViewModel == null)
             return;
+        ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         if (DataContext is MainWindowViewModel vm && vm.Pulpit != null)
         {
             vm.Pulpit.Odswiez();
@@ -60,6 +61,18 @@ public partial class MainWindow : FluentWindow
         ZaznaczNawigacje(ekran);
     }
 
+    /// <summary>Synchronizuje programową nawigację (skróty, przyciski ViewModelu) z widocznym Frame i menu.</summary>
+    private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(MainWindowViewModel.AktualnyEkran) || ViewModel == null)
+            return;
+        var ekran = ViewModel.AktualnyEkran;
+        if (!_strony.ContainsKey(ekran))
+            return;
+        PokazEkran(ekran);
+        ZaznaczNawigacje(ekran);
+    }
+
     private void ZarejestrujStrony()
     {
         var vm = ViewModel!;
@@ -92,8 +105,10 @@ public partial class MainWindow : FluentWindow
             return;
         if (ekran == "Wyposazenie" && ViewModel.Wyposazenie.Wybrany != null)
             PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany });
-        if (ekran == "Bronie" && ViewModel.Repliki.Wybrana != null)
+        else if (ekran == "Bronie" && ViewModel.Repliki.Wybrana != null)
             PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana });
+        else
+            UkryjKarte();
     }
 
     /// <summary>Odświeża kartę po prawej po zmianie wyboru (FR-204, FR-302).</summary>
@@ -105,6 +120,14 @@ public partial class MainWindow : FluentWindow
             PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany });
         else if (ViewModel.AktualnyEkran == "Bronie" && ViewModel.Repliki.Wybrana != null)
             PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana });
+        else
+            UkryjKarte();
+    }
+
+    private void UkryjKarte()
+    {
+        ZawartoscKarty.Content = null;
+        PanelKarty.Visibility = Visibility.Collapsed;
     }
 
     private void ZaznaczNawigacje(string ekran)
@@ -181,7 +204,7 @@ public partial class MainWindow : FluentWindow
 
     private void ZamknijPanelKarty_Click(object sender, RoutedEventArgs e)
     {
-        PanelKarty.Visibility = Visibility.Collapsed;
+        UkryjKarte();
     }
 
     /// <summary>Przejście z karty pulpitu (FR-104) lub rankingu (FR-105): ekran + filtr/wybór rekordu.</summary>
