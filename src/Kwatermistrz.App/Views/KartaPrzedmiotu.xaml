@@ -180,11 +180,10 @@
             <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
                 <ui:Button Content="Zapisz" Appearance="Primary"
                            Command="{Binding ViewModel.ZapiszKarteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
-                <ui:Button Content="Duplikuj" Margin="8,0,0,0"
-                           Command="{Binding ViewModel.DuplikujCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
-                <ui:Button Content="Usuń" Appearance="Danger" Margin="8,0,0,0"
-                           Command="{Binding ViewModel.UsunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                           CommandParameter="{Binding}" />
+                <TextBlock Margin="12,0,0,0" VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Text="Operacje na przedmiotach: PPM na wierszu tabeli."
+                           ToolTip="Prawym przyciskiem myszy wybierz operację na pojedynczym wierszu albo przedmiotach zaznaczonych checkboxami." />
                 <!-- FR-1205: ostatnia zmiana na karcie -->
                 <TextBlock VerticalAlignment="Center" Margin="16,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                            Text="{Binding Przedmiot.OstatniaZmiana, StringFormat=Ostatnia zmiana: {0:dd.MM.yyyy HH:mm}}" />
