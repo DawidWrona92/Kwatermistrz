@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - fix/audit-ui-consistency-20261111
   pull_request:
     branches:
       - main
