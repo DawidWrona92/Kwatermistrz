@@ -43,6 +43,10 @@ public sealed class RejestrWyprawTests
         Assert.Equal(5, new IndeksObliczeniowy(dane).LacznaLiczbaWypraw);
         Assert.Equal(3, new Kalkulator(dane).WyprawyWRoku(2022));
         Assert.Equal(2, dane.Ustawienia.HistoryczneWyprawyWgRok[2022]);
+        var pozostale = RejestrWypraw.Nierozpoznane(dane);
+        Assert.DoesNotContain(pozostale, p => p.Nazwa == w.NazwaHistoryczna);
+        Assert.Equal(new[] { "Wyprawa_2", "Wyprawa_3", "Wyprawa_4", "Wyprawa_5" },
+            pozostale.Select(p => p.Nazwa).ToArray());
         Assert.Equal(4, dane.Repliki[0].LicznikHistorycznyWypraw);
         Assert.Null(w.ReplikaGlownaId);
         Assert.True(w.CzyHistoryczna);
