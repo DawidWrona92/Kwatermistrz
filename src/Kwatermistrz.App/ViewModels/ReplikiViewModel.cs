@@ -119,10 +119,26 @@ public partial class ReplikiViewModel : ObservableObject
         for (var i = 0; i < wiersze.Count; i++)
             wiersze[i].MiejsceWRankingu = i + 1;
 
+        var wybranyId = Wybrana?.Id;
+        var porownywaneId = Wiersze.Where(w => w.ZaznaczonaDoPorownania)
+            .Select(w => w.Id).ToHashSet(StringComparer.Ordinal);
         Wiersze.Clear();
         foreach (var w in wiersze)
+        {
+            w.ZaznaczonaDoPorownania = porownywaneId.Contains(w.Id);
+            w.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(WierszRepliki.ZaznaczonaDoPorownania))
+                {
+                    OnPropertyChanged(nameof(ZaznaczoneDoPorownania));
+                    OnPropertyChanged(nameof(PorownanieKart));
+                }
+            };
             Wiersze.Add(w);
+        }
+        Wybrana = Wiersze.FirstOrDefault(w => w.Id == wybranyId);
         OnPropertyChanged(nameof(LiczbaWierszy));
+        OnPropertyChanged(nameof(PorownanieKart));
     }
 
     private int _zawieszoneOdswiezanie;
