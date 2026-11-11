@@ -225,9 +225,20 @@ public partial class MainWindowViewModel : ObservableObject
         get => _stan.AktywnaRekonstrukcjaId;
         set
         {
+            if (_stan.AktywnaRekonstrukcjaId == value)
+                return;
             _stan.AktywnaRekonstrukcjaId = value;
+            _dane.Ustawienia.OstatniaRekonstrukcjaId = value;
+            _magazyn.ZapiszDebounce(_dane);
             OnPropertyChanged(nameof(AktywnaRekonstrukcjaId));
             OnPropertyChanged(nameof(AktywnaRekonstrukcjaNazwa));
+            Pulpit.Odswiez();
+            Wyposazenie.Odswiez();
+            Repliki.Odswiez();
+            Zestawy.Odswiez();
+            Wyprawy.Odswiez();
+            Raporty.Odswiez();
+            DoUzupelnienia.Odswiez();
         }
     }
 
@@ -243,9 +254,12 @@ public partial class MainWindowViewModel : ObservableObject
         get => _stan.AktualnyEkran;
         set
         {
+            if (_stan.AktualnyEkran == value)
+                return;
             _stan.AktualnyEkran = value;
-            OnPropertyChanged();
             _dane.Ustawienia.OstatniEkran = value;
+            _magazyn.ZapiszDebounce(_dane);
+            OnPropertyChanged();
         }
     }
 
