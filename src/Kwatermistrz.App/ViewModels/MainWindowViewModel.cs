@@ -30,6 +30,7 @@ public partial class MainWindowViewModel : ObservableObject
         WyprawyViewModel wyprawy,
         RaportyViewModel raporty,
         DoUzupelnieniaViewModel doUzupelnienia,
+        KonfliktyViewModel konflikty,
         SzukanieViewModel szukanie,
         MagazynJson magazyn)
     {
@@ -49,6 +50,7 @@ public partial class MainWindowViewModel : ObservableObject
         Wyprawy = wyprawy;
         Raporty = raporty;
         DoUzupelnienia = doUzupelnienia;
+        Konflikty = konflikty;
         Szukanie = szukanie;
         _stan.AktywnaRekonstrukcjaId = dane.Ustawienia.OstatniaRekonstrukcjaId;
         if (!string.IsNullOrEmpty(dane.Ustawienia.OstatniEkran))
@@ -68,6 +70,7 @@ public partial class MainWindowViewModel : ObservableObject
         Wyprawy.Odswiez();
         Raporty.Odswiez();
         DoUzupelnienia.Odswiez();
+        Konflikty.Odswiez();
         OnPropertyChanged(nameof(RekonstrukcjeLista));
         OnPropertyChanged(nameof(AktywnaRekonstrukcjaNazwa));
         Komunikat = $"Dane: {_dane.Przedmioty.Count} przedmiotów, {_dane.Repliki.Count} replik, {_dane.Zestawy.Count} zestawów; {_dane.Wyprawy.Count} wypraw zapisanych.";
@@ -217,6 +220,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>ViewModel „Do uzupełnienia” (FR-1204).</summary>
     public DoUzupelnieniaViewModel DoUzupelnienia { get; }
+    public KonfliktyViewModel Konflikty { get; }
 
     /// <summary>ViewModel globalnego wyszukiwania (FR-1201).</summary>
     public SzukanieViewModel Szukanie { get; }
