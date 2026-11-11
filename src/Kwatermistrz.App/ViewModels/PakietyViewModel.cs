@@ -68,6 +68,19 @@ public partial class PakietyViewModel : ObservableObject
         _magazyn = magazyn;
     }
 
+    /// <summary>Inny import lub przywrócenie bazy może unieważnić przygotowane dopasowania.</summary>
+    public void UniewaznijPodgladPoZmianieDanych()
+    {
+        if (_podglad == null)
+            return;
+        _podglad = null;
+        Wiersze.Clear();
+        SciezkaPakietu = "";
+        InfoPakietu = "";
+        OnPropertyChanged(nameof(MaPodglad));
+        Komunikat = "Dane zmieniły się. Wczytaj pakiet ponownie przed zastosowaniem.";
+    }
+
     [ObservableProperty]
     private string _nazwaPakietu = "";
 
