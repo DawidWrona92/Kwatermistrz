@@ -188,4 +188,86 @@ public class OperacjeNaWyprawachTests
         Assert.Equal(3, r1.LicznikHistorycznyWypraw);
         Assert.Equal(5, dane.Ustawienia.HistoryczneWyprawyWgRok[2021]);
     }
+
+    [Fact]
+    public void EdycjaBezWystarczajacejHistorii_NieZmieniaOryginaluAniLicznikow()
+    {
+        var (dane, r1, r2) = Przyklad();
+        r2.LicznikHistorycznyWypraw = 0;
+        var wyprawa = new Wyprawa
+        {
+            Data = new DateOnly(2021, 5, 4), ReplikaGlownaId = r1.Id,
+            OdliczonaOdLicznikow = true, Miejsce = "Pierwotne",
+        };
+        dane.Wyprawy.Add(wyprawa);
+        var szkic = OperacjeNaWyprawach.Kopia(wyprawa);
+        szkic.Data = new DateOnly(2022, 5, 4);
+        szkic.ReplikaGlownaId = r2.Id;
+        szkic.Miejsce = "Zmiana";
+
+        Assert.False(new OperacjeNaWyprawach(dane).SprobujZapisac(wyprawa, szkic, out _));
+        Assert.Equal("Pierwotne", wyprawa.Miejsce);
+        Assert.Equal(new DateOnly(2021, 5, 4), wyprawa.Data);
+        Assert.True(wyprawa.OdliczonaOdLicznikow);
+        Assert.Equal(3, r1.LicznikHistorycznyWypraw);
+        Assert.Equal(0, r2.LicznikHistorycznyWypraw);
+        Assert.Equal(5, dane.Ustawienia.HistoryczneWyprawyWgRok[2021]);
+        Assert.Equal(4, dane.Ustawienia.HistoryczneWyprawyWgRok[2022]);
+    }
+
+    [Fact]
+    public void Baza100_ZIndeksamiWariantow_PozostajeCzytelnaPoEdycjiWyprawy()
+    {
+        var katalog = Path.Combine(Path.GetTempPath(), "kwatermistrz-legacy-trips-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(katalog);
+        try
+        {
+            const string starszyJson = """
+                {
+                  "SchemaVersion": 1,
+                  "Repliki": [{ "Id": "r1", "ModelProducenta": "AK" }],
+                  "Zestawy": [{
+                    "Id": "z1", "Nazwa": "Zestaw 2022",
+                    "Sloty": [{
+                      "Id": "s1", "Nazwa": "Broń",
+                      "IndeksWariantuDomyslnego": 0,
+                      "Warianty": [{
+                        "Elementy": [{ "Typ": "Replika", "ElementId": "r1" }]
+                      }]
+                    }],
+                    "OstatnieWarianty": { "s1": 0 }
+                  }],
+                  "Wyprawy": [{
+                    "Id": "w1", "Data": "2022-10-01", "ZestawId": "z1",
+                    "WybraneWarianty": { "s1": 0 }, "Miejsce": "Stary wpis"
+                  }]
+                }
+                """;
+            File.WriteAllText(Path.Combine(katalog, "dane.json"), starszyJson);
+            var dane = MagazynJson.WczytajZPliku(Path.Combine(katalog, "dane.json"));
+            var zestaw = Assert.Single(dane.Zestawy);
+            var slot = Assert.Single(zestaw.Sloty);
+            var wariant = Assert.Single(slot.Warianty);
+            var wyprawa = Assert.Single(dane.Wyprawy);
+            Assert.Equal(wariant.Id, wyprawa.WybraneWarianty[slot.Id]);
+            Assert.Equal(wariant.Id, slot.WariantDomyslnyId);
+            Assert.Equal(wariant.Id, zestaw.OstatnieWarianty[slot.Id]);
+
+            var szkic = OperacjeNaWyprawach.Kopia(wyprawa);
+            szkic.Miejsce = "Edycja po migracji";
+            Assert.True(new OperacjeNaWyprawach(dane).SprobujZapisac(wyprawa, szkic, out var blad), blad);
+            var magazyn = new MagazynJson(katalog);
+            magazyn.Zapisz(dane);
+            var ponownie = magazyn.Wczytaj();
+            Assert.Equal("w1", Assert.Single(ponownie.Wyprawy).Id);
+            Assert.Equal("Edycja po migracji", Assert.Single(ponownie.Wyprawy).Miejsce);
+            Assert.Equal(wariant.Id, Assert.Single(ponownie.Wyprawy).WybraneWarianty["s1"]);
+            Assert.Equal(1, ponownie.SchemaVersion);
+        }
+        finally
+        {
+            Directory.Delete(katalog, recursive: true);
+        }
+    }
+
 }
