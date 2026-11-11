@@ -93,6 +93,7 @@ public partial class WyprawyViewModel : ObservableObject
                 (w.Miejsce != null && Normalizacja.TekstDoPorownania(w.Miejsce).Contains(szukane)) ||
                 (w.Komentarz != null && Normalizacja.TekstDoPorownania(w.Komentarz).Contains(szukane)));
         }
+        var wybranaId = Wybrana?.Id;
         Wiersze.Clear();
         foreach (var w in zapytanie.OrderByDescending(w => w.Data))
         {
@@ -108,6 +109,7 @@ public partial class WyprawyViewModel : ObservableObject
                 : null;
             Wiersze.Add(new WierszWyprawy(w, replika, zestaw, mundur));
         }
+        Wybrana = Wiersze.FirstOrDefault(w => w.Id == wybranaId);
         OnPropertyChanged(nameof(Lata));
     }
 
@@ -304,6 +306,11 @@ public partial class WyprawyViewModel : ObservableObject
     private void Usun(WierszWyprawy? wiersz)
     {
         if (wiersz == null)
+            return;
+        var odpowiedz = System.Windows.MessageBox.Show(
+            $"Usunąć wyprawę z dnia {wiersz.Wyprawa.Data:dd.MM.yyyy}?\\nMożna ją później przywrócić.",
+            "Kwatermistrz", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
+        if (odpowiedz != System.Windows.MessageBoxResult.Yes)
             return;
         wiersz.Wyprawa.CzyUsunieta = true;
         CofnijOdliczenie(wiersz.Wyprawa);
