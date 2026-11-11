@@ -139,12 +139,25 @@ public partial class WyprawyViewModel : ObservableObject
     partial void OnFiltrTekstChanged(string value) => Odswiez();
     partial void OnPokazUsunieteChanged(bool value) => Odswiez();
 
-    partial void OnWybranaChanged(WierszWyprawy? value)
+    /// <summary>Odświeżona lista może zawierać nowy wiersz tej samej wyprawy.
+    /// Nie wyrzucaj wtedy szkicu edycji (dopóki zmienia się tylko widok).</summary>
+    partial void OnWybranaChanged(WierszWyprawy? oldValue, WierszWyprawy? newValue)
     {
-        Edytowana = value != null && !value.CzyUsunieta
-            ? OperacjeNaWyprawach.Kopia(value.Wyprawa) : null;
+        if (oldValue?.Id == newValue?.Id
+            && ReferenceEquals(oldValue?.Wyprawa, newValue?.Wyprawa))
+            return;
+        Edytowana = newValue != null && !newValue.CzyUsunieta
+            ? OperacjeNaWyprawach.Kopia(newValue.Wyprawa) : null;
         ZestawEdycjiId = Edytowana?.ZestawId;
         PrzygotujWariantyEdycji();
+    }
+
+    /// <summary>Po imporcie lub przywróceniu zawartości bazy odrzuca stary szkic.</summary>
+    public void PrzeladujPoWymianieDanych()
+    {
+        Odswiez();
+        AnulujEdycje();
+        PrzygotujWariantyNowej();
     }
 
     partial void OnZestawEdycjiIdChanged(string? value)
