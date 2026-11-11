@@ -134,4 +134,35 @@ public class TransakcjaDanychTests
         Assert.Equal(1, dane.SchemaVersion);
     }
 
+
+    [Fact]
+    public void DuplikatIdPodczasImportu_ZatrzymujeCommitPrzedZmianaJakiegokolwiekRekordu()
+    {
+        var dane = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        var replika = new Replika { Id = "r1", ModelProducenta = "Nie ruszaj", LicznikHistorycznyWypraw = 9 };
+        dane.Repliki.Add(replika);
+        dane.Zadania.Add(new Zadanie { Id = "zadanie1" });
+        var lista = dane.Repliki;
+        var ustawienia = dane.Ustawienia;
+        dane.Ustawienia.HistoryczneWyprawyWgRok[2020] = 12;
+
+        Assert.Throws<InvalidDataException>(() =>
+            TransakcjaDanych.Wykonaj(dane, robocza =>
+            {
+                robocza.Repliki[0].ModelProducenta = "ZMIENIONE";
+                robocza.Ustawienia.HistoryczneWyprawyWgRok[2020] = 0;
+                robocza.Zadania.Add(new Zadanie { Id = "zadanie1" }); // kolizja dopiero na końcu grafu
+                return true;
+            }));
+
+        Assert.Same(lista, dane.Repliki);
+        Assert.Same(replika, Assert.Single(dane.Repliki));
+        Assert.Equal("Nie ruszaj", replika.ModelProducenta);
+        Assert.Equal(9, replika.LicznikHistorycznyWypraw);
+        Assert.Same(ustawienia, dane.Ustawienia);
+        Assert.Equal(12, dane.Ustawienia.HistoryczneWyprawyWgRok[2020]);
+        Assert.Single(dane.Zadania);
+        Assert.Equal(1, dane.SchemaVersion);
+    }
+
 }
