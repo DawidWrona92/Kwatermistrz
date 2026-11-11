@@ -44,6 +44,7 @@ public partial class WyprawyViewModel : ObservableObject
     private string? _zestawEdycjiId;
 
     public ObservableCollection<WyborWariantuWyprawy> WariantyEdycji { get; } = new();
+    public ObservableCollection<WyborWariantuWyprawy> WariantyNowej { get; } = new();
 
     /// <summary>Nowa wyprawa — formularz szybkiego dodawania (FR-802).</summary>
     [ObservableProperty]
@@ -166,6 +167,34 @@ public partial class WyprawyViewModel : ObservableObject
         PrzygotujWariantyEdycji();
     }
 
+    private void PrzygotujWariantyNowej()
+    {
+        WariantyNowej.Clear();
+        var nowa = Nowa;
+        var zestaw = _dane.Zestawy.FirstOrDefault(z => z.Id == nowa.ZestawId);
+        if (zestaw == null)
+            return;
+        foreach (var slot in zestaw.Sloty.OrderBy(s => s.Kolejnosc))
+        {
+            var opcje = slot.Warianty.Select(w => new OpcjaWariantuWyprawy(
+                w.Id, w.CzyPuste ? "Puste" : w.Elementy.Count == 0 ? "(brak elementów)" :
+                    string.Join(" + ", w.Elementy.Select(NazwaElementu)))).ToList();
+            nowa.WybraneWarianty.TryGetValue(slot.Id, out var wybrany);
+            var wybor = new WyborWariantuWyprawy(slot.Id, slot.Nazwa, opcje, wybrany);
+            wybor.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName != nameof(WyborWariantuWyprawy.WybranyWariantId)
+                    || !ReferenceEquals(Nowa, nowa) || nowa.ZestawId != zestaw.Id)
+                    return;
+                if (wybor.WybranyWariantId is { } wariantId)
+                    nowa.WybraneWarianty[wybor.SlotId] = wariantId;
+                else
+                    nowa.WybraneWarianty.Remove(wybor.SlotId);
+            };
+            WariantyNowej.Add(wybor);
+        }
+    }
+
     private void PrzygotujWariantyEdycji()
     {
         WariantyEdycji.Clear();
@@ -234,6 +263,7 @@ public partial class WyprawyViewModel : ObservableObject
                     Nowa.ReplikaGlownaId = pierwszy.ElementId;
             }
         }
+        PrzygotujWariantyNowej();
         OnPropertyChanged(nameof(Nowa));
     }
 
@@ -259,6 +289,8 @@ public partial class WyprawyViewModel : ObservableObject
         // żeby kolejna wyprawa nie została z pustym składem (FR-704)
         if (value.ZestawId != null)
             UstawZestaw(_dane.Zestawy.FirstOrDefault(z => z.Id == value.ZestawId));
+        else
+            WariantyNowej.Clear();
     }
 
     private static void PokazBlad(string blad) =>
