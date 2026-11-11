@@ -2,16 +2,16 @@
 
 **Aktualna wersja:** 1.0.3  
 **Aktualny etap:** 1 — Poprawki  
-**Następne zadanie:** 1.1 — Wyprawy (w trakcie)  
-**Stan prac:** poprawki z audytu są w roboczym [PR #5](https://github.com/DawidWrona92/Kwatermistrz/pull/5); wymagają kompilacji i testów przed scaleniem.
+**Następne zadanie:** odbiór 1.1 i 1.2 na Windows, następnie 1.3 — Jedno źródło prawdy  
+**Stan prac:** poprawki z audytu, Wypraw 1.1 i Importu 1.2 są w roboczym [PR #5](https://github.com/DawidWrona92/Kwatermistrz/pull/5); CI Windows weryfikuje kompilację i testy, a przed scaleniem nadal wymagane są testy ręczne na kopii bazy.
 
 > Ten plik jest główną listą zadań projektu. Aktualizujemy go po zakończeniu każdego punktu.
 
 ## Etap 1 — Poprawki
 
 - [ ] **1.1 Wyprawy** — poprawić dodawanie, wybór, edycję, usuwanie i przywracanie; zapewnić poprawne przeliczanie liczników historycznych i brak podwójnego naliczania. *Kod przygotowany; do wykonania: [testy i akceptacja na Windows](docs/testy-wypraw-1.1.md).*
-- [ ] **1.2 Import** — sprawdzić import XLSX, ogólny, pakiety i `.kwreko`; naprawić podgląd, komunikaty, rozwiązywanie konfliktów oraz odświeżanie danych po imporcie.
-- [ ] **1.3 Jedno źródło prawdy** — usunąć niespójności między danymi w JSON, stanem ekranów i wartościami obliczanymi; ujednolicić powiadamianie o zmianach, zapis i odświeżanie. Rozważyć trwałą migawkę składników korekt historycznych, bez naruszania starszych baz.
+- [ ] **1.2 Import** — sprawdzić import XLSX, ogólny, pakiety i `.kwreko`; naprawić podgląd, komunikaty, rozwiązywanie konfliktów oraz odświeżanie danych po imporcie. *Kod i testy regresyjne przygotowane; do akceptacji: [checklista 1.2](docs/testy-import-1.2.md). Import podstawowego XLSX do istniejącej bazy nadal wymaga ręcznej kontroli potencjalnych duplikatów.*
+- [ ] **1.3 Jedno źródło prawdy** — usunąć niespójności między danymi w JSON, stanem ekranów i wartościami obliczanymi; ujednolicić powiadamianie o zmianach, zapis i odświeżanie. *Po imporcie wdrożono wspólne odświeżanie ekranów i transakcje kopiujące dane; nadal wymaga pełnego ujednolicenia.* Rozważyć trwałą migawkę składników korekt historycznych, bez naruszania starszych baz.
 - [ ] **1.4 Nawigacja i zakładki** — sprawdzić przełączanie ekranów, wybór rekordów, filtry, panel karty i skróty klawiszowe; zweryfikować poprawki z PR #5.
 - [ ] **1.5 Przyciski i spójność UX** — ujednolicić „Dodaj”, „Edytuj”, „Zapisz”, „Usuń”, „Otwórz” i „Potwierdź”; poprawić niejasne lub nieaktywne akcje, zaznaczanie oraz menu kontekstowe.
 - [ ] **1.6 Integralność i kopie danych** — zabezpieczyć odzyskiwanie po uszkodzeniu JSON, zweryfikować backup/przywracanie zdjęć oraz referencje między przedmiotami, replikami, zestawami i wyprawami.
