@@ -22,6 +22,7 @@
 
         <!-- Szybkie dodawanie (FR-802) -->
         <Border x:Name="FormularzNowejWyprawy" Grid.Row="1" Style="{StaticResource Karta}" Padding="10" Margin="0,8,0,8">
+            <StackPanel>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -53,6 +54,25 @@
                     </StackPanel>
                 </ui:Button>
             </Grid>
+            <Expander Header="Warianty zestawu nowej wyprawy" Margin="0,8,0,0"
+                      ToolTip="Wybierz warianty przed dodaniem wyprawy; bez zestawu lista jest pusta">
+                <ScrollViewer MaxHeight="120" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding WariantyNowej}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
+                                    <TextBlock Text="{Binding NazwaSlotu}" Width="160" VerticalAlignment="Center" />
+                                    <ComboBox Width="310" ItemsSource="{Binding Opcje}"
+                                              SelectedValue="{Binding WybranyWariantId, Mode=TwoWay}"
+                                              SelectedValuePath="Id" DisplayMemberPath="Opis"
+                                              ToolTip="Wariant do zapisania na nowej wyprawie" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Expander>
+            </StackPanel>
         </Border>
 
         <!-- Filtry + lista (FR-808) -->
@@ -73,7 +93,7 @@
                           ToolTip="Zestaw" />
                 <ui:TextBox MinWidth="160" Margin="8,0,0,0" PlaceholderText="Filtr…"
                             Text="{Binding FiltrTekst, UpdateSourceTrigger=PropertyChanged}" />
-                <CheckBox Content="Pokaż usunięte" Margin="12,0,0,0" VerticalAlignment="Center"
+                <CheckBox Content="Tylko usunięte" Margin="12,0,0,0" VerticalAlignment="Center"
                           IsChecked="{Binding PokazUsuniete, Mode=TwoWay}"
                           ToolTip="Wyświetla usunięte wyprawy, które można przywrócić" />
             </StackPanel>
