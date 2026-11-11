@@ -421,6 +421,8 @@ public partial class MainWindow : FluentWindow
 
             if (ObszarZawartosci.Content is not DependencyObject zawartosc)
                 throw new InvalidOperationException($"Brak widoku: {ekran}.");
+            if (ekran == "Zestawy" && zawartosc is ZestawyPage stronaZestawow)
+                stronaZestawow.ZweryfikujUklad();
 
             var tabele = ZnajdzWizualne<System.Windows.Controls.DataGrid>(zawartosc).ToList();
             if (tabele.Count == 0)
