@@ -414,7 +414,8 @@ public class Kalkulator
         // Nierozpoznane wyprawy z konkretnym rokiem są już obecne w
         // historycznych licznikach replik. Nie dodajemy ich dwa razy.
         var wgReplik = Math.Max(0, _dane.Repliki.Sum(r => r.LicznikHistorycznyWypraw)
-            - _dane.Wyprawy.Count(w => !w.CzyUsunieta && w.CzyHistoryczna && w.ReplikaGlownaId == null))
+            - _dane.Wyprawy.Count(w => !w.CzyUsunieta &&
+                (w.CzyHistoryczna || w.OdliczonaOdLicznikow) && w.ReplikaGlownaId == null))
             + _dane.Wyprawy.Count(w => !w.CzyUsunieta);
         var bezMunduru = 0;
         var wgMundur = 0;
