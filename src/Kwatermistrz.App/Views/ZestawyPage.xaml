@@ -16,28 +16,46 @@
         <conv:KonwerterRowneTyp x:Key="KonwerterRowneTyp" />
         <conv:KonwerterRowneIdWariantu x:Key="KonwerterRowneIdWariantu" />
     </Page.Resources>
-    <Grid Margin="8">
+    <Grid x:Name="SiatkaZestawow" Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280" />
-            <ColumnDefinition Width="*" />
+            <!-- Prawdziwe kolumny Grid (nie StackPanel); użytkownik może złapać
+                 splitter i rozszerzyć listę bez zmiany wielkości całego okna. -->
+            <ColumnDefinition x:Name="KolumnaListyZestawow"
+                              Width="420" MinWidth="300" MaxWidth="900" />
+            <ColumnDefinition Width="7" />
+            <ColumnDefinition Width="*" MinWidth="300" />
         </Grid.ColumnDefinitions>
 
-        <!-- Lista zestawów (FR-709) -->
-        <StackPanel Grid.Column="0" Margin="0,0,8,0">
-            <TextBlock Text="Zestawy" Style="{StaticResource TytulEkranu}" />
-            <StackPanel Orientation="Horizontal" Margin="0,8,0,8">
-                <ui:TextBox MinWidth="140" PlaceholderText="Filtr…"
+        <!-- Lewy panel wypełnia dostępną wysokość, tabela przewija się wewnątrz. -->
+        <Grid x:Name="LewyPanelZestawow" Grid.Column="0" Margin="0,0,4,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Text="Zestawy" Style="{StaticResource TytulEkranu}" />
+            <Grid Grid.Row="1" Margin="0,8,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ui:TextBox Grid.Column="0" PlaceholderText="Filtr…"
                             Text="{Binding FiltrTekst, UpdateSourceTrigger=PropertyChanged}" />
-                <CheckBox Content="Tylko szkice" VerticalAlignment="Center" Margin="8,0,0,0"
-                          IsChecked="{Binding TylkoSzkice}" />
-                <ui:Button Content="Nowy" Appearance="Primary" Margin="8,0,0,0"
+                <ui:Button Grid.Column="1" Content="Nowy" Appearance="Primary" Margin="8,0,0,0"
                            Command="{Binding DodajCommand}" />
-            </StackPanel>
-            <ui:DataGrid ItemsSource="{Binding Wiersze}"
+            </Grid>
+            <CheckBox Grid.Row="2" Content="Tylko szkice" VerticalAlignment="Center"
+                      Margin="0,0,0,8" IsChecked="{Binding TylkoSzkice}" />
+            <ui:DataGrid x:Name="ListaZestawow" Grid.Row="3"
+                         MinHeight="180" MinWidth="0"
+                         VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                         VerticalScrollBarVisibility="Auto"
+                         ItemsSource="{Binding Wiersze}"
                          AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                          SelectionMode="Single" SelectedItem="{Binding Wybrany}"
                          HeadersVisibility="Column" GridLinesVisibility="All"
@@ -63,10 +81,43 @@
                     </DataGridTextColumn>
                 </DataGrid.Columns>
             </ui:DataGrid>
-        </StackPanel>
+        </Grid>
+
+        <!-- Rozdzielacz z wyraźnym uchwytem, którego można używać myszą. -->
+        <GridSplitter x:Name="PodzialZestawow" Grid.Column="1"
+                      Width="7" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"
+                      Background="{DynamicResource LiniaTabeli}"
+                      Cursor="SizeWE"
+                      ToolTip="Przeciągnij, aby zmienić szerokość listy zestawów." />
+
+        <!-- Gdy nie wybrano rekordu, nie pokazuj pustej ściany bez wskazówki. -->
+        <Border Grid.Column="2" Padding="28"
+                VerticalAlignment="Center" HorizontalAlignment="Center"
+                MaxWidth="480">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Wybrany}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <StackPanel>
+                <TextBlock Text="Wybierz zestaw z listy"
+                           FontSize="19" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Text="Tutaj zobaczysz szczegóły, zdjęcia własne i referencyjne, sloty oraz listę pakowania. Możesz też utworzyć nowy zestaw."
+                           TextAlignment="Center" TextWrapping="Wrap" Margin="0,12,0,0"
+                           Foreground="{Binding Drugorzedny, Source={x:Static app:App.Kolory}}" />
+            </StackPanel>
+        </Border>
 
         <!-- Karta zestawu (FR-701, FR-702, FR-703) -->
-        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto"
+        <ScrollViewer x:Name="EdytorZestawu" Grid.Column="2"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto"
                       Visibility="{Binding Wybrany, Converter={StaticResource KonwerterNieRowneNull}}">
             <StackPanel Margin="4" DataContext="{Binding Wybrany}">
                 <Grid Margin="0,0,0,8">
@@ -255,6 +306,6 @@
             </StackPanel>
         </ScrollViewer>
         <!-- Pasek komunikatu (wyniki eksportu) -->
-        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Komunikat}" VerticalAlignment="Center" Margin="0,4,0,0" />
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding Komunikat}" VerticalAlignment="Center" Margin="0,4,0,0" />
     </Grid>
 </Page>
