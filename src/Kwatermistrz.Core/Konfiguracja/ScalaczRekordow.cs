@@ -31,17 +31,41 @@ public static class ScalaczRekordow
         var noweZadania = new List<Zadanie>();
         var noweWyprawy = new List<Wyprawa>();
 
-        pominiete += ScalListy(docelowe.Rekonstrukcje, eksport.Rekonstrukcje, r => r.Id, mapaRekonstrukcji, noweRekonstrukcje);
-        // sloty szablonu: mapa po Id (sloty zestawów wskazują SzablonSlotId — musi wskazywać lokalny slot)
+        // Pakiet konfiguracji mógł już scalić rekonstrukcję po nazwie z lokalną pod innym Id.
+        // Dwa różne Id z identyczną nazwą nie powinny tworzyć zdublowanych profili.
+        foreach (var rekEksport in eksport.Rekonstrukcje)
+        {
+            var lokalna = docelowe.Rekonstrukcje.FirstOrDefault(r => r.Id == rekEksport.Id)
+                ?? docelowe.Rekonstrukcje.FirstOrDefault(r =>
+                    Normalizacja.TekstDoPorownania(r.Nazwa) == Normalizacja.TekstDoPorownania(rekEksport.Nazwa));
+            if (lokalna != null)
+            {
+                mapaRekonstrukcji[rekEksport.Id] = lokalna.Id;
+                pominiete++;
+            }
+            else
+            {
+                docelowe.Rekonstrukcje.Add(rekEksport);
+                noweRekonstrukcje.Add(rekEksport);
+                mapaRekonstrukcji[rekEksport.Id] = rekEksport.Id;
+            }
+        }
+        // Mapujemy sloty szablonu nie tylko po Id, ale też po nazwie, jeśli profile już
+        // istniały w obu instalacjach pod różnymi identyfikatorami.
         foreach (var rekEksport in eksport.Rekonstrukcje)
             if (mapaRekonstrukcji.TryGetValue(rekEksport.Id, out var rekLokalna))
+            {
+                var lokalna = docelowe.Rekonstrukcje.First(r => r.Id == rekLokalna);
                 foreach (var slotEksport in rekEksport.SzablonSlotow)
                 {
-                    var slotLokalny = docelowe.Rekonstrukcje.First(r => r.Id == rekLokalna).SzablonSlotow
-                        .FirstOrDefault(s => s.Id == slotEksport.Id);
+                    var slotLokalny = lokalna.SzablonSlotow.FirstOrDefault(s => s.Id == slotEksport.Id)
+                        ?? lokalna.SzablonSlotow.FirstOrDefault(s =>
+                            Normalizacja.TekstDoPorownania(s.Nazwa) ==
+                            Normalizacja.TekstDoPorownania(slotEksport.Nazwa));
                     if (slotLokalny != null)
                         mapaSlotowSzablonu[slotEksport.Id] = slotLokalny.Id;
                 }
+            }
         pominiete += ScalListy(docelowe.Przedmioty, eksport.Przedmioty, p => p.Id, mapaPrzedmiotow, nowePrzedmioty);
         pominiete += ScalListy(docelowe.Repliki, eksport.Repliki, r => r.Id, mapaReplik, noweRepliki);
         pominiete += ScalListy(docelowe.Zestawy, eksport.Zestawy, z => z.Id, mapaZestawow, noweZestawy);
