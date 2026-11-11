@@ -1,3 +1,11 @@
+## Tabele — proporcjonalne kolumny (2026-11-11)
+
+- Rozwiązano problem pustej prawej części raportów po powiększeniu okna: kolumny `Auto` nie rozdzielały wolnej szerokości.
+- W 14 tabelach na 8 ekranach kolumny tekstowe otrzymały ważone szerokości `*` oraz minimalne szerokości dla czytelności. Nazwy, opisy i komentarze dostają więcej miejsca niż `%` i liczniki.
+- Kolumny z przyciskami, ikonami, zdjęciami i checkboxami pozostają zwarte; szerokie tabele mogą być przewijane poziomo.
+- Ręczna zmiana szerokości nagłówków i dopasowanie szerokości do treści dwuklikiem pozostają dostępne.
+- Smoke Windows kontroluje proporcjonalny typ wszystkich kolumn oraz faktyczne rozciąganie kilku kolumn przy powiększeniu tabeli Raportów.
+
 # Changelog
 
 Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie semantyczne.

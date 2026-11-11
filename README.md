@@ -106,3 +106,16 @@ aby zobaczyć pozostałe kolumny.
 Po wejściu do ekranu zaznaczany jest pierwszy widoczny zestaw, a wybrany
 rekord pozostaje zaznaczony po odświeżeniu lub edycji. Gdy filtr nie zwraca
 wyników, wyświetlany jest komunikat wskazujący wybór lub utworzenie zestawu.
+
+## Automatyczne dopasowanie szerokości kolumn
+
+W tabelach Raportów, Broni, Wyposażenia, Wypraw, Zestawów, Słowników,
+Pakietów i Do uzupełnienia kolumny z danymi dzielą wolną szerokość okna
+proporcjonalnie. Szersze pola tekstowe (nazwa, opis, komentarz) otrzymują
+większy udział niż liczniki, procenty czy daty. Dla wąskich okien kolumny
+mają minimalne szerokości, a nadmiar można przewijać poziomo.
+
+Możesz nadal przeciągnąć granicę nagłówka, żeby ręcznie zmienić szerokość
+kolumny, lub kliknąć tę granicę dwukrotnie, żeby dopasować ją do treści.
+Przy pierwszym otwarciu i przy zmianie szerokości okna kolumny zachowują
+proporcjonalny układ. Kolumny akcji i ikon nie zajmują niepotrzebnie miejsca.
