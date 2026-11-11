@@ -34,6 +34,12 @@ public static class RejestrWypraw
         var rzeczywiste = dane.Wyprawy.Count(w => !w.CzyUsunieta);
         var wedlugLat = dane.Ustawienia.HistoryczneWyprawyWgRok.Values.Sum(n => Math.Max(0, n));
         var wedlugReplik = dane.Repliki.Sum(r => Math.Max(0, r.LicznikHistorycznyWypraw));
+        // Jeśli użytkownik rozpoznał jedynie datę, przypisanie repliki jest
+        // wciąż nieznane: wydarzenie nadal znajduje się w starym łącznym
+        // liczniku replik. Nie wolno naliczyć go drugi raz.
+        var historiaBezRepliki = dane.Wyprawy.Count(w => !w.CzyUsunieta &&
+            w.CzyHistoryczna && w.ReplikaGlownaId == null);
+        wedlugReplik = Math.Max(0, wedlugReplik - historiaBezRepliki);
         return checked(rzeczywiste + Math.Max(wedlugLat, wedlugReplik));
     }
 
@@ -78,17 +84,114 @@ public static class RejestrWypraw
             ReplikaGlownaId = replikaId,
             ZestawId = zestawId,
             Komentarz = "Rozpoznana wyprawa z importowanego rocznego zestawienia.",
+            HistorycznieOdliczonaReplikaId = replika?.LicznikHistorycznyWypraw > 0 ? replika.Id : null,
         };
-        // Mutacja dopiero po całej walidacji.
+        var przedmioty = ZnajdzPrzedmiotyZestawu(dane, wyprawa);
+        var odliczone = przedmioty.Where(p => p.LicznikHistoryczny > 0)
+            .Select(p => p.Id).Distinct().ToList();
+        wyprawa.HistorycznieOdliczonePrzedmiotyId = odliczone;
+        // Mutacja dopiero po walidacji. Wszystkie źródła liczników są pomniejszane
+        // tylko o faktycznie skonsumowane wystąpienia historyczne.
         dane.Ustawienia.HistoryczneWyprawyWgRok[wpis.Rok]--;
-        if (replika != null)
-            replika.LicznikHistorycznyWypraw--;
+        if (wyprawa.HistorycznieOdliczonaReplikaId != null)
+            replika!.LicznikHistorycznyWypraw--;
+        foreach (var p in przedmioty.Where(p => odliczone.Contains(p.Id)))
+            p.LicznikHistoryczny--;
         dane.Wyprawy.Add(wyprawa);
         return wyprawa;
+    }
+
+    /// <summary>Wybrane domyślne warianty zestawu i elementy użyte w wyprawie.</summary>
+    private static List<Przedmiot> ZnajdzPrzedmiotyZestawu(DaneAplikacji dane, Wyprawa wyprawa)
+    {
+        var zestaw = dane.Zestawy.FirstOrDefault(z => z.Id == wyprawa.ZestawId);
+        if (zestaw == null)
+            return new List<Przedmiot>();
+        var kalkulator = new Kalkulator(dane);
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var slot in zestaw.Sloty)
+        {
+            var wariant = slot.Warianty.FirstOrDefault(w => w.Id == slot.WariantDomyslnyId)
+                ?? slot.Warianty.FirstOrDefault();
+            if (wariant == null)
+                continue;
+            wyprawa.WybraneWarianty[slot.Id] = wariant.Id;
+            foreach (var element in wariant.Elementy)
+                foreach (var id in kalkulator.RozwinNaPrzedmioty(element))
+                    ids.Add(id);
+        }
+        return dane.Przedmioty.Where(p => ids.Contains(p.Id)).ToList();
+    }
+
+    /// <summary>Przywraca anonimowe wystąpienie po odrzuceniu błędnego przypisania.</summary>
+    public static void CofnijRozpoznanie(DaneAplikacji dane, Wyprawa wyprawa)
+    {
+        if (!wyprawa.CzyHistoryczna || wyprawa.CzyUsunieta || wyprawa.RokHistoryczny == null)
+            throw new InvalidOperationException("To nie jest aktywna wyprawa z identyfikacji.");
+        var rok = wyprawa.RokHistoryczny.Value;
+        dane.Ustawienia.HistoryczneWyprawyWgRok.TryGetValue(rok, out var liczba);
+        dane.Ustawienia.HistoryczneWyprawyWgRok[rok] = liczba + 1;
+        var replika = dane.Repliki.FirstOrDefault(r => r.Id == wyprawa.HistorycznieOdliczonaReplikaId);
+        if (replika != null)
+            replika.LicznikHistorycznyWypraw++;
+        foreach (var id in wyprawa.HistorycznieOdliczonePrzedmiotyId.Distinct())
+        {
+            var przedmiot = dane.Przedmioty.FirstOrDefault(p => p.Id == id);
+            if (przedmiot != null)
+                przedmiot.LicznikHistoryczny++;
+        }
+        wyprawa.CzyUsunieta = true;
+    }
+
+    /// <summary>Uzupełnia wcześniej częściowo rozpoznaną wyprawę bez ponownego zmniejszania licznika rocznego.</summary>
+    public static void Dopelnij(DaneAplikacji dane, Wyprawa wyprawa,
+        DateOnly? data, string? replikaId, string? zestawId)
+    {
+        if (!wyprawa.CzyHistoryczna || wyprawa.CzyUsunieta || wyprawa.RokHistoryczny == null)
+            throw new InvalidOperationException("Wybrany wpis nie jest historyczną wyprawą.");
+        if (data != null && data.Value.Year != wyprawa.RokHistoryczny)
+            throw new InvalidOperationException("Wybrana data nie należy do roku historycznego.");
+        if (wyprawa.ReplikaGlownaId != null && wyprawa.ReplikaGlownaId != replikaId)
+            throw new InvalidOperationException("Zmiana już uzgodnionej repliki wymaga cofnięcia przypisania.");
+        if (wyprawa.ZestawId != null && wyprawa.ZestawId != zestawId)
+            throw new InvalidOperationException("Zmiana już uzgodnionego zestawu wymaga cofnięcia przypisania.");
+        var replika = replikaId == null ? null : dane.Repliki.FirstOrDefault(r => r.Id == replikaId);
+        if (replikaId != null && replika == null)
+            throw new InvalidOperationException("Nie ma wskazanej repliki.");
+        if (zestawId != null && !dane.Zestawy.Any(z => z.Id == zestawId))
+            throw new InvalidOperationException("Nie ma wskazanego zestawu.");
+        if (wyprawa.ReplikaGlownaId == null && replika != null &&
+            replika.LicznikHistorycznyWypraw == 0 &&
+            dane.Repliki.Any(r => r.LicznikHistorycznyWypraw > 0))
+            throw new InvalidOperationException("Replika nie posiada wolnego historycznego użycia.");
+
+        if (wyprawa.ReplikaGlownaId == null && replika != null)
+        {
+            if (replika.LicznikHistorycznyWypraw > 0)
+            {
+                replika.LicznikHistorycznyWypraw--;
+                wyprawa.HistorycznieOdliczonaReplikaId = replika.Id;
+            }
+            wyprawa.ReplikaGlownaId = replika.Id;
+        }
+        if (wyprawa.ZestawId == null && zestawId != null)
+        {
+            wyprawa.ZestawId = zestawId;
+            var przedmioty = ZnajdzPrzedmiotyZestawu(dane, wyprawa);
+            foreach (var p in przedmioty.Where(p => p.LicznikHistoryczny > 0))
+            {
+                p.LicznikHistoryczny--;
+                wyprawa.HistorycznieOdliczonePrzedmiotyId.Add(p.Id);
+            }
+        }
+        if (data != null)
+            wyprawa.Data = data.Value;
     }
 
     /// <summary>Niedopasowane liczby nie mogą być po cichu traktowane jako nowe wyprawy.</summary>
     public static int RozbieznoscLicznikow(DaneAplikacji dane)
         => dane.Ustawienia.HistoryczneWyprawyWgRok.Values.Sum()
-           - dane.Repliki.Sum(r => r.LicznikHistorycznyWypraw);
+           - Math.Max(0, dane.Repliki.Sum(r => r.LicznikHistorycznyWypraw)
+               - dane.Wyprawy.Count(w => !w.CzyUsunieta &&
+                   w.CzyHistoryczna && w.ReplikaGlownaId == null));
 }
