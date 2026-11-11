@@ -499,6 +499,13 @@ public partial class MainWindow : FluentWindow
                 throw new InvalidOperationException(
                     $"Kolumna checkboxów jest za wąska: {tabela.Columns[0].ActualWidth:F0}px.");
 
+            var kolumnaMiejsca = tabela.Columns
+                .OfType<System.Windows.Controls.DataGridTextColumn>()
+                .SingleOrDefault(k => Equals(k.Header, "Miejsce"));
+            if (kolumnaMiejsca?.Binding is not System.Windows.Data.MultiBinding)
+                throw new InvalidOperationException(
+                    "Wyposażenie nadal wyświetla wewnętrzne ID miejsca zamiast nazwy.");
+
             var checkbox = ZnajdzWizualne<System.Windows.Controls.CheckBox>(tabela)
                 .FirstOrDefault()
                 ?? throw new InvalidOperationException("Nie wyrenderowano checkboxa wiersza.");
