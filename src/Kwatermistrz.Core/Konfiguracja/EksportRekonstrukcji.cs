@@ -155,7 +155,7 @@ public static class EksportRekonstrukcji
                 continue;
             // Zdjęcia odbiorcy mają pierwszeństwo: import nie może nadpisywać istniejących plików
             // nawet gdy dwa eksporty używają identycznej ścieżki względnej.
-            if (string.IsNullOrWhiteSpace(wzgledna) || wpis.FullName.EndsWith("/", StringComparison.Ordinal)
+            if (string.IsNullOrWhiteSpace(wzgledna) || wpis.FullName.EndsWith('/')
                 || File.Exists(pelna))
                 continue;
             Directory.CreateDirectory(Path.GetDirectoryName(pelna)!);
