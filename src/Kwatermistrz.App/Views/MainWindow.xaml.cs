@@ -726,6 +726,45 @@ public partial class MainWindow : FluentWindow
             throw new InvalidOperationException(
                 $"Pulpit nie pokazuje 89 wypraw po imporcie; pokazuje {ViewModel.Pulpit.LacznaLiczbaWypraw}.");
 
+        // Historia bez konkretnych dat: 89 rekordów z arkusza rocznego musi
+        // pojawić się jako Wyprawa_N, NN-NN-NNNN, nie tylko jako licznik.
+        ViewModel.Wyprawy.Odswiez();
+        var historia = ViewModel.Wyprawy.Wiersze.Where(w => w.CzyWirtualna).ToList();
+        if (historia.Count != 89 ||
+            historia.Any(w => w.DataTekst != "NN-NN-NNNN") ||
+            historia.FirstOrDefault()?.Nazwa != "Wyprawa_1")
+            throw new InvalidOperationException(
+                $"Historyczne wyprawy nie są poprawnie widoczne: {historia.Count}/89.");
+
+        ViewModel.Konflikty.Odswiez();
+        if (ViewModel.Konflikty.LiczbaWyprawHistorycznych != 89 ||
+            ViewModel.Konflikty.Wiersze.Count < 89)
+            throw new InvalidOperationException("Nowa zakładka Konflikty nie zawiera nierozpoznanej historii.");
+        OtworzEkranZMenu("Konflikty");
+        PrzepompujNawigacje();
+        if (ObszarZawartosci.Content is not KonfliktyPage stronaKonfliktow ||
+            ZnajdzWizualne<System.Windows.Controls.DataGrid>(stronaKonfliktow).FirstOrDefault()?.Items.Count < 89)
+            throw new InvalidOperationException("Nie wyświetlono tabeli konfliktów po imporcie.");
+
+        // W środowisku CI podejmujemy prawdziwą decyzję użytkownika,
+        // zapisujemy JSON i kontrolujemy brak podwójnego liczenia.
+        var cel = ViewModel.Konflikty.Wiersze.First(w => w.CzyHistorycznaWirtualna);
+        var rokHistorii = cel.Rok ?? throw new InvalidOperationException("Historia straciła rok.");
+        ViewModel.Konflikty.Wybrany = cel;
+        ViewModel.Konflikty.Data = new DateTime(rokHistorii, 11, 11);
+        ViewModel.Konflikty.ZapiszRozwiazanieCommand.Execute(null);
+        if (App.Dane.Wyprawy.Count(w => w.CzyHistoryczna && !w.CzyUsunieta) != 1 ||
+            new Kwatermistrz.Core.Obliczenia.Kalkulator(App.Dane).LacznaLiczbaWypraw() != 89 ||
+            ViewModel.Konflikty.LiczbaWyprawHistorycznych != 88)
+            throw new InvalidOperationException("Rozpoznanie historii podwoiło liczbę wypraw lub nie zapisało zmian.");
+        var rozpoznana = App.Dane.Wyprawy.Single(w => w.CzyHistoryczna && !w.CzyUsunieta);
+        Kwatermistrz.Core.Obliczenia.RejestrWypraw.CofnijRozpoznanie(App.Dane, rozpoznana);
+        App.Magazyn.Zapisz(App.Dane);
+        ViewModel.OdswiezWszystkieEkrany();
+        if (ViewModel.Konflikty.LiczbaWyprawHistorycznych != 89 ||
+            ViewModel.Pulpit.LacznaLiczbaWypraw != 89)
+            throw new InvalidOperationException("Cofnięcie uzgodnienia nie przywróciło historycznych liczników.");
+
         if (ViewModel.RekonstrukcjeLista.Count < 3)
             throw new InvalidOperationException("Wybór rekonstrukcji nie odświeżył się po imporcie.");
 
