@@ -32,6 +32,15 @@ public class MagazynJson
     /// <summary>Powiadomienie o zmianie dokumentu; nie jest zdarzeniem okresowego flush na dysk.</summary>
     public event Action? DaneZmienione;
 
+    private bool _ochronaPrzedNadpisaniem;
+    private bool _wczytanoZBak;
+
+    /// <summary>Nie znaleziono czytelnej bazy; zapis jest zablokowany do ręcznego odzyskania.</summary>
+    public bool OchronaPrzedNadpisaniem
+    {
+        get { lock (_blokada) return _ochronaPrzedNadpisaniem; }
+    }
+
     public MagazynJson(string katalogDanych)
     {
         KatalogDanych = katalogDanych;
@@ -77,6 +86,8 @@ public class MagazynJson
                 var dane = DeserializujZMigracja(json) ?? throw new InvalidDataException("Pusty dokument");
                 Waliduj(dane);
                 Migruj(dane);
+                _ochronaPrzedNadpisaniem = false;
+                _wczytanoZBak = false;
                 return (dane, new WynikKontroli { CzyPoprawne = true, Zrodlo = _sciezka });
             }
             catch (Exception ex) when (ex is IOException or InvalidDataException or System.Text.Json.JsonException)
@@ -93,6 +104,8 @@ public class MagazynJson
                         {
                             Waliduj(dane);
                             Migruj(dane);
+                            _ochronaPrzedNadpisaniem = false;
+                            _wczytanoZBak = true;
                             return (dane, new WynikKontroli { CzyPoprawne = false, Komunikat = "Odczytano ostatnią kopię zapasową", Zrodlo = kopia });
                         }
                     }
@@ -101,8 +114,18 @@ public class MagazynJson
                 {
                     // oba pliki uszkodzone — pusty dokument + komunikat
                 }
+                _ochronaPrzedNadpisaniem = true;
+                _wczytanoZBak = false;
+                // Zachowujemy dotychczasowy kontrakt wyniku, ale OCHRONA blokuje
+                // zapis zastępczego pustego dokumentu oraz uruchomienie aplikacji.
                 var nowe = NoweDane();
-                return (nowe, new WynikKontroli { CzyPoprawne = false, Komunikat = "Nie udało się odczytać danych; utworzono pusty dokument", Zrodlo = null });
+                return (nowe, new WynikKontroli
+                {
+                    CzyPoprawne = false,
+                    Komunikat = "Dane i kopia .bak są nieczytelne. Nie zapisano pustej bazy. " +
+                        "Odzyskaj pliki z katalogu kopie.",
+                    Zrodlo = null,
+                });
             }
         }
     }
@@ -137,6 +160,8 @@ public class MagazynJson
         bool bezWczesniejszegoPowiadomienia;
         lock (_blokada)
         {
+            if (_ochronaPrzedNadpisaniem)
+                throw new InvalidOperationException("Ochrona bazy: odmowa nadpisania uszkodzonych danych.");
             bezWczesniejszegoPowiadomienia = !_brudne;
             Directory.CreateDirectory(KatalogDanych);
             dane.OstatniaZmiana = DateTime.Now;
@@ -144,7 +169,9 @@ public class MagazynJson
             var json = JsonSerializer.Serialize(dane, Opcje);
             var tmp = _sciezka + ".tmp";
             File.WriteAllText(tmp, json);
-            if (File.Exists(_sciezka))
+            // Przy odzyskaniu z .bak plik główny był uszkodzony.
+            // Nie wolno nadpisywać zdrowej .bak uszkodzonym plikiem podczas 1. zapisu.
+            if (File.Exists(_sciezka) && !_wczytanoZBak)
             {
                 var kopia = _sciezka + ".bak";
                 try
@@ -157,6 +184,7 @@ public class MagazynJson
                 }
             }
             File.Move(tmp, _sciezka, overwrite: true);
+            _wczytanoZBak = false;
             _brudne = false;
             start.Stop();
             if (start.ElapsedMilliseconds > 500)
@@ -178,6 +206,8 @@ public class MagazynJson
     {
         lock (_blokada)
         {
+            if (_ochronaPrzedNadpisaniem)
+                throw new InvalidOperationException("Ochrona bazy: odmowa nadpisania uszkodzonych danych.");
             _brudne = true;
             dane.OstatniaZmiana = DateTime.Now;
         }
