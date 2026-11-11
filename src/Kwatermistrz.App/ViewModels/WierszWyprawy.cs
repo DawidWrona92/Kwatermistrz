@@ -24,4 +24,5 @@ public class WierszWyprawy
     public string? MundurNazwa { get; }
     public string? Komentarz => Wyprawa.Komentarz;
     public bool CzyUsunieta => Wyprawa.CzyUsunieta;
+    public bool CzyAktywna => !Wyprawa.CzyUsunieta;
 }
