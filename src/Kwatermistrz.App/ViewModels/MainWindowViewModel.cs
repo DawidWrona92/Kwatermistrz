@@ -1,3 +1,5 @@
+using System.Windows;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kwatermistrz.App.Services;
@@ -57,21 +59,94 @@ public partial class MainWindowViewModel : ObservableObject
         ustawienia.DanePrzywrocone += OdswiezWszystkieEkrany;
         import.DaneZmienione += OdswiezWszystkieEkrany;
         pakiety.DaneZmienione += OdswiezWszystkieEkrany;
+        // Jedno źródło powiadomień dla zwykłych zapisów (również z innych zakładek).
+        magazyn.DaneZmienione += ZaplanujOdswiezenieDanych;
     }
 
-    /// <summary>Odświeża wszystkie ekrany po przywróceniu danych z kopii (FR-1107).</summary>
+    private bool _odswiezanieZaplanowane;
+
+    /// <summary>
+    /// Jeden sygnał zmiany danych: odświeżenie widoków po zakończeniu bieżącej operacji,
+    /// bez ponownego liczenia wszystkiego przy każdej serializacji lub klawiszu.
+    /// </summary>
+    private void ZaplanujOdswiezenieDanych()
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher == null || dispatcher.HasShutdownStarted)
+            return;
+        if (!dispatcher.CheckAccess())
+        {
+            dispatcher.BeginInvoke(new Action(ZaplanujOdswiezenieDanych), DispatcherPriority.Background);
+            return;
+        }
+        if (_odswiezanieZaplanowane)
+            return;
+        _odswiezanieZaplanowane = true;
+        dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (!_odswiezanieZaplanowane)
+                return; // pełna wymiana danych mogła już odświeżyć wszystkie widoki
+            _odswiezanieZaplanowane = false;
+            OdswiezWidokiZalezne();
+        }), DispatcherPriority.ContextIdle);
+    }
+
+    /// <summary>
+    /// Zwykła edycja: aktualizuje widoki zależne, ale nie przebudowuje aktualnie
+    /// edytowanego formularza (utrata fokusu i niezapisanych zmian).
+    /// Ekran docelowy odświeża się ponadto przy wejściu na niego.
+    /// </summary>
+    private void OdswiezWidokiZalezne()
+    {
+        var aktywny = _stan.AktualnyEkran;
+        if (aktywny != "Slowniki")
+            Slowniki.Odswiez();
+        if (aktywny != "Wyposazenie")
+        {
+            Kategorie.Odswiez();
+            Wyposazenie.Odswiez();
+        }
+        if (aktywny != "Rekonstrukcje")
+            Rekonstrukcje.Odswiez();
+        if (aktywny != "Bronie")
+            Repliki.Odswiez();
+        if (aktywny != "Zestawy")
+            Zestawy.Odswiez();
+        if (aktywny != "Wyprawy")
+            Wyprawy.Odswiez();
+        if (aktywny != "Ustawienia")
+            Ustawienia.Odswiez();
+        Pulpit.Odswiez();
+        Raporty.Odswiez();
+        DoUzupelnienia.Odswiez();
+        if (!string.IsNullOrWhiteSpace(_stan.SzukajTekst))
+            Szukanie.Szukaj(_stan.SzukajTekst);
+        OnPropertyChanged(nameof(RekonstrukcjeLista));
+        OnPropertyChanged(nameof(AktywnaRekonstrukcjaNazwa));
+    }
+
+    /// <summary>Pełny refresh po imporcie/przywróceniu. Resetuje kopie edycji tylko wtedy.</summary>
     private void OdswiezWszystkieEkrany()
     {
+        _odswiezanieZaplanowane = false;
+        // Aktywne ID musi istnieć w nowej bazie. Inaczej wszystkie listy filtrują do zera.
+        var przywroconeId = _dane.Ustawienia.OstatniaRekonstrukcjaId;
+        if (przywroconeId != null && !_dane.Rekonstrukcje.Any(r => r.Id == przywroconeId))
+            przywroconeId = null;
+        if (_stan.AktywnaRekonstrukcjaId != przywroconeId)
+            _stan.AktywnaRekonstrukcjaId = przywroconeId;
+
         Slowniki.Odswiez();
         Kategorie.Odswiez();
         Rekonstrukcje.Odswiez();
+        Ustawienia.Odswiez();
         Import.OdswiezZrodla();
         Pakiety.UniewaznijPodgladPoZmianieDanych();
         Pulpit.Odswiez();
         Wyposazenie.Odswiez();
         Repliki.Odswiez();
         Zestawy.Odswiez();
-        Wyprawy.Odswiez();
+        Wyprawy.PrzeladujPoWymianieDanych();
         Raporty.Odswiez();
         DoUzupelnienia.Odswiez();
         Szukanie.Szukaj(_stan.SzukajTekst);
