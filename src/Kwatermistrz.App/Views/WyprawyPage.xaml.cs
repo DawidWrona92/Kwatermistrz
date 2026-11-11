@@ -14,14 +14,15 @@ public partial class WyprawyPage : Page
             if (DataContext is ViewModels.WyprawyViewModel vm)
                 vm.Odswiez();
         };
-
     }
 
     private void Zestaw_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (DataContext is ViewModels.WyprawyViewModel vm &&
-            sender is ComboBox combo &&
-            combo.SelectedItem is Zestaw zestaw)
+        if (DataContext is not ViewModels.WyprawyViewModel vm || sender is not ComboBox combo)
+            return;
+        if (combo.SelectedItem is Zestaw zestaw)
             vm.UstawZestaw(zestaw);
+        else if (e.RemovedItems.Count > 0)
+            vm.UstawZestaw(null);
     }
 }
