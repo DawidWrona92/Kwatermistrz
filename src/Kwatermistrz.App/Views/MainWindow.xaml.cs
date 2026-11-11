@@ -456,6 +456,77 @@ public partial class MainWindow : FluentWindow
     }
 
     /// <summary>
+    /// Regresja: wyposażenie po samym otwarciu strony ma wypełnić szerokie
+    /// okno i pokazywać pełne checkboxy; bez jakiejkolwiek interakcji użytkownika.
+    /// </summary>
+    public void ZweryfikujPierwszyRenderWyposazenia()
+    {
+        var widok = new WyposazeniePage { DataContext = ViewModel!.Wyposazenie };
+        var okno = new Window
+        {
+            Title = "Kwatermistrz — test pierwszego renderowania wyposażenia",
+            Owner = this,
+            ShowInTaskbar = false,
+            WindowStartupLocation = WindowStartupLocation.Manual,
+            Left = 24,
+            Top = 24,
+            Width = 1650,
+            Height = 760,
+            Content = widok,
+        };
+        try
+        {
+            // Test świadomie NIE zmienia szerokości okna po Show().
+            okno.Show();
+            PrzepompujNawigacje();
+            okno.UpdateLayout();
+
+            var tabela = ZnajdzWizualne<System.Windows.Controls.DataGrid>(widok)
+                .SingleOrDefault()
+                ?? throw new InvalidOperationException("Brak tabeli wyposażenia.");
+            if (tabela.Items.Count < 100)
+                throw new InvalidOperationException("Nie wczytano danych wyposażenia do testu.");
+
+            var zajeta = tabela.Columns
+                .Where(k => k.Visibility == Visibility.Visible)
+                .Sum(k => k.ActualWidth);
+            if (zajeta < tabela.ActualWidth - 45)
+                throw new InvalidOperationException(
+                    $"Przy pierwszym renderze tabela nie wypełnia okna: " +
+                    $"kolumny={zajeta:F0}px, DataGrid={tabela.ActualWidth:F0}px.");
+
+            if (tabela.Columns[0].ActualWidth < 60)
+                throw new InvalidOperationException(
+                    $"Kolumna checkboxów jest za wąska: {tabela.Columns[0].ActualWidth:F0}px.");
+
+            var checkbox = ZnajdzWizualne<System.Windows.Controls.CheckBox>(tabela)
+                .FirstOrDefault()
+                ?? throw new InvalidOperationException("Nie wyrenderowano checkboxa wiersza.");
+            if (checkbox.ActualWidth < 24 || checkbox.ActualHeight < 18)
+                throw new InvalidOperationException(
+                    $"Checkbox ma za mały rozmiar: {checkbox.ActualWidth:F0}×{checkbox.ActualHeight:F0}px.");
+
+            var rodzic = System.Windows.Media.VisualTreeHelper.GetParent(checkbox);
+            while (rodzic != null && rodzic is not System.Windows.Controls.DataGridCell)
+                rodzic = System.Windows.Media.VisualTreeHelper.GetParent(rodzic);
+            if (rodzic is not System.Windows.Controls.DataGridCell komorka)
+                throw new InvalidOperationException("Checkbox nie znajduje się w komórce tabeli.");
+
+            var granice = checkbox.TransformToAncestor(komorka)
+                .TransformBounds(new Rect(new Point(0, 0), checkbox.RenderSize));
+            if (granice.Left < -1 || granice.Right > komorka.ActualWidth + 1 ||
+                granice.Top < -1 || granice.Bottom > komorka.ActualHeight + 1)
+                throw new InvalidOperationException(
+                    $"Checkbox wychodzi poza komórkę: checkbox={granice}, " +
+                    $"komórka={komorka.ActualWidth:F0}×{komorka.ActualHeight:F0}px.");
+        }
+        finally
+        {
+            okno.Close();
+        }
+    }
+
+    /// <summary>
     /// Windows UI test: szerokość raportu należy rozdzielić na wszystkie kolumny,
     /// a nie zostawiać pusty obszar po ostatniej, jak w zgłoszonym zrzucie.
     /// </summary>
