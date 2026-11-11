@@ -19,7 +19,7 @@ public class WierszWyprawy
     public bool CzyWirtualna { get; }
     public bool CzyZapisana => !CzyWirtualna;
     public string Nazwa => Wyprawa.NazwaHistoryczna ?? "Wyprawa";
-    public string DataTekst => Wyprawa.Data == default ? "NN-NN-NNNN" : Wyprawa.Data.ToString("dd-MM-yyyy");
+    public string DataTekst => Wyprawa.Data == default ? "NN-NN-NNNN" : Wyprawa.Data.ToString("dd-MM-yyyy", System.Globalization.CultureInfo.InvariantCulture);
     public string CzyWymagaUzupelnienia => CzyWirtualna ? "Do rozpoznania" : Wyprawa.Data == default ? "Data nieznana" : "";
     public string Id => Wyprawa.Id;
     public DateOnly Data => Wyprawa.Data;
