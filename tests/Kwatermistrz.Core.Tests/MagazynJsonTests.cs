@@ -154,4 +154,48 @@ public class MagazynJsonTests : IDisposable
         Assert.Throws<FileNotFoundException>(() =>
             MagazynJson.WczytajZPliku(Path.Combine(_katalog, "nie-ma.json")));
     }
+
+    [Fact]
+    public void PowiadomieniaDanych_OdroczonyZapisNieOgloszaPonownieTejSamejZmiany()
+    {
+        var magazyn = new MagazynJson(_katalog);
+        var dane = magazyn.Wczytaj();
+        var powiadomienia = 0;
+        magazyn.DaneZmienione += () => powiadomienia++;
+
+        dane.Repliki.Add(new Replika { Id = "nowa" });
+        magazyn.ZapiszDebounce(dane);
+        Assert.Equal(1, powiadomienia);
+        Assert.True(magazyn.CzyBrudne);
+
+        magazyn.ZapiszJezeliBrudne(dane);
+        Assert.Equal(1, powiadomienia);
+        Assert.False(magazyn.CzyBrudne);
+
+        magazyn.ZapiszJezeliBrudne(dane);
+        Assert.Equal(1, powiadomienia);
+
+        dane.Repliki.Single().ModelProducenta = "Zmiana";
+        magazyn.ZapiszDebounce(dane);
+        Assert.Equal(2, powiadomienia);
+        magazyn.Zapisz(dane);
+        Assert.Equal(2, powiadomienia);
+    }
+
+    [Fact]
+    public void PowiadomieniaDanych_BezposredniZapisJestZmianaAleOdczytNie()
+    {
+        var magazyn = new MagazynJson(_katalog);
+        var dane = magazyn.Wczytaj();
+        var powiadomienia = 0;
+        magazyn.DaneZmienione += () => powiadomienia++;
+
+        Assert.Empty(magazyn.Wczytaj().Repliki);
+        Assert.Equal(0, powiadomienia);
+        magazyn.Zapisz(dane);
+        Assert.Equal(1, powiadomienia);
+        magazyn.Zapisz(dane);
+        Assert.Equal(2, powiadomienia);
+    }
+
 }
