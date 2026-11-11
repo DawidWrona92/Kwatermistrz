@@ -463,6 +463,80 @@ public partial class MainWindow : FluentWindow
     }
 
     /// <summary>
+    /// Windows UI smoke: checkboxy w Broń muszą zmieścić się w komórce
+    /// przy pierwszym renderze, a zmiana rekonstrukcji musi aktualizować
+    /// widoczne wiersze bez ponownego otwierania zakładki.
+    /// </summary>
+    public void ZweryfikujCheckboxBroniIFiltrRekonstrukcji()
+    {
+        var vm = ViewModel ?? throw new InvalidOperationException("Brak kontekstu głównego.");
+        if (ObszarZawartosci.Content is not BroniePage widok)
+            throw new InvalidOperationException("Test filtra wymaga aktywnej zakładki Broń.");
+
+        var tabela = ZnajdzWizualne<System.Windows.Controls.DataGrid>(widok).Single();
+        if (tabela.Columns.FirstOrDefault() is not System.Windows.Controls.DataGridTemplateColumn kolumna ||
+            kolumna.MinWidth < 64 || kolumna.ActualWidth < 60 || kolumna.CanUserResize)
+            throw new InvalidOperationException(
+                $"Checkbox replik nadal ma uciętą kolumnę (szerokość: {tabela.Columns.FirstOrDefault()?.ActualWidth:F0}).");
+
+        if (vm.Repliki.Wiersze.Count < 2)
+            throw new InvalidOperationException("Brak replik do sprawdzenia pierwszego renderu.");
+
+        tabela.ScrollIntoView(vm.Repliki.Wiersze[0]);
+        PrzepompujNawigacje();
+        tabela.UpdateLayout();
+        var checkbox = ZnajdzWizualne<System.Windows.Controls.CheckBox>(tabela).FirstOrDefault()
+            ?? throw new InvalidOperationException("Checkbox porównania nie został wyrenderowany.");
+        if (checkbox.ActualWidth < 24 || checkbox.ActualHeight < 18)
+            throw new InvalidOperationException(
+                $"Checkbox replik jest zbyt mały: {checkbox.ActualWidth:F0}×{checkbox.ActualHeight:F0}px.");
+
+        DependencyObject? rodzic = System.Windows.Media.VisualTreeHelper.GetParent(checkbox);
+        while (rodzic != null && rodzic is not System.Windows.Controls.DataGridCell)
+            rodzic = System.Windows.Media.VisualTreeHelper.GetParent(rodzic);
+        if (rodzic is not System.Windows.Controls.DataGridCell komorka)
+            throw new InvalidOperationException("Checkbox porównania nie jest elementem komórki.");
+        var granice = checkbox.TransformToAncestor(komorka)
+            .TransformBounds(new Rect(new Point(0, 0), checkbox.RenderSize));
+        if (granice.Left < -1 || granice.Right > komorka.ActualWidth + 1 ||
+            granice.Top < -1 || granice.Bottom > komorka.ActualHeight + 1)
+            throw new InvalidOperationException(
+                $"Checkbox porównania jest obcięty: {granice}, komórka {komorka.ActualWidth:F0}×{komorka.ActualHeight:F0}.");
+
+        if (checkbox.DataContext is not WierszRepliki wiersz)
+            throw new InvalidOperationException("Checkbox nie ma kontekstu właściwej repliki.");
+        var poczatkoweZaznaczenie = wiersz.ZaznaczonaDoPorownania;
+        checkbox.IsChecked = !poczatkoweZaznaczenie;
+        if (wiersz.ZaznaczonaDoPorownania == poczatkoweZaznaczenie)
+            throw new InvalidOperationException("Checkbox nie aktualizuje zaznaczenia porównania.");
+        checkbox.IsChecked = poczatkoweZaznaczenie;
+
+        // Stan źródłowy jest odtwarzany po sprawdzeniu filtra.
+        var wszystkieId = vm.Repliki.Wiersze.Select(w => w.Id).ToHashSet(StringComparer.Ordinal);
+        var polska = vm.RekonstrukcjeLista.FirstOrDefault(r => r.Nazwa == "Polska")
+            ?? throw new InvalidOperationException("Import nie zawiera profilu Polska.");
+        vm.AktywnaRekonstrukcjaId = polska.Id;
+        PrzepompujNawigacje();
+        tabela.UpdateLayout();
+
+        var tylkoPolska = vm.Repliki.Wiersze;
+        if (tylkoPolska.Count == 0 || tylkoPolska.Count >= wszystkieId.Count ||
+            tylkoPolska.Any(w => w.Replika.RekonstrukcjeId.Count > 0 &&
+                                !w.Replika.RekonstrukcjeId.Contains(polska.Id)) ||
+            tabela.Items.Count != tylkoPolska.Count)
+            throw new InvalidOperationException(
+                $"Zmiana rekonstrukcji nie przefiltrowała widoku Broń: " +
+                $"wszystkie={wszystkieId.Count}, Polska={tylkoPolska.Count}, UI={tabela.Items.Count}.");
+
+        vm.AktywnaRekonstrukcjaId = "";
+        PrzepompujNawigacje();
+        tabela.UpdateLayout();
+        var przywrocone = vm.Repliki.Wiersze.Select(w => w.Id).ToHashSet(StringComparer.Ordinal);
+        if (!wszystkieId.SetEquals(przywrocone) || tabela.Items.Count != przywrocone.Count)
+            throw new InvalidOperationException("Powrót do Wszystkie nie przywrócił replik na tej samej stronie.");
+    }
+
+    /// <summary>
     /// Regresja: wyposażenie po samym otwarciu strony ma wypełnić szerokie
     /// okno i pokazywać pełne checkboxy; bez jakiejkolwiek interakcji użytkownika.
     /// </summary>
@@ -786,6 +860,8 @@ public partial class MainWindow : FluentWindow
         if (ViewModel.AktualnyEkran != "Bronie" || ObszarZawartosci.Content is not BroniePage)
             throw new InvalidOperationException($"Komenda nawigacji do Broni nie działa: " +
                 $"VM={ViewModel.AktualnyEkran}, Frame={ObszarZawartosci.Content?.GetType().Name ?? "null"}.");
+
+        ZweryfikujCheckboxBroniIFiltrRekonstrukcji();
 
         // Regresja: wejście w kartę repliki ładowało readonly Status/Wyprawy
         // do Run.Text w trybie TwoWay i kończyło się InvalidOperationException.
