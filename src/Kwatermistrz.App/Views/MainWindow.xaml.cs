@@ -438,14 +438,17 @@ public partial class MainWindow : FluentWindow
                     tabela.AlternationCount < 2)
                     throw new InvalidOperationException($"Tabela {ekran} nie ma poprawnego wyglądu/resize.");
 
-                if (!tabela.ColumnWidth.IsStar)
-                    throw new InvalidOperationException($"Tabela {ekran} nie rozciąga kolumn proporcjonalnie.");
+                if (!tabela.ColumnWidth.IsStar ||
+                    !Kwatermistrz.App.Controls.ProporcjonalneKolumny.GetWlaczone(tabela))
+                    throw new InvalidOperationException(
+                        $"Tabela {ekran} nie ma włączonego automatycznego wypełniania szerokości.");
 
                 foreach (var kolumna in tabela.Columns.OfType<System.Windows.Controls.DataGridTextColumn>())
                 {
-                    if (!kolumna.Width.IsStar || kolumna.MinWidth < 40)
+                    if ((!kolumna.Width.IsStar && !kolumna.Width.IsAbsolute) ||
+                        kolumna.MinWidth < 40)
                         throw new InvalidOperationException(
-                            $"Kolumna tekstowa '{kolumna.Header}' w {ekran} nie skaluje się z oknem.");
+                            $"Kolumna tekstowa '{kolumna.Header}' w {ekran} ma niepoprawny rozmiar.");
                 }
             }
         }
@@ -487,7 +490,8 @@ public partial class MainWindow : FluentWindow
                     d.Columns.Count(c => c is System.Windows.Controls.DataGridTextColumn) == 7)
                 ?? throw new InvalidOperationException("Nie załadowano siedmiu kolumn raportu Umundurowanie.");
             var kolumny = tabela.Columns
-                .Where(c => c.Visibility == Visibility.Visible && c.Width.IsStar)
+                .Where(c => c.Visibility == Visibility.Visible &&
+                    c is System.Windows.Controls.DataGridTextColumn)
                 .ToList();
             if (kolumny.Count != 7)
                 throw new InvalidOperationException("Raport Umundurowanie nie ma 7 elastycznych kolumn.");
