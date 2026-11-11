@@ -87,6 +87,7 @@ public partial class MainWindow : FluentWindow
         _fabrykiStron["Zestawy"] = () => new ZestawyPage { DataContext = vm.Zestawy };
         _fabrykiStron["Raporty"] = () => new RaportyPage { DataContext = vm.Raporty };
         _fabrykiStron["DoUzupelnienia"] = () => new DoUzupelnieniaPage { DataContext = vm.DoUzupelnienia };
+        _fabrykiStron["Konflikty"] = () => new KonfliktyPage { DataContext = vm.Konflikty };
         _fabrykiStron["Rekonstrukcje"] = () => new RekonstrukcjePage { DataContext = vm.Rekonstrukcje };
     }
 
@@ -246,7 +247,7 @@ public partial class MainWindow : FluentWindow
         foreach (var ekran in new[]
         {
             "Pulpit", "Wyprawy", "Bronie", "Wyposazenie",
-            "Zestawy", "Raporty", "DoUzupelnienia", "Slowniki",
+            "Zestawy", "Raporty", "DoUzupelnienia", "Konflikty", "Slowniki",
             "Import", "Pakiety", "Ustawienia", "Pulpit",
         })
         {
@@ -412,7 +413,7 @@ public partial class MainWindow : FluentWindow
         foreach (var ekran in new[]
         {
             "Wyposazenie", "Bronie", "Wyprawy", "Zestawy",
-            "DoUzupelnienia", "Slowniki", "Pakiety", "Raporty",
+            "DoUzupelnienia", "Konflikty", "Slowniki", "Pakiety", "Raporty",
         })
         {
             PokazEkran(ekran);
@@ -937,6 +938,8 @@ public partial class MainWindow : FluentWindow
             ViewModel.Raporty.Odswiez();
         if (ekran == "DoUzupelnienia")
             ViewModel.DoUzupelnienia.Odswiez();
+        if (ekran == "Konflikty")
+            ViewModel.Konflikty.Odswiez();
         ZaznaczNawigacje(ekran);
         }
         finally
