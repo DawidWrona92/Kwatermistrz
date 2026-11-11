@@ -217,10 +217,14 @@ public static class ImporterPakietuKonfiguracji
                         mapa[idPakietu] = kopia.Id;
                         break;
                     case AkcjaWartosci.ScalZIstniejaca when d.Istniejaca != null:
-                        DodajAliasy(d.Istniejaca, d.WartoscPakietu.Nazwa, d.WartoscPakietu.Aliasy);
-                        if (d.Istniejaca.Semantyka.Length == 0)
-                            d.Istniejaca.Semantyka = d.WartoscPakietu.Semantyka;
-                        mapa[idPakietu] = d.Istniejaca.Id;
+                        // Podgląd może wskazywać na oryginalną bazę. Zawsze modyfikuj
+                        // rekord o tym Id W PRZEKAZANEJ bazie (również w kopii transakcyjnej).
+                        var celScalenia = lokalne.FirstOrDefault(w => w.Id == d.Istniejaca.Id)
+                            ?? throw new InvalidOperationException("Zmienił się słownik od czasu przygotowania podglądu.");
+                        DodajAliasy(celScalenia, d.WartoscPakietu.Nazwa, d.WartoscPakietu.Aliasy);
+                        if (celScalenia.Semantyka.Length == 0)
+                            celScalenia.Semantyka = d.WartoscPakietu.Semantyka;
+                        mapa[idPakietu] = celScalenia.Id;
                         break;
                     case AkcjaWartosci.ScalZIstniejaca:
                         // użytkownik wybrał scalanie, ale nie wskazał istniejącej — traktuj jak dodanie nowej
@@ -255,8 +259,10 @@ public static class ImporterPakietuKonfiguracji
                     mapaWzorow[d.WartoscPakietu.Id] = d.WartoscPakietu.Id;
                     break;
                 case AkcjaWartosci.ScalZIstniejaca when d.Istniejaca != null:
-                    DodajAliasy(d.Istniejaca, d.WartoscPakietu.Nazwa, d.WartoscPakietu.Aliasy);
-                    mapaWzorow[d.WartoscPakietu.Id] = d.Istniejaca.Id;
+                    var wzorScalenia = dane.Slowniki.Wzory.FirstOrDefault(w => w.Id == d.Istniejaca.Id)
+                        ?? throw new InvalidOperationException("Zmienił się wzór od czasu przygotowania podglądu.");
+                    DodajAliasy(wzorScalenia, d.WartoscPakietu.Nazwa, d.WartoscPakietu.Aliasy);
+                    mapaWzorow[d.WartoscPakietu.Id] = wzorScalenia.Id;
                     break;
             }
         }
@@ -277,7 +283,9 @@ public static class ImporterPakietuKonfiguracji
                     mapaKategorii[d.WartoscPakietu.Id] = d.WartoscPakietu.Id;
                     break;
                 case AkcjaWartosci.ScalZIstniejaca when d.Istniejaca != null:
-                    mapaKategorii[d.WartoscPakietu.Id] = d.Istniejaca.Id;
+                    var kategoriaScalenia = dane.Slowniki.Kategorie.FirstOrDefault(k => k.Id == d.Istniejaca.Id)
+                        ?? throw new InvalidOperationException("Zmieniła się kategoria od czasu przygotowania podglądu.");
+                    mapaKategorii[d.WartoscPakietu.Id] = kategoriaScalenia.Id;
                     break;
             }
         }
@@ -305,17 +313,19 @@ public static class ImporterPakietuKonfiguracji
                     });
                     break;
                 case AkcjaRekonstrukcji.ScalSzablony when d.Istniejaca != null:
-                    var nazwyIstniejace = d.Istniejaca.SzablonSlotow
+                    var rekonstrukcjaScalenia = dane.Rekonstrukcje.FirstOrDefault(r => r.Id == d.Istniejaca.Id)
+                        ?? throw new InvalidOperationException("Zmieniła się rekonstrukcja od czasu przygotowania podglądu.");
+                    var nazwyIstniejace = rekonstrukcjaScalenia.SzablonSlotow
                         .Select(s => Normalizacja.TekstDoPorownania(s.Nazwa))
                         .ToHashSet();
-                    var kolejnosc = d.Istniejaca.SzablonSlotow.Count > 0
-                        ? d.Istniejaca.SzablonSlotow.Max(s => s.Kolejnosc) + 1
+                    var kolejnosc = rekonstrukcjaScalenia.SzablonSlotow.Count > 0
+                        ? rekonstrukcjaScalenia.SzablonSlotow.Max(s => s.Kolejnosc) + 1
                         : 0;
                     foreach (var s in d.Pakiet.SzablonSlotow.OrderBy(x => x.Kolejnosc))
                     {
                         if (nazwyIstniejace.Add(Normalizacja.TekstDoPorownania(s.Nazwa)))
                         {
-                            d.Istniejaca.SzablonSlotow.Add(new SlotSzablonu
+                            rekonstrukcjaScalenia.SzablonSlotow.Add(new SlotSzablonu
                             {
                                 Nazwa = s.Nazwa,
                                 Kolejnosc = kolejnosc++,
