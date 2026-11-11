@@ -93,3 +93,16 @@ a referencje i opisy zapisywane w `dane.json`.
 Eksport rekonstrukcji do `.kwreko` uwzględnia obie galerie wraz z opisami.
 Przy imporcie kolizja z istniejącym plikiem o tej samej nazwie nie nadpisuje zdjęcia:
 różna zawartość otrzymuje nową nazwę i aktualizowane są ścieżki importowanego zestawu.
+
+## Układ ekranu Zestawy
+
+Lista zestawów i edytor mają elastyczne szerokości. Przeciągnij pionowy
+rozdzielacz pomiędzy nimi w lewo lub prawo, aby ustawić większą szerokość listy
+lub karty (np. podczas pracy ze zdjęciami referencyjnymi). Po maksymalizacji
+okna obie części wykorzystują dodatkowe miejsce. Lista zestawów ma własny
+pionowy i poziomy pasek przewijania; nie trzeba powiększać całego okna,
+aby zobaczyć pozostałe kolumny.
+
+Po wejściu do ekranu zaznaczany jest pierwszy widoczny zestaw, a wybrany
+rekord pozostaje zaznaczony po odświeżeniu lub edycji. Gdy filtr nie zwraca
+wyników, wyświetlany jest komunikat wskazujący wybór lub utworzenie zestawu.
