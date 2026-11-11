@@ -324,8 +324,17 @@ public partial class WyprawyViewModel : ObservableObject
     {
         if (wiersz == null || wiersz.CzyWirtualna)
             return;
-        wiersz.Wyprawa.CzyUsunieta = true;
-        CofnijOdliczenie(wiersz.Wyprawa);
+        if (wiersz.Wyprawa.CzyHistoryczna)
+        {
+            // Cofnij identyfikację do puli bezimiennych historycznych wydarzeń.
+            // Nie wolno usuwać jej bez zwrotu licznika rocznego.
+            RejestrWypraw.CofnijRozpoznanie(_dane, wiersz.Wyprawa);
+        }
+        else
+        {
+            wiersz.Wyprawa.CzyUsunieta = true;
+            CofnijOdliczenie(wiersz.Wyprawa);
+        }
         _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
@@ -334,7 +343,7 @@ public partial class WyprawyViewModel : ObservableObject
     [RelayCommand]
     private void Przywroc(WierszWyprawy? wiersz)
     {
-        if (wiersz == null || !wiersz.Wyprawa.CzyUsunieta)
+        if (wiersz == null || !wiersz.Wyprawa.CzyUsunieta || wiersz.Wyprawa.CzyHistoryczna)
             return;
         wiersz.Wyprawa.CzyUsunieta = false;
         if (CzyPrzedDniemZerowymDla(wiersz.Wyprawa))
