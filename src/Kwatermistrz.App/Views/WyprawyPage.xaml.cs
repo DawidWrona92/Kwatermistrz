@@ -14,17 +14,7 @@ public partial class WyprawyPage : Page
             if (DataContext is ViewModels.WyprawyViewModel vm)
                 vm.Odswiez();
         };
-        KeyDown += (_, e) =>
-        {
-            // Enter w formularzu szybkiego dodawania = „Dodaj wyprawę” (FR-802)
-            if (e.Key == System.Windows.Input.Key.Enter &&
-                DataContext is ViewModels.WyprawyViewModel vm &&
-                vm.DodajWypraweCommand.CanExecute(null))
-            {
-                vm.DodajWypraweCommand.Execute(null);
-                e.Handled = true;
-            }
-        };
+
     }
 
     private void Zestaw_SelectionChanged(object sender, SelectionChangedEventArgs e)
