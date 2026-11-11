@@ -298,8 +298,8 @@ public partial class WyprawyViewModel : ObservableObject
     [RelayCommand]
     private void ZapiszWybrana()
     {
-        if (Wybrana == null || Wybrana.CzyWirtualna)
-            return;
+        if (Wybrana == null || Wybrana.CzyWirtualna || Wybrana.Wyprawa.CzyHistoryczna)
+            return; // historyczne korekty przechodzą wyłącznie przez RejestrWypraw w Konfliktach
         var wyprawa = Wybrana.Wyprawa;
         // korekta sprzed edycji jest cofana po migawce z momentu otwarcia edycji (pola mogą być już zmienione)
         _wplywSprzedEdycji.TryGetValue(wyprawa.Id, out var staryWplyw);
