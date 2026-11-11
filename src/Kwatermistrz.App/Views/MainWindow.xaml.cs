@@ -478,8 +478,11 @@ public partial class MainWindow : FluentWindow
                 $"{ObszarZawartosci.Content?.GetType().Name ?? "null"}, " +
                 $"VM: {ViewModel.AktualnyEkran}).");
 
-        // Używamy widocznej tabeli z co najmniej pięcioma kolumnami danych,
-        // niezależnie od wybranego rodzaju raportu.
+        // Dokładnie ten raport, którego zrzut użytkownik załączył:
+        // Umundurowanie z siedmioma kolumnami danych.
+        ViewModel.Raporty.WybranyRaport = "Umundurowanie";
+        PrzepompujNawigacje();
+        widok.UpdateLayout();
         var tabela = ZnajdzWizualne<System.Windows.Controls.DataGrid>(widok)
             .FirstOrDefault(d => d.IsVisible && d.Columns.Count(c => c is System.Windows.Controls.DataGridTextColumn) >= 5)
             ?? throw new InvalidOperationException("Nie znaleziono widocznej tabeli raportowej.");
@@ -488,8 +491,10 @@ public partial class MainWindow : FluentWindow
         try
         {
             tabela.Width = 950;
-            tabela.UpdateLayout();
+            tabela.InvalidateMeasure();
+            widok.UpdateLayout();
             PrzepompujNawigacje();
+            tabela.UpdateLayout();
             var kolumny = tabela.Columns
                 .Where(c => c.Visibility == Visibility.Visible && c.Width.IsStar)
                 .ToList();
@@ -498,13 +503,18 @@ public partial class MainWindow : FluentWindow
 
             var waskie = kolumny.Select(c => c.ActualWidth).ToArray();
             tabela.Width = 1350;
-            tabela.UpdateLayout();
+            tabela.InvalidateMeasure();
+            widok.UpdateLayout();
             PrzepompujNawigacje();
+            tabela.UpdateLayout();
             var szerokie = kolumny.Select(c => c.ActualWidth).ToArray();
             var rosnie = kolumny.Where((_, i) => szerokie[i] > waskie[i] + 12).Count();
             if (rosnie < 4)
                 throw new InvalidOperationException(
-                    $"Po poszerzeniu Raportów rośnie tylko {rosnie}/{kolumny.Count} kolumn.");
+                    $"Po poszerzeniu Raportów rośnie tylko {rosnie}/{kolumny.Count} kolumn; " +
+                    $"tabela={tabela.ActualWidth:F0}px, Width={tabela.Width:F0}, " +
+                    $"przed=[{string.Join(", ", waskie.Select(w => w.ToString("F0")))}], " +
+                    $"po=[{string.Join(", ", szerokie.Select(w => w.ToString("F0")))}].");
 
             var zajeta = kolumny.Sum(c => c.ActualWidth);
             if (zajeta < tabela.ActualWidth - 45)
