@@ -310,6 +310,17 @@ public partial class WyprawyViewModel : ObservableObject
         System.Windows.MessageBox.Show(blad, "Wyprawy",
             System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
 
+    /// <summary>Stare bazy nie zapisywały składu odliczenia — nie wolno go zgadywać po cichu.</summary>
+    private static bool PotwierdzLegacyKorekte() =>
+        System.Windows.MessageBox.Show(
+            "Ta wyprawa ma odliczenie historyczne zapisane w starszej wersji, " +
+            "bez listy oryginalnych liczników. Jeśli po jej zapisaniu zmieniono zestaw, " +
+            "automatyczna korekta może dotyczyć niewłaściwych elementów.\n\n" +
+            "Zrób kopię bazy i sprawdź liczniki po operacji. Czy kontynuować?",
+            "Wyprawy — starsza korekta bez migawki",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning) == System.Windows.MessageBoxResult.Yes;
+
     /// <summary>Dodawanie z jawną decyzją o historycznej korekcie.</summary>
     [RelayCommand]
     private void DodajWyprawe()
@@ -359,6 +370,11 @@ public partial class WyprawyViewModel : ObservableObject
     {
         if (Wybrana == null || Edytowana == null)
             return;
+        if (Wybrana.Wyprawa.OdliczonaOdLicznikow &&
+            Wybrana.Wyprawa.SkladnikiKorekty == null &&
+            OperacjeNaWyprawach.CzyZmianaWplywaNaKorekte(Wybrana.Wyprawa, Edytowana) &&
+            !PotwierdzLegacyKorekte())
+            return;
         if (!_operacje.SprobujZapisac(Wybrana.Wyprawa, Edytowana, out var blad))
         {
             PokazBlad(blad);
@@ -389,6 +405,10 @@ public partial class WyprawyViewModel : ObservableObject
             System.Windows.MessageBoxImage.Question);
         if (wybor != System.Windows.MessageBoxResult.Yes)
             return;
+        if (wiersz.Wyprawa.OdliczonaOdLicznikow &&
+            wiersz.Wyprawa.SkladnikiKorekty == null &&
+            !PotwierdzLegacyKorekte())
+            return;
         if (!_operacje.SprobujUsun(wiersz.Wyprawa, out var blad))
         {
             PokazBlad(blad);
@@ -404,6 +424,10 @@ public partial class WyprawyViewModel : ObservableObject
         if (wiersz == null || !wiersz.CzyUsunieta)
             return;
         var odlicz = false;
+        if (wiersz.Wyprawa.OdliczonaOdLicznikow &&
+            wiersz.Wyprawa.SkladnikiKorekty == null &&
+            !PotwierdzLegacyKorekte())
+            return;
         // Stare wersje zerowały flagę przy usuwaniu: nie odtwarzamy jej z domysłów.
         if (!wiersz.Wyprawa.OdliczonaOdLicznikow
             && _operacje.CzyHistoryczna(wiersz.Wyprawa)
