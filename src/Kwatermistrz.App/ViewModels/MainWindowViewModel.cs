@@ -132,7 +132,11 @@ public partial class MainWindowViewModel : ObservableObject
         // Aktywne ID musi istnieć w nowej bazie. Inaczej wszystkie listy filtrują do zera.
         var przywroconeId = _dane.Ustawienia.OstatniaRekonstrukcjaId;
         if (przywroconeId != null && !_dane.Rekonstrukcje.Any(r => r.Id == przywroconeId))
+        {
             przywroconeId = null;
+            _dane.Ustawienia.OstatniaRekonstrukcjaId = null;
+            _magazyn.ZapiszDebounce(_dane); // napraw filtr również na kolejny restart
+        }
         if (_stan.AktywnaRekonstrukcjaId != przywroconeId)
             _stan.AktywnaRekonstrukcjaId = przywroconeId;
 
