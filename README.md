@@ -125,3 +125,37 @@ proporcjonalny układ. Kolumny akcji i ikon nie zajmują niepotrzebnie miejsca.
 Tabele automatycznie wypełniają dostępną szerokość już po otwarciu ekranu, bez konieczności przeciągania czy maksymalizowania okna. Kolumny z danymi dzielą dodatkowe miejsce według wag, ale zachowują minimalne szerokości. Jeśli okno jest zbyt wąskie, pojawia się przewijanie poziome. Po ręcznej zmianie szerokości kolumny aplikacja zachowuje wybraną przez użytkownika szerokość podczas dalszego zmieniania rozmiaru okna.
 
 W Wyposażeniu checkboxy do edycji zbiorczej mieszczą się w kolumnie wyboru. Kolumna „Miejsce” prezentuje nazwę ze słownika zamiast wewnętrznego identyfikatora.
+
+## Historyczne wyprawy i zakładka „Konflikty”
+
+Przy imporcie starego arkusza liczby wypraw według lat oraz użycia replik
+opisują **te same wydarzenia**. Aplikacja nie dodaje ich do siebie. Sumy
+wynikają z `RejestrWypraw`, który uzgadnia zapisane wyprawy i nierozpoznane
+liczniki.
+
+W zakładce **Wyprawy** każdy niewyjaśniony rekord roczny jest widoczny jako
+`Wyprawa_1`, `Wyprawa_2` itd., z datą `NN-NN-NNNN`. Rok pochodzi z
+arkusza, ale dzień, miesiąc, replika i zestaw są naprawdę nieznane.
+Nie otrzymują fikcyjnych wartości.
+
+W zakładce **Konflikty** wybierz wiersz. W prawej części możesz wskazać
+datę (w obrębie znanego roku), replikę, zestaw lub naprawić nieprawidłowe
+miejsce wyposażenia przez wybór wartości ze słownika. Możesz uzupełnić
+tylko jeden znany szczegół; pozostałe będą nadal widoczne jako konflikt.
+Przycisk **Zapisz uzgodnienie** zapisuje dane i odświeża pozostałe widoki.
+
+Jeśli źródłowe liczniki nie pozwalają ustalić, której repliki dotyczy
+konkretna wyprawa, przypisanie może zostać zablokowane. Aplikacja nie
+zgaduje, któremu rekordowi odebrać historyczne użycie. Liczniki
+nierozpoznanych wypraw pozostają w danych do czasu świadomego uzgodnienia.
+Wyprawy zapisane z nieznaną datą przechowują rok osobno i nie zaburzają
+raportów lat.
+
+**Zachowanie danych:** nie następuje automatyczna destrukcyjna migracja
+starych plików. Dane są zapisywane do `dane.json` z dotychczasową
+kopią `.bak`. Przed pierwszym testem nowej wersji warto wykonać własną
+kopię katalogu `%APPDATA%\\Kwatermistrz`.
+
+Dopóki nie rozpoznasz wszystkich historycznych zdarzeń, liczniki
+indywidualnych przedmiotów/replik pozostają danymi historycznymi,
+a nie potwierdzonymi powiązaniami z konkretnymi wyprawami.
