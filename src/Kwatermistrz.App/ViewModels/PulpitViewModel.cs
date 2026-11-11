@@ -183,15 +183,15 @@ public partial class PulpitViewModel : ObservableObject
                 Etykieta = $"{(wyprawa.Data == default ? "NN-NN-NNNN" : wyprawa.Data.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture))}{(replika != null ? $" — {replika}" : "")}{(zestaw != null ? $" — {zestaw}" : "")}",
             });
         }
-        // kafelki historyczne neutralne, w liczbie zgodnej z licznikiem roku (FR-102)
-        foreach (var (rok, liczba) in _dane.Ustawienia.HistoryczneWyprawyWgRok.OrderBy(x => x.Key))
-            for (var i = 0; i < liczba; i++)
-                kafelki.Add(new KafelekWyprawy
-                {
-                    Rok = rok,
-                    CzyHistoryczny = true,
-                    Etykieta = $"{rok} — wpis historyczny (bez daty)",
-                });
+        // Identyczna projekcja anonimowych zdarzeń co w Wyprawach i Konfliktach:
+        // nazwy Wyprawa_N są liczone w jednym miejscu, bez innych migawkowych liczników.
+        foreach (var wpis in Kwatermistrz.Core.Obliczenia.RejestrWypraw.Nierozpoznane(_dane))
+            kafelki.Add(new KafelekWyprawy
+            {
+                Rok = wpis.Rok,
+                CzyHistoryczny = true,
+                Etykieta = $"{wpis.Nazwa} — NN-NN-NNNN (rok {wpis.Rok})",
+            });
         return kafelki;
     }
 }
