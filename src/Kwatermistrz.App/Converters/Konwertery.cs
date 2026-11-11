@@ -277,3 +277,17 @@ public class KonwerterRowneDoWidocznosci : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => Binding.DoNothing;
 }
+
+
+/// <summary>
+/// Konwerter dwukierunkowy DateOnly ↔ DateTime? dla WPF DatePicker.SelectedDate.
+/// Konwersja dotyczy wyłącznie UI, format JSON pozostaje bez zmian.
+/// </summary>
+public sealed class KonwerterDateOnlyDatePicker : IValueConverter
+{
+    public object? Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is DateOnly data && data != default ? data.ToDateTime(TimeOnly.MinValue) : null;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is DateTime data ? DateOnly.FromDateTime(data) : default(DateOnly);
+}
