@@ -27,6 +27,8 @@ public partial class MainWindow : FluentWindow
             vm.Pulpit.Odswiez();
             // karty skrótowe pulpitu (FR-104) i ranking (FR-105) — przejście do listy z filtrem
             vm.Pulpit.PrzejdzDo += PrzejdzZPulpitu;
+            vm.DoUzupelnienia.PrzejdzDo += (ekran, rekordId) =>
+                OtworzWynik(new WynikSzukania { Ekran = ekran, RekordId = rekordId });
         }
         // globalne wyszukiwanie (FR-1201): wyniki pod polem, Enter otwiera pierwszy
         PoleSzukania.TextChanged += (_, _) =>
