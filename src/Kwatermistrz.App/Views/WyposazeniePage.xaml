@@ -86,12 +86,16 @@
                          AlternationCount="2"
                          AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
                          CanUserResizeColumns="True" ColumnWidth="*"
-                         HorizontalScrollBarVisibility="Auto">
+                         HorizontalScrollBarVisibility="Auto" controls:ProporcjonalneKolumny.Wlaczone="True">
                 <DataGrid.Columns>
-                    <DataGridTemplateColumn Header="" Width="30">
+                    <DataGridTemplateColumn Header="" Width="64" MinWidth="64" CanUserResize="False">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <CheckBox IsChecked="{Binding Zaznaczony}" HorizontalAlignment="Center" />
+                                <CheckBox IsChecked="{Binding Zaznaczony}"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          MinWidth="24" MinHeight="24"
+                                          Padding="0" Margin="5,2"
+                                          ToolTip="Zaznacz przedmiot do edycji zbiorczej" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
