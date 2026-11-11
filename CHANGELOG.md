@@ -2,6 +2,15 @@
 
 Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie semantyczne.
 
+## Zestawy — elastyczny układ listy i edytora (2026-11-11)
+
+- Naprawiono stałą szerokość 280 px listy zestawów. Lista i karta dzielą teraz szerokość okna proporcjonalnie.
+- Dodano uchwyt pomiędzy listą i kartą do ręcznej zmiany proporcji (GridSplitter).
+- Zastąpiono StackPanel po lewej kontenerem Grid: tabela zajmuje pełną dostępną wysokość i przewija się we własnym obszarze.
+- Przy pustym wyborze karta pokazuje instrukcję; po wejściu w zestawy automatycznie zaznacza się pierwszy widoczny rekord.
+- Odświeżanie, filtrowanie i zapis zachowują wybrany zestaw, a kliknięcie w tabeli odświeża listę pakowania.
+- Windows smoke test sprawdza wymiary obu paneli, możliwość zmiany szerokości, widoczność karty i zachowanie selekcji po odświeżeniu.
+
 ## [1.0.4] — stabilizacja startu, naprawa formularzy i CI Windows
 
 ### Uruchamianie i diagnostyka
