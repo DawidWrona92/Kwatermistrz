@@ -2,8 +2,9 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
       xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
-      Title="Broń">
+      Title="Broń" TextElement.Foreground="{DynamicResource TekstAplikacji}">
     <Page.Resources>
         <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
         <conv:KonwerterProcentu x:Key="KonwerterProcentu" />
@@ -95,44 +96,61 @@
                      IsReadOnly="True"
                      SelectionMode="Single"
                      SelectedItem="{Binding Wybrana}"
-                     HeadersVisibility="Column">
+                     HeadersVisibility="Column" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="*"
+                         HorizontalScrollBarVisibility="Auto" controls:ProporcjonalneKolumny.Wlaczone="True">
             <DataGrid.Columns>
-                <DataGridCheckBoxColumn Header="Por." Width="36"
-                                         Binding="{Binding ZaznaczonaDoPorownania, Mode=TwoWay}" />
-                <DataGridTextColumn Header="#" Binding="{Binding MiejsceWRankingu}" Width="36" />
-                <DataGridTextColumn Header="Nazwa" Binding="{Binding NazwaPelna}" Width="*" />
-                <DataGridTextColumn Header="Strona" Binding="{Binding NazwyStron}" Width="90" />
-                <DataGridTextColumn Header="Rola" Binding="{Binding NazwyRol}" Width="110" />
-                <DataGridTextColumn Header="Magazynek" Binding="{Binding NazwaTypuMagazynka}" Width="90" />
-                <DataGridTextColumn Header="Napęd" Binding="{Binding NazwaNapedu}" Width="80" />
-                <DataGridTextColumn Header="Stan" Binding="{Binding NazwaStanu}" Width="90" />
-                <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="70" />
-                <DataGridTextColumn Header="%" Width="60">
+                <!-- Stałe minimum jak w Wyposażeniu: DataGridCheckBoxColumn 36px
+                     obcinał checkbox przy pierwszym renderze w WPF UI. -->
+                <DataGridTemplateColumn Header="Por." Width="64" MinWidth="64" CanUserResize="False">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding ZaznaczonaDoPorownania, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                      MinWidth="24" MinHeight="24" Padding="0" Margin="5,2"
+                                      ToolTip="Zaznacz replikę do porównania" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="#" Binding="{Binding MiejsceWRankingu}" Width="0.55*" MinWidth="75" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding NazwaPelna}" Width="2.6*" MinWidth="215" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Strona" Binding="{Binding NazwyStron}" Width="1.25*" MinWidth="135" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Rola" Binding="{Binding NazwyRol}" Width="1.25*" MinWidth="135" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Magazynek" Binding="{Binding NazwaTypuMagazynka}" Width="1.6*" MinWidth="170" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Napęd" Binding="{Binding NazwaNapedu}" Width="1.25*" MinWidth="145" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Stan" Binding="{Binding NazwaStanu}" Width="1.25*" MinWidth="135" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Wyprawy" Binding="{Binding Wyprawy}" Width="0.95*" MinWidth="75" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="%" Width="0.65*" MinWidth="75">
                     <DataGridTextColumn.Binding>
                         <Binding Path="ProcentWypraw" Converter="{StaticResource KonwerterProcentu}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Koszt całk." Width="90">
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Koszt całk." Width="1.35*" MinWidth="145">
                     <DataGridTextColumn.Binding>
                         <Binding Path="KosztCalkowity" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Cena oryg." Width="90">
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Cena oryg." Width="1.35*" MinWidth="145">
                     <DataGridTextColumn.Binding>
                         <Binding Path="CenaOryginalna" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Dodatki" Width="80">
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Dodatki" Width="1.35*" MinWidth="145">
                     <DataGridTextColumn.Binding>
                         <Binding Path="KosztDodatkow" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Koszt/wyp." Width="80">
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Koszt/wyp." Width="1.35*" MinWidth="105">
                     <DataGridTextColumn.Binding>
                         <Binding Path="KosztNaWyprawe" Converter="{StaticResource KonwerterWaluty}" />
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-                <DataGridTextColumn Header="Ostatni test" Width="90">
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Ostatni test" Width="1.3*" MinWidth="110">
                     <DataGridTextColumn.Binding>
                         <Binding Path="DataOstatniegoTestu" Converter="{StaticResource KonwerterDaty}" />
                     </DataGridTextColumn.Binding>
@@ -145,7 +163,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Akcje" Width="90">
+                <DataGridTemplateColumn Header="Akcje" Width="90" MinWidth="85">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">

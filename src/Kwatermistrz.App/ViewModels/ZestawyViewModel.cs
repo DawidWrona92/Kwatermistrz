@@ -19,12 +19,17 @@ public partial class ZestawyViewModel : ObservableObject
     private readonly KalkulatorSerwis _kalkulator;
     private readonly StanAplikacji _stan;
 
-    public ZestawyViewModel(DaneAplikacji dane, MagazynJson magazyn, KalkulatorSerwis kalkulator, StanAplikacji stan)
+    /// <summary>Ten sam serwis plików co w kartach wyposażenia i replik.</summary>
+    public SerwisZdjec SerwisZdjec { get; }
+
+    public ZestawyViewModel(DaneAplikacji dane, MagazynJson magazyn, KalkulatorSerwis kalkulator, StanAplikacji stan,
+        SerwisZdjec serwisZdjec)
     {
         _dane = dane;
         _magazyn = magazyn;
         _kalkulator = kalkulator;
         _stan = stan;
+        SerwisZdjec = serwisZdjec;
     }
 
     /// <summary>Wiersze listy zestawów (FR-709).</summary>
@@ -33,6 +38,17 @@ public partial class ZestawyViewModel : ObservableObject
     /// <summary>Wybrany zestaw (karta).</summary>
     [ObservableProperty]
     private WierszZestawu? _wybrany;
+
+    /// <summary>Aktualny licznik referencji, aktualizowany przy zmianie galerii i zestawu.</summary>
+    public string LicznikReferencji => $"{Wybrany?.Zestaw.ZdjeciaReferencyjne.Count ?? 0}/10";
+
+    partial void OnWybranyChanged(WierszZestawu? value)
+    {
+        OnPropertyChanged(nameof(LicznikReferencji));
+        // Binding SelectedItem w DataGrid zmienia Wybrany bez wywoływania WybierzCommand.
+        // Odświeżaj pakowanie także dla zwykłego kliknięcia rekordu.
+        OdswiezPakowanie();
+    }
 
     /// <summary>Filtr tekstowy.</summary>
     [ObservableProperty]
@@ -82,12 +98,17 @@ public partial class ZestawyViewModel : ObservableObject
             var szukane = Normalizacja.TekstDoPorownania(tekst);
             zapytanie = zapytanie.Where(z => Normalizacja.TekstDoPorownania(z.Nazwa).Contains(szukane));
         }
+        // Po zmianie filtra / powrocie do strony / zapisie zachowaj wybraną kartę.
+        // Wcześniej Clear() gubiło SelectedItem i użytkownik widział pusty edytor.
+        var wybraneId = Wybrany?.Id;
         Wiersze.Clear();
         foreach (var z in zapytanie.OrderBy(z => z.Nazwa, StringComparer.CurrentCulture))
         {
             var (wyprawy, procent, ostatnie) = kalk.StatystykiZestawu(z);
             Wiersze.Add(new WierszZestawu(z, wyprawy, procent, ostatnie));
         }
+        Wybrany = Wiersze.FirstOrDefault(w => w.Id == wybraneId)
+            ?? Wiersze.FirstOrDefault();
     }
 
     partial void OnFiltrTekstChanged(string value) => Odswiez();
@@ -98,7 +119,6 @@ public partial class ZestawyViewModel : ObservableObject
     private void Wybierz(WierszZestawu? wiersz)
     {
         Wybrany = wiersz;
-        OdswiezPakowanie();
         if (wiersz != null)
         {
             wiersz.Zestaw.ZnacznikZImportu = false;
@@ -126,6 +146,21 @@ public partial class ZestawyViewModel : ObservableObject
         _magazyn.ZapiszDebounce(_dane);
         Odswiez();
         Wybrany = Wiersze.FirstOrDefault(w => w.Id == zestaw.Id);
+    }
+
+    /// <summary>Zapisuje zmiany galerii nie odświeżając edytora ani bieżącej selekcji.</summary>
+    public void ZapiszGalerie()
+    {
+        if (Wybrany == null)
+            return;
+        Wybrany.Zestaw.OstatniaZmiana = DateTime.Now;
+        // Zdjęcia zapisujemy od razu, nie przez debounce; po awarii aplikacji
+        // zaktualizowane referencje muszą nadal wskazywać na skopiowane pliki.
+        _magazyn.Zapisz(_dane);
+        OnPropertyChanged(nameof(LicznikReferencji));
+        Komunikat = $"Zapisano galerie zestawu „{Wybrany.Zestaw.Nazwa}”: " +
+            $"{Wybrany.Zestaw.Zdjecia.Count} własnych i " +
+            $"{Wybrany.Zestaw.ZdjeciaReferencyjne.Count}/10 referencyjnych.";
     }
 
     /// <summary>Zapisuje kartę zestawu (FR-1203).</summary>

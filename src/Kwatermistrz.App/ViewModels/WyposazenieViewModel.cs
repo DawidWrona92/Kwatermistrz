@@ -150,15 +150,32 @@ public partial class WyposazenieViewModel : ObservableObject
         }
         if (TylkoBezUzycia)
             zapytanie = zapytanie.Where(p => indeks.UzyciaPrzedmiotu(p) == 0);
+        foreach (var w in Wiersze)
+            w.PropertyChanged -= ZaznaczenieWierszaZmienione;
         Wiersze.Clear();
         var kategorie = _dane.Slowniki.Kategorie.ToDictionary(k => k.Id, k => k.CzyNosnik);
+        var miejsca = _dane.Slowniki.Miejsca
+            .GroupBy(m => m.Id)
+            .ToDictionary(g => g.Key, g => g.First().Nazwa);
         foreach (var p in zapytanie.OrderBy(p => p.Nazwa, StringComparer.CurrentCulture))
-            Wiersze.Add(new WierszPrzedmiotu(p, indeks.UzyciaPrzedmiotu(p))
+        {
+            var nazwaMiejsca = string.IsNullOrWhiteSpace(p.MiejsceId) ? "—" :
+                miejsca.TryGetValue(p.MiejsceId, out var nazwa) ? nazwa : "Nieznane miejsce";
+            var wiersz = new WierszPrzedmiotu(p, indeks.UzyciaPrzedmiotu(p), nazwaMiejsca)
             {
                 CzyNosnik = kategorie.TryGetValue(p.KategoriaId, out var nosnik) && nosnik,
-            });
+            };
+            wiersz.PropertyChanged += ZaznaczenieWierszaZmienione;
+            Wiersze.Add(wiersz);
+        }
         OnPropertyChanged(nameof(LiczbaWierszy));
         OnPropertyChanged(nameof(LiczbaZaznaczonych));
+    }
+
+    private void ZaznaczenieWierszaZmienione(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(WierszPrzedmiotu.Zaznaczony))
+            OnPropertyChanged(nameof(LiczbaZaznaczonych));
     }
 
     private int _zawieszoneOdswiezanie;
@@ -200,10 +217,23 @@ public partial class WyposazenieViewModel : ObservableObject
     [RelayCommand]
     private void Dodaj()
     {
-        if (WybranaKategoria == null)
+        if (WybranaKategoria != null)
+            DodajWKategorii(WybranaKategoria);
+    }
+
+    /// <summary>Dodawanie z menu kontekstowego; działa także przy filtrze „Wszystkie”.</summary>
+    [RelayCommand]
+    private void DodajWKategorii(Kategoria? kategoria)
+    {
+        if (kategoria == null)
             return;
-        var przedmiot = new Przedmiot { KategoriaId = WybranaKategoria.Id };
+        // Nowy rekord musi pozostać widoczny, by karta edycji mogła się otworzyć.
+        WybranaKategoria = kategoria;
+        FiltrTekst = "";
+        TylkoBezUzycia = false;
+        var przedmiot = new Przedmiot { KategoriaId = kategoria.Id };
         _dane.Przedmioty.Add(przedmiot);
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
         Wybrany = Wiersze.FirstOrDefault(w => w.Id == przedmiot.Id);
     }
@@ -250,11 +280,15 @@ public partial class WyposazenieViewModel : ObservableObject
 
     /// <summary>„Duplikuj” (FR-205) — osobny rekord, własna historia użycia.</summary>
     [RelayCommand]
-    private void Duplikuj()
+    private void Duplikuj() => DuplikujWiersz(Wybrany);
+
+    /// <summary>Duplikowanie z PPM dotyczy wskazanego wiersza, nie całej grupy zaznaczonych.</summary>
+    [RelayCommand]
+    private void DuplikujWiersz(WierszPrzedmiotu? wiersz)
     {
-        if (Wybrany == null)
+        if (wiersz == null)
             return;
-        var kopia = KopiujKarte(Wybrany.Przedmiot);
+        var kopia = KopiujKarte(wiersz.Przedmiot);
         _dane.Przedmioty.Add(kopia);
         _magazyn.ZapiszDebounce(_dane);
         Odswiez();
@@ -281,9 +315,11 @@ public partial class WyposazenieViewModel : ObservableObject
         if (wiersz == null)
             return;
         var odpowiedz = System.Windows.MessageBox.Show(
+            System.Windows.Application.Current.MainWindow,
             $"Usunąć przedmiot „{wiersz.Przedmiot.Nazwa}”?\n\n" +
             "Przedmiot zostanie odłączony od kompletu i nośnika oraz usunięty z konfiguracji i zestawów.",
-            "Kwatermistrz", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
+            "Potwierdź usunięcie jednego przedmiotu", System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning, System.Windows.MessageBoxResult.No);
         if (odpowiedz != System.Windows.MessageBoxResult.Yes)
             return;
         CzyscicielReferencji.UsunReferencjePrzedmiotu(_dane, wiersz.Przedmiot.Id);
@@ -291,6 +327,42 @@ public partial class WyposazenieViewModel : ObservableObject
         _magazyn.ZapiszDebounce(_dane);
         if (Wybrany?.Id == wiersz.Id)
             Wybrany = null;
+        Odswiez();
+    }
+
+    /// <summary>
+    /// Usuwanie zbiorcze dotyczy WYŁĄCZNIE zaznaczonych checkboxami rekordów.
+    /// Wymaga osobnego potwierdzenia; jeden klik w wiersz nie włącza go do grupy.
+    /// </summary>
+    [RelayCommand]
+    private void UsunZaznaczone()
+    {
+        var zaznaczone = Wiersze.Where(w => w.Zaznaczony)
+            .Select(w => w.Przedmiot).DistinctBy(p => p.Id).ToList();
+        if (zaznaczone.Count == 0)
+            return;
+
+        var odpowiedz = System.Windows.MessageBox.Show(
+            System.Windows.Application.Current.MainWindow,
+            $"Usunąć {zaznaczone.Count} zaznaczonych przedmiotów?\\n\\n" +
+            "Zostaną usunięte również ich powiązania z kompletami, nośnikami i zestawami. " +
+            "Ta operacja jest nieodwracalna.",
+            "Kwatermistrz — usuwanie zbiorcze",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning,
+            System.Windows.MessageBoxResult.No);
+        if (odpowiedz != System.Windows.MessageBoxResult.Yes)
+            return;
+
+        var idUsuwanych = zaznaczone.Select(p => p.Id).ToHashSet();
+        foreach (var przedmiot in zaznaczone)
+        {
+            CzyscicielReferencji.UsunReferencjePrzedmiotu(_dane, przedmiot.Id);
+            _dane.Przedmioty.Remove(przedmiot);
+        }
+        if (Wybrany != null && idUsuwanych.Contains(Wybrany.Id))
+            Wybrany = null;
+        _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 

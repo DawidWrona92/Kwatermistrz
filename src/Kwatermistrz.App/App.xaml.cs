@@ -16,8 +16,13 @@ public partial class App : Application
 {
     private const string NazwaMutexa = "Kwatermistrz.SingleInstance";
     private static System.Threading.Mutex? _mutex;
+    private static bool _posiadamyMutex;
+    private bool _wyjscieAwaryjne;
     private ServiceProvider? _provider;
     private System.Windows.Threading.DispatcherTimer? _timerZapisu;
+
+    /// <summary>Obserwowalna paleta Foreground standardowych widoków WPF.</summary>
+    public static KoloryInterfejsu Kolory { get; } = new();
 
     /// <summary>Aktualne dane aplikacji (wstrzykiwane do widoków).</summary>
     public static DaneAplikacji Dane { get; private set; } = null!;
@@ -31,9 +36,11 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        var testUruchomienia = e.Args.Contains("--smoke-test", StringComparer.OrdinalIgnoreCase);
 
         // jedna instancja na użytkownika — dwie instancje nadpisywałyby sobie dane (NFR-05)
         _mutex = new System.Threading.Mutex(true, NazwaMutexa, out var czyNowa);
+        _posiadamyMutex = czyNowa;
         if (!czyNowa)
         {
             System.Windows.MessageBox.Show(
@@ -43,43 +50,23 @@ public partial class App : Application
             return;
         }
 
-        // globalna obsługa wyjątków: log + komunikat zamiast cichego zamknięcia (NFR-05)
+        // Wyjątki na wątku UI są krytyczne. Nie kontynuujemy z niekompletnym
+        // drzewem wizualnym ani nie nadpisujemy danych po awarii.
         DispatcherUnhandledException += (_, args) =>
         {
-            args.Handled = true;
+            _wyjscieAwaryjne = true;
             var sciezkaLogu = ZapiszLogWyjatku(args.Exception);
-            // lawina wyjątków (np. uszkodzony binding w pętli renderowania) zamiast zalewać użytkownika oknami kończy działanie
-            _licznikNieobsluzonych++;
-            if (_licznikNieobsluzonych >= 5)
-            {
-                // seria wyjątków — zapisujemy odłożone zmiany i robimy kopię zapasową przed zamknięciem, żeby nie stracić edycji
-                var kopia = "";
-                try
-                {
-                    if (Magazyn != null && Dane != null)
-                    {
-                        Magazyn.ZapiszJezeliBrudne(Dane);
-                        kopia = Magazyn.UtworzKopieZapasowa(Dane);
-                    }
-                }
-                catch
-                {
-                    // kopia po awarii jest best-effort — nie może przeszkodzić zamknięciu
-                }
-                var informacjeOkopii = kopia != "" ? $"\n\nKopia zapasowa danych: {kopia}" : "";
+            args.Handled = true;
+            if (!testUruchomienia)
                 System.Windows.MessageBox.Show(
-                    $"Wystąpiła seria nieoczekiwanych błędów ({_licznikNieobsluzonych}). Aby nie uszkodzić danych, aplikacja zostanie zamknięta.{informacjeOkopii}\n\nSzczegóły zapisano w pliku:\n{sciezkaLogu}",
+                    $"Kwatermistrz napotkał błąd i zostanie zamknięty.\nSzczegóły: {sciezkaLogu}",
                     "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-                Shutdown();
-                return;
-            }
-            System.Windows.MessageBox.Show(
-                $"Wystąpił nieoczekiwany błąd. Szczegóły zapisano w pliku:\n{sciezkaLogu}",
-                "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            Shutdown(1);
         };
 
-        KatalogDanych = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Kwatermistrz");
+        KatalogDanych = testUruchomienia
+            ? Path.Combine(Path.GetTempPath(), "Kwatermistrz-smoke-" + Guid.NewGuid().ToString("N"))
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Kwatermistrz");
         Directory.CreateDirectory(KatalogDanych);
         Magazyn = new MagazynJson(KatalogDanych);
         var (dane, kontrola) = Magazyn.WczytajZKontrola();
@@ -107,6 +94,7 @@ public partial class App : Application
         services.AddSingleton<WyprawyViewModel>();
         services.AddSingleton<RaportyViewModel>();
         services.AddSingleton<DoUzupelnieniaViewModel>();
+        services.AddSingleton<KonfliktyViewModel>();
         services.AddSingleton<SzukanieViewModel>();
         _provider = services.BuildServiceProvider();
 
@@ -134,6 +122,30 @@ public partial class App : Application
         {
             DataContext = _provider.GetRequiredService<MainWindowViewModel>(),
         };
+        if (testUruchomienia)
+        {
+            // Windows CI: parsuj każdy ekran i karty bez pokazywania okna.
+            // Awaria któregokolwiek widoku kończy proces kodem != 0.
+            // Odpalamy prawdziwy lifecycle WPF, a nie tylko parsowanie konstruktorów.
+            mainWindow.Show();
+            mainWindow.ZweryfikujEkrany();
+            mainWindow.ZweryfikujNawigacje();
+            mainWindow.ZweryfikujKreator();
+            if (e.Args.Length >= 2 && !string.IsNullOrWhiteSpace(e.Args[1]))
+                mainWindow.ZweryfikujImportPoStarcie(e.Args[1]);
+            mainWindow.ZweryfikujTabeleIPasekTytulu();
+            mainWindow.ZweryfikujProporcjonalneKolumny();
+            if (e.Args.Length >= 2 && !string.IsNullOrWhiteSpace(e.Args[1]))
+            {
+                mainWindow.ZweryfikujGalerieZestawu();
+                mainWindow.ZweryfikujPierwszyRenderWyposazenia();
+            }
+            mainWindow.ZweryfikujJednoZaznaczenieMenu();
+            mainWindow.ZweryfikujKoloryPulpitu();
+            mainWindow.Close();
+            Shutdown();
+            return;
+        }
         mainWindow.Show();
 
         if (dane.CzyPierwszeUruchomienie)
@@ -143,7 +155,13 @@ public partial class App : Application
                 Owner = mainWindow,
                 DataContext = new KreatorViewModel(dane, Magazyn),
             };
-            kreator.ShowDialog();
+            if (kreator.ShowDialog() == true)
+            {
+                // MainWindow została pokazana wcześniej: jej Pulpit i filtry mają
+                // migawki sprzed importu. Odświeżamy je po zakończeniu kreatora.
+                if (mainWindow.DataContext is MainWindowViewModel widok)
+                    widok.OdswiezWszystkieEkrany();
+            }
         }
 
         if (!kontrola.CzyPoprawne && kontrola.Komunikat != null)
@@ -153,7 +171,40 @@ public partial class App : Application
     /// <summary>Ustawia aliasy kolorów wykresów (FR-909) wg motywu — ta sama paleta co w UstawieniaViewModel.ZastosujMotyw.</summary>
     internal static void UstawAliasyWykresow(bool jasny)
     {
+        Kolory.UstawMotyw(jasny);
         System.Windows.Media.Color Kolor(byte r, byte g, byte b) => System.Windows.Media.Color.FromRgb(r, g, b);
+        // WPF-UI może utrzymywać stary pędzel TextFillColorPrimaryBrush
+        // w już utworzonych stronach Frame. DynamicResource do własnego
+        // klucza, podmienianego jawnie, odświeża kolory istniejących widoków.
+        // Zmiana ResourceDictionary[key] nie odświeża już rozwiązanego Foreground
+        // w starszych elementach WPF. Mutujemy ten SAM Brush: Freezable zgłasza
+        // zmianę i aktualizuje każdy TextBlock bez ponownego budowania ekranu.
+        void UstawKolorTekstu(string klucz, System.Windows.Media.Color kolor)
+        {
+            // Styles są w oddzielnym MergedDictionary i mogą zachować
+            // referencję do pędzla z Paleta.xaml, mimo późniejszego dodania
+            // klucza o tej samej nazwie do Current.Resources.
+            foreach (var slownik in Current.Resources.MergedDictionaries)
+            {
+                if (slownik.Contains(klucz) &&
+                    slownik[klucz] is System.Windows.Media.SolidColorBrush lokalny && !lokalny.IsFrozen)
+                    lokalny.Color = kolor;
+            }
+            if (Current.TryFindResource(klucz) is System.Windows.Media.SolidColorBrush pedzel && !pedzel.IsFrozen)
+            {
+                pedzel.Color = kolor;
+                return;
+            }
+            Current.Resources[klucz] = new System.Windows.Media.SolidColorBrush(kolor);
+        }
+        UstawKolorTekstu("TekstAplikacji",
+            jasny ? Kolor(0x22, 0x27, 0x25) : Kolor(0xF0, 0xF2, 0xF0));
+        UstawKolorTekstu("TekstAplikacjiDrugorzedny",
+            jasny ? Kolor(0x59, 0x62, 0x5E) : Kolor(0xB8, 0xBF, 0xBB));
+        UstawKolorTekstu("LiniaTabeli",
+            jasny ? Kolor(0xB3, 0xBD, 0xB8) : Kolor(0x59, 0x65, 0x60));
+        UstawKolorTekstu("WierszTabeliNaprzemienny",
+            jasny ? Kolor(0xEE, 0xF0, 0xED) : Kolor(0x29, 0x2C, 0x2B));
         if (jasny)
         {
             Current.Resources["Stal"] = new System.Windows.Media.SolidColorBrush(Kolor(0x2F, 0x4A, 0x6B));
@@ -176,24 +227,23 @@ public partial class App : Application
     {
         // spłukujemy odłożony debounce'em zapis — wyjście z aplikacji nie może gubić edycji
         // (Magazyn/Dane null przy wczesnym wyjściu, np. druga instancja)
-        if (Magazyn != null && Dane != null)
+        if (!_wyjscieAwaryjne && Magazyn != null && Dane != null)
             Magazyn.ZapiszJezeliBrudne(Dane);
         _timerZapisu?.Stop();
         _provider?.Dispose();
-        _mutex?.ReleaseMutex();
+        if (_posiadamyMutex)
+            _mutex?.ReleaseMutex();
         _mutex?.Dispose();
         _mutex = null;
+        _posiadamyMutex = false;
         base.OnExit(e);
     }
-
-    /// <summary>Liczba nieobsłużonych wyjątków od startu — po serii zamykamy aplikację, żeby nie zalać użytkownika oknami błędu.</summary>
-    private int _licznikNieobsluzonych;
 
     /// <summary>Zapisuje szczegóły wyjątku do error.log w katalogu danych, a gdy niemożliwe — obok pliku exe. Zwraca ścieżkę zapisanego logu (do komunikatu).</summary>
     private static string ZapiszLogWyjatku(Exception ex)
     {
         var wpis =
-            $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}{ex.StackTrace}{Environment.NewLine}{Environment.NewLine}";
+            $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex}{Environment.NewLine}{Environment.NewLine}";
         try
         {
             var sciezka = Path.Combine(KatalogDanych, "error.log");

@@ -4,7 +4,8 @@
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
       xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
-      Title="Zestawy">
+      xmlns:app="clr-namespace:Kwatermistrz.App"
+      Title="Zestawy" TextElement.Foreground="{DynamicResource TekstAplikacji}">
     <Page.Resources>
         <conv:KonwerterDaty x:Key="KonwerterDaty" />
         <conv:KonwerterProcentu x:Key="KonwerterProcentu" />
@@ -15,50 +16,108 @@
         <conv:KonwerterRowneTyp x:Key="KonwerterRowneTyp" />
         <conv:KonwerterRowneIdWariantu x:Key="KonwerterRowneIdWariantu" />
     </Page.Resources>
-    <Grid Margin="8">
+    <Grid x:Name="SiatkaZestawow" Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280" />
-            <ColumnDefinition Width="*" />
+            <!-- Prawdziwe kolumny Grid (nie StackPanel); użytkownik może złapać
+                 splitter i rozszerzyć listę bez zmiany wielkości całego okna. -->
+            <ColumnDefinition x:Name="KolumnaListyZestawow"
+                              Width="2*" MinWidth="320" MaxWidth="900" />
+            <ColumnDefinition Width="7" />
+            <ColumnDefinition Width="3*" MinWidth="320" />
         </Grid.ColumnDefinitions>
 
-        <!-- Lista zestawów (FR-709) -->
-        <StackPanel Grid.Column="0" Margin="0,0,8,0">
-            <TextBlock Text="Zestawy" Style="{StaticResource TytulEkranu}" />
-            <StackPanel Orientation="Horizontal" Margin="0,8,0,8">
-                <ui:TextBox MinWidth="140" PlaceholderText="Filtr…"
+        <!-- Lewy panel wypełnia dostępną wysokość, tabela przewija się wewnątrz. -->
+        <Grid x:Name="LewyPanelZestawow" Grid.Column="0" Margin="0,0,4,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Text="Zestawy" Style="{StaticResource TytulEkranu}" />
+            <Grid Grid.Row="1" Margin="0,8,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ui:TextBox Grid.Column="0" PlaceholderText="Filtr…"
                             Text="{Binding FiltrTekst, UpdateSourceTrigger=PropertyChanged}" />
-                <CheckBox Content="Tylko szkice" VerticalAlignment="Center" Margin="8,0,0,0"
-                          IsChecked="{Binding TylkoSzkice}" />
-                <ui:Button Content="Nowy" Appearance="Primary" Margin="8,0,0,0"
+                <ui:Button Grid.Column="1" Content="Nowy" Appearance="Primary" Margin="8,0,0,0"
                            Command="{Binding DodajCommand}" />
-            </StackPanel>
-            <ui:DataGrid ItemsSource="{Binding Wiersze}"
+            </Grid>
+            <CheckBox Grid.Row="2" Content="Tylko szkice" VerticalAlignment="Center"
+                      Margin="0,0,0,8" IsChecked="{Binding TylkoSzkice}" />
+            <ui:DataGrid x:Name="ListaZestawow" Grid.Row="3"
+                         MinHeight="180" MinWidth="0"
+                         VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                         VerticalScrollBarVisibility="Auto"
+                         ItemsSource="{Binding Wiersze}"
                          AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                          SelectionMode="Single" SelectedItem="{Binding Wybrany}"
-                         HeadersVisibility="Column">
+                         HeadersVisibility="Column" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="*"
+                         HorizontalScrollBarVisibility="Auto" controls:ProporcjonalneKolumny.Wlaczone="True">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
-                    <DataGridTextColumn Header="Wyprawy" Binding="{Binding Wyprawy}" Width="60" />
-                    <DataGridTextColumn Header="%" Width="50">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="2.6*" MinWidth="215" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Wyprawy" Binding="{Binding Wyprawy}" Width="0.95*" MinWidth="75" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="%" Width="0.65*" MinWidth="75">
                         <DataGridTextColumn.Binding>
                             <Binding Path="Procent" Converter="{StaticResource KonwerterProcentu}" />
                         </DataGridTextColumn.Binding>
                     </DataGridTextColumn>
-                    <DataGridTextColumn Header="Ostatnie" Width="80">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Ostatnie" Width="1.3*" MinWidth="110">
                         <DataGridTextColumn.Binding>
                             <Binding Path="OstatnieUzycie" Converter="{StaticResource KonwerterDaty}" />
                         </DataGridTextColumn.Binding>
                     </DataGridTextColumn>
                 </DataGrid.Columns>
             </ui:DataGrid>
-        </StackPanel>
+        </Grid>
+
+        <!-- Rozdzielacz z wyraźnym uchwytem, którego można używać myszą. -->
+        <GridSplitter x:Name="PodzialZestawow" Grid.Column="1"
+                      Width="7" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"
+                      Background="{DynamicResource LiniaTabeli}"
+                      Cursor="SizeWE"
+                      ToolTip="Przeciągnij, aby zmienić szerokość listy zestawów." />
+
+        <!-- Gdy nie wybrano rekordu, nie pokazuj pustej ściany bez wskazówki. -->
+        <Border Grid.Column="2" Padding="28"
+                VerticalAlignment="Center" HorizontalAlignment="Center"
+                MaxWidth="480">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Wybrany}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <StackPanel>
+                <TextBlock Text="Wybierz zestaw z listy"
+                           FontSize="19" FontWeight="SemiBold" TextAlignment="Center" />
+                <TextBlock Text="Tutaj zobaczysz szczegóły, zdjęcia własne i referencyjne, sloty oraz listę pakowania. Możesz też utworzyć nowy zestaw."
+                           TextAlignment="Center" TextWrapping="Wrap" Margin="0,12,0,0"
+                           Foreground="{Binding Drugorzedny, Source={x:Static app:App.Kolory}}" />
+            </StackPanel>
+        </Border>
 
         <!-- Karta zestawu (FR-701, FR-702, FR-703) -->
-        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto"
+        <ScrollViewer x:Name="EdytorZestawu" Grid.Column="2"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto"
                       Visibility="{Binding Wybrany, Converter={StaticResource KonwerterNieRowneNull}}">
             <StackPanel Margin="4" DataContext="{Binding Wybrany}">
                 <Grid Margin="0,0,0,8">
@@ -84,7 +143,35 @@
                               IsChecked="{Binding Zestaw.CzySzkic}" />
                 </StackPanel>
 
-                <TextBlock Text="Sloty i warianty" Style="{StaticResource NaglowekSekcji}" Margin="0,8,0,4" />
+                <!-- Dwie odrębne galerie zestawu: dotychczasowe zdjęcia są galerią własnej sylwetki. -->
+                <TextBlock Text="Moje zdjęcia w stroju" Style="{StaticResource NaglowekSekcji}"
+                           Margin="0,14,0,4" />
+                <TextBlock Text="Twoje rzeczywiste sylwetki i konfiguracje, bez limitu zdjęć."
+                           Foreground="{Binding Drugorzedny, Source={x:Static app:App.Kolory}}"
+                           TextWrapping="Wrap" Margin="0,0,0,5" />
+                <controls:GaleriaZdjec Sciezki="{Binding Zestaw.Zdjecia}"
+                                       Serwis="{Binding DataContext.SerwisZdjec, RelativeSource={RelativeSource AncestorType=Page}}"
+                                       Opisy="{Binding Zestaw.OpisyZdjec}"
+                                       WlascicielNazwa="{Binding Zestaw.Nazwa}"
+                                       Zmieniono="GaleriaZdjec_Zmieniono" />
+                <StackPanel Orientation="Horizontal" Margin="0,14,0,4">
+                    <TextBlock Text="Zdjęcia referencyjne" Style="{StaticResource NaglowekSekcji}" />
+                    <TextBlock Margin="10,4,0,0"
+                               Foreground="{Binding Drugorzedny, Source={x:Static app:App.Kolory}}"
+                               Text="{Binding DataContext.LicznikReferencji, RelativeSource={RelativeSource AncestorType=Page}, Mode=OneWay}" />
+                </StackPanel>
+                <TextBlock Text="Zdjęcia wzorcowe do rekonstrukcji. Maksymalnie 10. Kliknij, aby powiększyć; prawy przycisk otwiera opis i usuwanie."
+                           TextWrapping="Wrap"
+                           Foreground="{Binding Drugorzedny, Source={x:Static app:App.Kolory}}"
+                           Margin="0,0,0,5" />
+                <controls:GaleriaZdjec Sciezki="{Binding Zestaw.ZdjeciaReferencyjne}"
+                                       Serwis="{Binding DataContext.SerwisZdjec, RelativeSource={RelativeSource AncestorType=Page}}"
+                                       Opisy="{Binding Zestaw.OpisyZdjec}"
+                                       MaksymalnaLiczbaZdjec="10"
+                                       WlascicielNazwa="{Binding Zestaw.Nazwa}"
+                                       Zmieniono="GaleriaZdjec_Zmieniono" />
+
+                <TextBlock Text="Sloty i warianty" Style="{StaticResource NaglowekSekcji}" Margin="0,16,0,4" />
                 <ItemsControl ItemsSource="{Binding Zestaw.Sloty}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -94,7 +181,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <ui:TextBox MinWidth="140" Text="{Binding Nazwa}" ToolTip="Nazwa slotu" />
                                         <TextBlock VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                                            <Run Text="Wariantów: " /><Run Text="{Binding Warianty.Count}" />
+                                            <Run Text="Wariantów: " /><Run Text="{Binding Warianty.Count, Mode=OneWay}" />
                                         </TextBlock>
                                         <ui:Button Margin="8,0,0,0" Content="Dodaj wariant"
                                                    Command="{Binding DataContext.DodajWariantCommand, RelativeSource={RelativeSource AncestorType=Page}}"
@@ -115,7 +202,7 @@
                                                             <RadioButton GroupName="Domyslny" Content="Domyślny"
                                                                          Checked="Domyslny_Checked">
                                                                 <RadioButton.IsChecked>
-                                                                    <MultiBinding Converter="{x:Static conv:KonwerterRowneIdWariantu.Instance}">
+                                                                    <MultiBinding Mode="OneWay" Converter="{x:Static conv:KonwerterRowneIdWariantu.Instance}">
                                                                         <Binding Path="Id" />
                                                                         <Binding Path="DataContext.WariantDomyslnyId" RelativeSource="{RelativeSource AncestorType=ItemsControl}" />
                                                                     </MultiBinding>
@@ -124,10 +211,10 @@
                                                             <CheckBox Content="Puste (celowo brak)" Margin="12,0,0,0"
                                                                       IsChecked="{Binding CzyPuste}" VerticalAlignment="Center" />
                                                             <ui:Button Margin="8,0,0,0" Content="Dodaj element"
-                                                                       Command="{Binding DataContext.DataContext.DodajElementCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                       Command="{Binding DataContext.DodajElementCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                        CommandParameter="{Binding}" />
                                                             <ui:Button Margin="4,0,0,0" Appearance="Danger"
-                                                                       Command="{Binding DataContext.DataContext.UsunWariantCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                       Command="{Binding DataContext.UsunWariantCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                        CommandParameter="{Binding}">
                                                                 <ui:SymbolIcon Symbol="Dismiss24" />
                                                             </ui:Button>
@@ -142,15 +229,15 @@
                                                                             <ComboBoxItem Content="Konfiguracja" Tag="3" ToolTip="Nazwana konfiguracja nośnika (FR-208)" />
                                                                         </ComboBox>
                                                                         <ComboBox MinWidth="220" Margin="8,0,0,0"
-                                                                                  ItemsSource="{Binding DataContext.DataContext.DataContext.Przedmioty, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                                  ItemsSource="{Binding DataContext.Przedmioty, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                                   SelectedValue="{Binding ElementId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa" />
                                                                         <!-- Konfiguracje nośnika jako element wariantu (FR-208) -->
                                                                         <ComboBox MinWidth="220" Margin="8,0,0,0"
-                                                                                  ItemsSource="{Binding DataContext.DataContext.DataContext.KonfiguracjeNosnikow, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                                  ItemsSource="{Binding DataContext.KonfiguracjeNosnikow, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                                   SelectedValue="{Binding ElementId}" SelectedValuePath="Id" DisplayMemberPath="NazwaPelna"
                                                                                   Visibility="{Binding Typ, Converter={StaticResource KonwerterRowneTyp}, ConverterParameter=3}" />
                                                                         <ui:Button Margin="4,0,0,0" Appearance="Danger"
-                                                                                   Command="{Binding DataContext.DataContext.DataContext.UsunElementCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                                   Command="{Binding DataContext.UsunElementCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                                    CommandParameter="{Binding}">
                                                                             <ui:SymbolIcon Symbol="Dismiss24" />
                                                                         </ui:Button>
@@ -219,6 +306,6 @@
             </StackPanel>
         </ScrollViewer>
         <!-- Pasek komunikatu (wyniki eksportu) -->
-        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Komunikat}" VerticalAlignment="Center" Margin="0,4,0,0" />
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding Komunikat}" VerticalAlignment="Center" Margin="0,4,0,0" />
     </Grid>
 </Page>

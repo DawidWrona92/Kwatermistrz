@@ -61,10 +61,9 @@ public class Kalkulator
     /// <summary>BR-02: łączna liczba wypraw = suma wypraw wszystkich replik, także do sprzedaży i sprzedanych.</summary>
     public int LacznaLiczbaWypraw()
     {
-        var suma = _dane.Repliki.Sum(r => WyprawyRepliki(r));
-        // wyprawy bez repliki głównej (gdy szablon tego nie wymaga) liczą się osobno
-        suma += _dane.Wyprawy.Count(w => !w.CzyUsunieta && w.ReplikaGlownaId == null);
-        return suma;
+        // Liczniki z arkusza „wg lat” oraz z kart replik odnoszą się do
+        // tych samych wydarzeń — sumowanie obu zawyżałoby historię.
+        return RejestrWypraw.LacznaLiczbaWypraw(_dane);
     }
 
     /// <summary>BR-03: procent wypraw repliki względem łącznej liczby wypraw. Przy zerowej sumie wynosi 0.</summary>
@@ -111,14 +110,14 @@ public class Kalkulator
     public int WyprawyWRoku(int rok)
     {
         var historyczne = _dane.Ustawienia.HistoryczneWyprawyWgRok.TryGetValue(rok, out var h) ? h : 0;
-        var zapisane = _dane.Wyprawy.Count(w => !w.CzyUsunieta && w.Data.Year == rok);
+        var zapisane = _dane.Wyprawy.Count(w => !w.CzyUsunieta && RejestrWypraw.Rok(w) == rok);
         return historyczne + zapisane;
     }
 
     /// <summary>BR-15: data pierwszej wyprawy = ustawienie (z importu) albo najwcześniejsza zapisana wyprawa.</summary>
     public DateOnly? DataPierwszejWyprawy()
     {
-        var zapisane = _dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(w => (DateOnly?)w.Data).Min();
+        var zapisane = _dane.Wyprawy.Where(w => !w.CzyUsunieta && w.Data != default).Select(w => (DateOnly?)w.Data).Min();
         var ustawienie = _dane.Ustawienia.DataPierwszejWyprawy;
         if (zapisane == null)
             return ustawienie;
@@ -355,7 +354,7 @@ public class Kalkulator
     {
         var wyprawy = _dane.Wyprawy.Where(w => !w.CzyUsunieta && w.ZestawId == zestaw.Id).ToList();
         var liczba = wyprawy.Count;
-        var ostatnie = wyprawy.Count > 0 ? wyprawy.Max(w => (DateOnly?)w.Data) : null;
+        var ostatnie = wyprawy.Where(w => w.Data != default).Select(w => (DateOnly?)w.Data).Max();
         return (liczba, ProcentWypraw(liczba), ostatnie);
     }
 
@@ -408,11 +407,16 @@ public class Kalkulator
     public (int WgReplik, int WgLat, int WgMundur, int BezRepliki, int BezMunduru) KontrolaSpojnosci()
     {
         var lata = _dane.Ustawienia.HistoryczneWyprawyWgRok.Keys
-            .Concat(_dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(w => w.Data.Year))
+            .Concat(_dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(RejestrWypraw.Rok))
             .Distinct();
         var wgLat = lata.Sum(WyprawyWRoku);
         var bezRepliki = _dane.Wyprawy.Count(w => !w.CzyUsunieta && w.ReplikaGlownaId == null);
-        var wgReplik = _dane.Repliki.Sum(r => WyprawyRepliki(r)) + bezRepliki;
+        // Nierozpoznane wyprawy z konkretnym rokiem są już obecne w
+        // historycznych licznikach replik. Nie dodajemy ich dwa razy.
+        var wgReplik = Math.Max(0, _dane.Repliki.Sum(r => r.LicznikHistorycznyWypraw)
+            - _dane.Wyprawy.Count(w => !w.CzyUsunieta &&
+                (w.CzyHistoryczna || w.OdliczonaOdLicznikow) && w.ReplikaGlownaId == null))
+            + _dane.Wyprawy.Count(w => !w.CzyUsunieta);
         var bezMunduru = 0;
         var wgMundur = 0;
         foreach (var wyprawa in _dane.Wyprawy.Where(w => !w.CzyUsunieta))

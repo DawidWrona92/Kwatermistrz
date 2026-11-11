@@ -4,10 +4,11 @@
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
       xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
-      Title="Wyposażenie">
+      Title="Wyposażenie" TextElement.Foreground="{DynamicResource TekstAplikacji}">
     <Page.Resources>
         <conv:KonwerterMiniatury x:Key="KonwerterMiniatury" />
         <conv:KonwerterNazwySlownika x:Key="KonwerterNazwySlownika" />
+        <conv:KonwerterNazwySlownikaMulti x:Key="KonwerterNazwySlownikaMulti" />
         <conv:KonwerterNazwSlownikaWiele x:Key="KonwerterNazwSlownikaWiele" />
         <conv:KonwerterWaluty x:Key="KonwerterWaluty" />
         <conv:KonwerterNieRowneNull x:Key="KonwerterNieRowneNull" />
@@ -66,34 +67,53 @@
                           IsChecked="{Binding PokazSprzedane}" />
                 <CheckBox Content="Bez użyć" VerticalAlignment="Center" Margin="12,0,0,0"
                           IsChecked="{Binding TylkoBezUzycia}" ToolTip="Tylko przedmioty bez żadnego użycia (FR-104)" />
-                <ui:Button Content="Dodaj przedmiot" Appearance="Primary" Margin="12,0,0,0"
-                           Command="{Binding DodajCommand}" />
+                <TextBlock Margin="14,0,0,0" VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Text="PPM na tabeli: dodawanie i usuwanie"
+                           ToolTip="Prawy przycisk myszy na wierszu otwiera jego operacje. Zaznaczone checkboxami przedmioty obsługujesz zbiorczo." />
             </StackPanel>
             <TextBlock Grid.Row="1" Margin="0,0,0,4" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                 <Run Text="Pozycji: " /><Run Text="{Binding LiczbaWierszy, Mode=OneWay}" />
             </TextBlock>
-            <ui:DataGrid Grid.Row="2"
+            <ui:DataGrid x:Name="PrzedmiotyTabela"
+                         ContextMenuOpening="PrzedmiotyTabela_ContextMenuOpening"
+                         Grid.Row="2"
                          ItemsSource="{Binding Wiersze}"
                          AutoGenerateColumns="False"
                          CanUserAddRows="False"
                          IsReadOnly="True"
                          SelectionMode="Single"
                          SelectedItem="{Binding Wybrany}"
-                         HeadersVisibility="Column">
+                         HeadersVisibility="Column" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="*"
+                         HorizontalScrollBarVisibility="Auto" controls:ProporcjonalneKolumny.Wlaczone="True">
                 <DataGrid.Columns>
-                    <DataGridTemplateColumn Header="" Width="30">
+                    <DataGridTemplateColumn Header="" Width="64" MinWidth="64" CanUserResize="False">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <CheckBox IsChecked="{Binding Zaznaczony}" HorizontalAlignment="Center" />
+                                <CheckBox IsChecked="{Binding Zaznaczony}"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          MinWidth="24" MinHeight="24"
+                                          Padding="0" Margin="5,2"
+                                          ToolTip="Zaznacz przedmiot do edycji zbiorczej" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                     <!-- NFR-08: próbka wzoru zawsze ma obok nazwę (tekst), tooltip z nazwą przy najechaniu -->
-                    <DataGridTemplateColumn Header="Wzór" Width="110">
+                    <DataGridTemplateColumn Header="Wzór" Width="1.6*" MinWidth="175">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <controls:ProbkaKamuflazu>
+                                <Grid VerticalAlignment="Center" ClipToBounds="True">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <controls:ProbkaKamuflazu Grid.Column="0">
                                         <controls:ProbkaKamuflazu.Wzor>
                                             <MultiBinding Converter="{x:Static conv:KonwerterWzorKamuflazu.Instance}">
                                                 <Binding Path="WzorId" />
@@ -107,7 +127,10 @@
                                             </MultiBinding>
                                         </controls:ProbkaKamuflazu.ToolTip>
                                     </controls:ProbkaKamuflazu>
-                                    <TextBlock Margin="6,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Grid.Column="1" Margin="6,0,0,0" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
+                                               ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                                         <TextBlock.Text>
                                             <MultiBinding Converter="{x:Static conv:KonwerterNazwaWzoru.Instance}">
                                                 <Binding Path="WzorId" />
@@ -115,12 +138,12 @@
                                             </MultiBinding>
                                         </TextBlock.Text>
                                     </TextBlock>
-                                </StackPanel>
+                                </Grid>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Firma" Binding="{Binding Firma}" Width="120" />
-                    <DataGridTemplateColumn Header="Zdjęcie" Width="56">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Firma" Binding="{Binding Firma}" Width="1.25*" MinWidth="170" />
+                    <DataGridTemplateColumn Header="Zdjęcie" Width="70" MinWidth="70">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <!-- Miniatura pierwszego zdjęcia (FR-211 [S]) -->
@@ -129,11 +152,12 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Nazwa" Binding="{Binding Nazwa}" Width="*" />
-                    <DataGridTextColumn Header="Miejsce" Binding="{Binding MiejsceId}" Width="110" />
-                    <DataGridTextColumn Header="Użycia" Binding="{Binding Uzycia}" Width="70" />
-                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="90" />
-                    <DataGridTextColumn Header="Komentarz" Binding="{Binding Komentarz}" Width="160" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="2.6*" MinWidth="215" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Miejsce"
+                                        Binding="{Binding MiejsceNazwa, Mode=OneWay}" Width="1.6*" MinWidth="185" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Użycia" Binding="{Binding Uzycia}" Width="0.95*" MinWidth="75" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Status" Binding="{Binding Status}" Width="1.25*" MinWidth="135" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Komentarz" Binding="{Binding Komentarz}" Width="2.5*" MinWidth="220" />
                 </DataGrid.Columns>
             </ui:DataGrid>
 

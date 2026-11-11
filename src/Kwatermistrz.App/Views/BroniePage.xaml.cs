@@ -13,13 +13,20 @@ public partial class BroniePage : Page
             if (DataContext is ViewModels.ReplikiViewModel vm)
             {
                 vm.Odswiez();
-                vm.PropertyChanged += (_, e) =>
-                {
-                    if (e.PropertyName == nameof(vm.Wybrana) &&
-                        System.Windows.Window.GetWindow(this) is MainWindow okno)
-                        okno.OdswiezKarte();
-                };
+                vm.PropertyChanged -= WyborZmieniony;
+                vm.PropertyChanged += WyborZmieniony;
             }
         };
+        Unloaded += (_, _) =>
+        {
+            if (DataContext is ViewModels.ReplikiViewModel vm)
+                vm.PropertyChanged -= WyborZmieniony;
+        };
+    }
+    private void WyborZmieniony(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ViewModels.ReplikiViewModel.Wybrana) &&
+            System.Windows.Window.GetWindow(this) is MainWindow okno)
+            okno.OdswiezKarte();
     }
 }

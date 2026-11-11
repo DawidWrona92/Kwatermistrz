@@ -119,9 +119,19 @@ public partial class ReplikiViewModel : ObservableObject
         for (var i = 0; i < wiersze.Count; i++)
             wiersze[i].MiejsceWRankingu = i + 1;
 
+        // Przebudowa ObservableCollection tworzy nowe obiekty wierszy.
+        // Zachowujemy wybór karty i checkboxy porównania tylko dla replik,
+        // które pozostały widoczne po zmianie filtra/rekonstrukcji.
+        var idWybranej = Wybrana?.Id;
+        var porownywaneId = Wiersze.Where(w => w.ZaznaczonaDoPorownania)
+            .Select(w => w.Id).ToHashSet(StringComparer.Ordinal);
+        foreach (var w in wiersze)
+            w.ZaznaczonaDoPorownania = porownywaneId.Contains(w.Id);
+
         Wiersze.Clear();
         foreach (var w in wiersze)
             Wiersze.Add(w);
+        Wybrana = idWybranej == null ? null : Wiersze.FirstOrDefault(w => w.Id == idWybranej);
         OnPropertyChanged(nameof(LiczbaWierszy));
     }
 
@@ -307,10 +317,23 @@ public partial class ReplikiViewModel : ObservableObject
     {
         if (wiersz == null)
             return;
-        var odpowiedz = System.Windows.MessageBox.Show(
-            $"Usunąć replikę „{wiersz.Replika.ModelProducenta}”?\n\n" +
-            "Wyprawy z tą repliką stracą oznaczenie repliki głównej, a jej zadania zostaną usunięte.",
-            "Kwatermistrz", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
+        // Jedna bramka potwierdzenia dla przycisku w tabeli oraz w karcie.
+        // „Nie” jest domyślną odpowiedzią, żeby nie usunąć danych przez Enter.
+        var nazwa = string.IsNullOrWhiteSpace(wiersz.NazwaPelna)
+            ? wiersz.Replika.Id : wiersz.NazwaPelna;
+        var okno = System.Windows.Application.Current?.MainWindow;
+        var komunikat =
+            $"Czy na pewno usunąć replikę „{nazwa}”?\n\n" +
+            "Ta operacja jest nieodwracalna. Replika zostanie usunięta z ewidencji, " +
+            "wyprawy utracą przypisanie repliki głównej, a powiązane zadania i odwołania zostaną wyczyszczone.\n\n" +
+            "Wybierz „Tak”, aby usunąć, lub „Nie”, aby zachować dane.";
+        var odpowiedz = okno != null
+            ? System.Windows.MessageBox.Show(okno, komunikat,
+                "Potwierdzenie usunięcia repliki", System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning, System.Windows.MessageBoxResult.No)
+            : System.Windows.MessageBox.Show(komunikat,
+                "Potwierdzenie usunięcia repliki", System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning, System.Windows.MessageBoxResult.No);
         if (odpowiedz != System.Windows.MessageBoxResult.Yes)
             return;
         CzyscicielReferencji.UsunReferencjeRepliki(_dane, wiersz.Replika.Id);

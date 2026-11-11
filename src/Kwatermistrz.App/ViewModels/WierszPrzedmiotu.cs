@@ -8,11 +8,15 @@ public partial class WierszPrzedmiotu : ObservableObject
 {
     private readonly Przedmiot _przedmiot;
 
-    public WierszPrzedmiotu(Przedmiot przedmiot, int uzycia)
+    public WierszPrzedmiotu(Przedmiot przedmiot, int uzycia, string? miejsceNazwa = null)
     {
         _przedmiot = przedmiot;
         Uzycia = uzycia;
+        MiejsceNazwa = miejsceNazwa ?? (przedmiot.MiejsceId == null ? "—" : "Nieznane miejsce");
     }
+
+    /// <summary>Nazwa dla tabeli: nigdy nie pokazujemy technicznego identyfikatora.</summary>
+    public string MiejsceNazwa { get; }
 
     /// <summary>Model przedmiotu.</summary>
     public Przedmiot Przedmiot => _przedmiot;

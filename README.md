@@ -36,7 +36,7 @@ Publikacja zgodnie z [decyzją 06](docs/decyzje/06-instalacja.md): self-containe
 
 ```powershell
 # wydanie paczki dist\Kwatermistrz-<wersja>.zip (Windows, .NET 10 SDK)
-powershell -File scripts\publikuj-katalog.ps1 -Wersja 1.0.1
+powershell -File scripts\publikuj-katalog.ps1
 ```
 
 Paczka nie zawiera danych autora (NFR-15). Instrukcja dla kolegów: [`docs/instalacja/INSTRUKCJA.txt`](docs/instalacja/INSTRUKCJA.txt).
@@ -54,3 +54,108 @@ docs/dane-startowe/      plik źródłowy xlsx do importu
 docs/decyzje/            notatki decyzji technologicznych
 docs/instalacja/         instrukcja dla użytkowników (trafia do paczki)
 ```
+
+## Diagnostyka uruchomienia i walidacja Windows
+
+Jeśli aplikacja się nie uruchamia, sprawdź `%AppData%\Kwatermistrz\error.log`
+(znajdują się tam pełne wyjątki, także z parsowania `App.xaml`).
+**Nie usuwaj `%AppData%\Kwatermistrz`** — zawiera dane, zdjęcia i kopie.
+
+Przed wypuszczeniem nowej wersji uruchom CI `Windows build, tests and XAML smoke test`.
+CI kompiluje .NET 10, uruchamia testy Core, sprawdza pokazanie okna,
+wszystkie widoki i nawigację WPF w trybie `--smoke-test`,
+a następnie tworzy przenośny ZIP jako artefakt GitHub Actions.
+Test automatyczny **nie zastępuje ręcznego sprawdzenia** na docelowym Windows
+z rzeczywistymi danymi.
+
+Skrypt `scripts/publikuj-katalog.ps1` czyści katalog `dist/publish`
+i pobiera numer wersji automatycznie z `Kwatermistrz.App.csproj`.
+
+## Zdjęcia zestawów i referencje
+
+W zakładce **Zestawy** wybierz zestaw. Na karcie są dwie osobne galerie:
+
+- **Moje zdjęcia w stroju** — Twoje zdjęcia sylwetki, bez limitu liczby plików. Wykorzystuje istniejące pole `Zestaw.Zdjecia`, więc stare zdjęcia są zachowywane.
+- **Zdjęcia referencyjne** — do 10 zdjęć wzorcowych dla danego zestawu; licznik pokazuje postęp od 0 do 10.
+
+Kliknij **+**, aby wybrać kilka plików naraz, albo przeciągnij pliki z Eksploratora do galerii.
+Obsługiwane formaty: JPG, JPEG, PNG, BMP. Kliknięcie miniatury otwiera powiększenie.
+Prawym przyciskiem myszy na miniaturze można ustawić zdjęcie główne,
+zmienić opcjonalny opis (maks. 500 znaków) lub usunąć zdjęcie z galerii.
+
+**Bezpieczeństwo:** usuwanie zdjęcia z galerii wymaga potwierdzenia i nie
+usuwa od razu fizycznego pliku z katalogu `%APPDATA%\\Kwatermistrz\\zdjecia`.
+To chroni inne zestawy i istniejące kopie danych. Dopiero osobna, świadoma
+operacja porządkowania osieroconych plików mogłaby je trwale usuwać.
+Zdjęcia są kopiowane do katalogu aplikacji, zmniejszane według ustawień,
+a referencje i opisy zapisywane w `dane.json`.
+
+Eksport rekonstrukcji do `.kwreko` uwzględnia obie galerie wraz z opisami.
+Przy imporcie kolizja z istniejącym plikiem o tej samej nazwie nie nadpisuje zdjęcia:
+różna zawartość otrzymuje nową nazwę i aktualizowane są ścieżki importowanego zestawu.
+
+## Układ ekranu Zestawy
+
+Lista zestawów i edytor mają elastyczne szerokości. Przeciągnij pionowy
+rozdzielacz pomiędzy nimi w lewo lub prawo, aby ustawić większą szerokość listy
+lub karty (np. podczas pracy ze zdjęciami referencyjnymi). Po maksymalizacji
+okna obie części wykorzystują dodatkowe miejsce. Lista zestawów ma własny
+pionowy i poziomy pasek przewijania; nie trzeba powiększać całego okna,
+aby zobaczyć pozostałe kolumny.
+
+Po wejściu do ekranu zaznaczany jest pierwszy widoczny zestaw, a wybrany
+rekord pozostaje zaznaczony po odświeżeniu lub edycji. Gdy filtr nie zwraca
+wyników, wyświetlany jest komunikat wskazujący wybór lub utworzenie zestawu.
+
+## Automatyczne dopasowanie szerokości kolumn
+
+W tabelach Raportów, Broni, Wyposażenia, Wypraw, Zestawów, Słowników,
+Pakietów i Do uzupełnienia kolumny z danymi dzielą wolną szerokość okna
+proporcjonalnie. Szersze pola tekstowe (nazwa, opis, komentarz) otrzymują
+większy udział niż liczniki, procenty czy daty. Dla wąskich okien kolumny
+mają minimalne szerokości, a nadmiar można przewijać poziomo.
+
+Możesz nadal przeciągnąć granicę nagłówka, żeby ręcznie zmienić szerokość
+kolumny, lub kliknąć tę granicę dwukrotnie, żeby dopasować ją do treści.
+Przy pierwszym otwarciu i przy zmianie szerokości okna kolumny zachowują
+proporcjonalny układ. Kolumny akcji i ikon nie zajmują niepotrzebnie miejsca.
+
+## Wyświetlanie i dopasowanie kolumn tabel
+
+Tabele automatycznie wypełniają dostępną szerokość już po otwarciu ekranu, bez konieczności przeciągania czy maksymalizowania okna. Kolumny z danymi dzielą dodatkowe miejsce według wag, ale zachowują minimalne szerokości. Jeśli okno jest zbyt wąskie, pojawia się przewijanie poziome. Po ręcznej zmianie szerokości kolumny aplikacja zachowuje wybraną przez użytkownika szerokość podczas dalszego zmieniania rozmiaru okna.
+
+W Wyposażeniu checkboxy do edycji zbiorczej mieszczą się w kolumnie wyboru. Kolumna „Miejsce” prezentuje nazwę ze słownika zamiast wewnętrznego identyfikatora.
+
+## Historyczne wyprawy i zakładka „Konflikty”
+
+Przy imporcie starego arkusza liczby wypraw według lat oraz użycia replik
+opisują **te same wydarzenia**. Aplikacja nie dodaje ich do siebie. Sumy
+wynikają z `RejestrWypraw`, który uzgadnia zapisane wyprawy i nierozpoznane
+liczniki.
+
+W zakładce **Wyprawy** każdy niewyjaśniony rekord roczny jest widoczny jako
+`Wyprawa_1`, `Wyprawa_2` itd., z datą `NN-NN-NNNN`. Rok pochodzi z
+arkusza, ale dzień, miesiąc, replika i zestaw są naprawdę nieznane.
+Nie otrzymują fikcyjnych wartości.
+
+W zakładce **Konflikty** wybierz wiersz. W prawej części możesz wskazać
+datę (w obrębie znanego roku), replikę, zestaw lub naprawić nieprawidłowe
+miejsce wyposażenia przez wybór wartości ze słownika. Możesz uzupełnić
+tylko jeden znany szczegół; pozostałe będą nadal widoczne jako konflikt.
+Przycisk **Zapisz uzgodnienie** zapisuje dane i odświeża pozostałe widoki.
+
+Jeśli źródłowe liczniki nie pozwalają ustalić, której repliki dotyczy
+konkretna wyprawa, przypisanie może zostać zablokowane. Aplikacja nie
+zgaduje, któremu rekordowi odebrać historyczne użycie. Liczniki
+nierozpoznanych wypraw pozostają w danych do czasu świadomego uzgodnienia.
+Wyprawy zapisane z nieznaną datą przechowują rok osobno i nie zaburzają
+raportów lat.
+
+**Zachowanie danych:** nie następuje automatyczna destrukcyjna migracja
+starych plików. Dane są zapisywane do `dane.json` z dotychczasową
+kopią `.bak`. Przed pierwszym testem nowej wersji warto wykonać własną
+kopię katalogu `%APPDATA%\\Kwatermistrz`.
+
+Dopóki nie rozpoznasz wszystkich historycznych zdarzeń, liczniki
+indywidualnych przedmiotów/replik pozostają danymi historycznymi,
+a nie potwierdzonymi powiązaniami z konkretnymi wyprawami.

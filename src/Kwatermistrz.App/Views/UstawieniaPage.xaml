@@ -3,7 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
-      Title="Ustawienia">
+      Title="Ustawienia" TextElement.Foreground="{DynamicResource TekstAplikacji}">
     <Page.Resources>
         <conv:KonwerterEnumIndeks x:Key="KonwerterEnumIndeks" />
         <x:Array x:Key="Motywy" Type="sys:String"

@@ -58,9 +58,7 @@ public class IndeksObliczeniowy
                 DodajUzycie(przedmiotId);
         }
 
-        LacznaLiczbaWypraw = dane.Repliki.Sum(r =>
-            r.LicznikHistorycznyWypraw + (_wyprawyWgRepliki.TryGetValue(r.Id, out var l) ? l : 0))
-            + dane.Wyprawy.Count(w => !w.CzyUsunieta && w.ReplikaGlownaId == null);
+        LacznaLiczbaWypraw = RejestrWypraw.LacznaLiczbaWypraw(dane);
 
         void DodajUzycie(string przedmiotId)
         {

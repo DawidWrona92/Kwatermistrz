@@ -1,3 +1,19 @@
-bin/
-obj/
+# .NET / Visual Studio
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+TestResults/
+
+# Local application data and diagnostics
+error.log
+*.bak
+*.tmp
+dane.json
+zdjecia/
+kopie/
+
+# Generated artifacts; legacy ZIPs under releases/ remain archived in git history
 dist/
+releases/*.zip

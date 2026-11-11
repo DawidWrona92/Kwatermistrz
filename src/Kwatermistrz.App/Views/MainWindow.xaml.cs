@@ -8,6 +8,7 @@ namespace Kwatermistrz.App.Views;
 public partial class MainWindow : FluentWindow
 {
     private readonly Dictionary<string, FrameworkElement> _strony = new();
+    private readonly Dictionary<string, Func<FrameworkElement>> _fabrykiStron = new();
 
     public MainWindow()
     {
@@ -26,6 +27,21 @@ public partial class MainWindow : FluentWindow
             vm.Pulpit.Odswiez();
             // karty skrótowe pulpitu (FR-104) i ranking (FR-105) — przejście do listy z filtrem
             vm.Pulpit.PrzejdzDo += PrzejdzZPulpitu;
+            vm.FokusujSzukanieWidok += () => PoleSzukania.Focus();
+            vm.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(MainWindowViewModel.AktualnyEkran))
+                {
+                    PokazEkran(vm.AktualnyEkran);
+                    ZaznaczNawigacje(vm.AktualnyEkran);
+                }
+                else if (args.PropertyName == nameof(MainWindowViewModel.AktywnaRekonstrukcjaId))
+                {
+                    // Po przefiltrowaniu listy karta nie może dalej pokazywać
+                    // repliki/przedmiotu niewidocznego w wybranej rekonstrukcji.
+                    OdswiezKarte();
+                }
+            };
         }
         // globalne wyszukiwanie (FR-1201): wyniki pod polem, Enter otwiera pierwszy
         PoleSzukania.TextChanged += (_, _) =>
@@ -55,7 +71,8 @@ public partial class MainWindow : FluentWindow
 
         ZarejestrujStrony();
         // przywrócenie ostatniego ekranu (FR-1303/NFR-12)
-        var ekran = u.OstatniEkran ?? "Pulpit";
+        var ekran = u.OstatniEkran is { } zapamietany && _fabrykiStron.ContainsKey(zapamietany)
+            ? zapamietany : "Pulpit";
         PokazEkran(ekran);
         ZaznaczNawigacje(ekran);
     }
@@ -63,26 +80,869 @@ public partial class MainWindow : FluentWindow
     private void ZarejestrujStrony()
     {
         var vm = ViewModel!;
-        _strony["Pulpit"] = new PulpitPage { DataContext = vm.Pulpit };
-        _strony["Slowniki"] = new SlownikiPage { DataContext = vm.Slowniki };
-        _strony["Ustawienia"] = new UstawieniaPage { DataContext = vm.Ustawienia };
-        _strony["Import"] = new ImportPage { DataContext = vm.Import };
-        _strony["Pakiety"] = new PakietyPage { DataContext = vm.Pakiety };
-        _strony["Wyprawy"] = new WyprawyPage { DataContext = vm.Wyprawy };
-        _strony["Bronie"] = new BroniePage { DataContext = vm.Repliki };
-        _strony["Wyposazenie"] = new WyposazeniePage { DataContext = vm.Wyposazenie };
-        _strony["Zestawy"] = new ZestawyPage { DataContext = vm.Zestawy };
-        _strony["Raporty"] = new RaportyPage { DataContext = vm.Raporty };
-        _strony["DoUzupelnienia"] = new DoUzupelnieniaPage { DataContext = vm.DoUzupelnienia };
-        // rekonstrukcje edytujemy w panelu karty po prawej stronie
-        _strony["Rekonstrukcje"] = new RekonstrukcjePage { DataContext = vm.Rekonstrukcje };
+        // XAML każdej strony tworzymy dopiero przy pierwszym wejściu.
+        // Awaria pojedynczego ekranu nie blokuje pulpitu i pozostałych funkcji.
+        _fabrykiStron["Pulpit"] = () => new PulpitPage { DataContext = vm.Pulpit };
+        _fabrykiStron["Slowniki"] = () => new SlownikiPage { DataContext = vm.Slowniki };
+        _fabrykiStron["Ustawienia"] = () => new UstawieniaPage { DataContext = vm.Ustawienia };
+        _fabrykiStron["Import"] = () => new ImportPage { DataContext = vm.Import };
+        _fabrykiStron["Pakiety"] = () => new PakietyPage { DataContext = vm.Pakiety };
+        _fabrykiStron["Wyprawy"] = () => new WyprawyPage { DataContext = vm.Wyprawy };
+        _fabrykiStron["Bronie"] = () => new BroniePage { DataContext = vm.Repliki };
+        _fabrykiStron["Wyposazenie"] = () => new WyposazeniePage { DataContext = vm.Wyposazenie };
+        _fabrykiStron["Zestawy"] = () => new ZestawyPage { DataContext = vm.Zestawy };
+        _fabrykiStron["Raporty"] = () => new RaportyPage { DataContext = vm.Raporty };
+        _fabrykiStron["DoUzupelnienia"] = () => new DoUzupelnieniaPage { DataContext = vm.DoUzupelnienia };
+        _fabrykiStron["Konflikty"] = () => new KonfliktyPage { DataContext = vm.Konflikty };
+        _fabrykiStron["Rekonstrukcje"] = () => new RekonstrukcjePage { DataContext = vm.Rekonstrukcje };
+    }
+
+    /// <summary>Tworzy każdy ekran i sprawdza parsowanie XAML bez wyświetlania okna.</summary>
+    public void ZweryfikujEkrany()
+    {
+        if (_fabrykiStron.Count == 0)
+            ZarejestrujStrony();
+        foreach (var (nazwa, fabryka) in _fabrykiStron)
+        {
+            try
+            {
+                _strony.TryAdd(nazwa, fabryka());
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Nie udało się utworzyć ekranu: {nazwa}", ex);
+            }
+        }
+        // Karty są tworzone poza Frame; testujemy także ich zasoby i konwertery.
+        _ = new KartaPrzedmiotu { ViewModel = ViewModel!.Wyposazenie };
+        _ = new KartaRepliki { ViewModel = ViewModel!.Repliki };
+        _ = new KreatorWindow();
+    }
+
+    /// <summary>Smoke test Windows: rzeczywiste przejścia Frame.Navigate i zdarzenia Loaded.</summary>
+    public void ZweryfikujNawigacje()
+    {
+        foreach (var ekran in _fabrykiStron.Keys.ToList())
+        {
+            PokazEkran(ekran);
+            // Frame może planować ładowanie na dispatcherze zamiast wykonywać je od razu.
+            var klatka = new System.Windows.Threading.DispatcherFrame();
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background,
+                new Action(() => klatka.Continue = false));
+            System.Windows.Threading.Dispatcher.PushFrame(klatka);
+        }
+    }
+
+    /// <summary>Windows CI: pierwszy start w motywie ciemnym i jasnym oraz zapis kreatora.</summary>
+    public void ZweryfikujKreator()
+    {
+        foreach (var motyw in new[] { Wpf.Ui.Appearance.ApplicationTheme.Dark, Wpf.Ui.Appearance.ApplicationTheme.Light })
+        {
+            Wpf.Ui.Appearance.ApplicationThemeManager.Apply(motyw);
+            var vm = new KreatorViewModel(App.Dane, App.Magazyn);
+            var kreator = new KreatorWindow { Owner = this, DataContext = vm };
+            Exception? blad = null;
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, new Action(() =>
+            {
+                try
+                {
+                    kreator.ZweryfikujOpcjeStartu();
+                    if (motyw == Wpf.Ui.Appearance.ApplicationTheme.Light)
+                    {
+                        vm.NazwaRekonstrukcji = "Test pierwszego uruchomienia";
+                        vm.PotwierdzCommand.Execute(null);
+                        if (App.Dane.CzyPierwszeUruchomienie || vm.Komunikat.Length > 0)
+                            throw new InvalidOperationException("Nie udało się zakończyć kreatora.");
+                    }
+                    else
+                    {
+                        kreator.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    blad = ex;
+                    kreator.Close();
+                }
+            }));
+            var wynik = kreator.ShowDialog();
+            if (blad != null)
+                throw new InvalidOperationException($"Test kreatora w motywie {motyw} nie powiódł się.", blad);
+            if (motyw == Wpf.Ui.Appearance.ApplicationTheme.Light && wynik != true)
+                throw new InvalidOperationException("Kreator nie zakończył się poprawnie po zatwierdzeniu.");
+        }
+    }
+
+    private static IEnumerable<T> ZnajdzWizualne<T>(DependencyObject rodzic) where T : DependencyObject
+    {
+        if (rodzic is T znaleziony)
+            yield return znaleziony;
+        for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(rodzic); i++)
+            foreach (var element in ZnajdzWizualne<T>(System.Windows.Media.VisualTreeHelper.GetChild(rodzic, i)))
+                yield return element;
+    }
+
+    /// <summary>Weryfikuje realne piksele 2x2 i zmianę Wzor już po pierwszym renderze.</summary>
+    private static void ZweryfikujRysowanieKamuflazu()
+    {
+        var kontrolka = new Kwatermistrz.App.Controls.ProbkaKamuflazu();
+        var paleta = new Kwatermistrz.Core.Model.WzorKamuflazu
+        {
+            KoloryProbki = ["#FF0000", "#00FF00", "#0000FF", "#FFFFFF"],
+        };
+        void Renderuj()
+        {
+            kontrolka.Measure(new Size(24, 16));
+            kontrolka.Arrange(new Rect(0, 0, 24, 16));
+            kontrolka.UpdateLayout();
+            var obraz = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                24, 16, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            obraz.Render(kontrolka);
+            var piksele = new byte[24 * 16 * 4];
+            obraz.CopyPixels(piksele, 24 * 4, 0);
+            if (kontrolka.Wzor == paleta)
+            {
+                void Sprawdz(int x, int y, byte r, byte g, byte b)
+                {
+                    var i = (y * 24 + x) * 4;
+                    if (piksele[i] != b || piksele[i + 1] != g || piksele[i + 2] != r)
+                        throw new InvalidOperationException(
+                            $"Błędny kolor próbki kamuflażu w punkcie ({x},{y}).");
+                }
+                Sprawdz(3, 3, 255, 0, 0);
+                Sprawdz(17, 3, 0, 255, 0);
+                Sprawdz(3, 12, 0, 0, 255);
+                Sprawdz(17, 12, 255, 255, 255);
+            }
+        }
+
+        // Zmiana powiązania w zrealizowanym już wierszu nie może modyfikować Template.
+        kontrolka.Wzor = paleta;
+        Renderuj();
+        foreach (var ilosc in new[] { 1, 2, 3, 4 })
+        {
+            kontrolka.Wzor = new Kwatermistrz.Core.Model.WzorKamuflazu
+            {
+                KoloryProbki = paleta.KoloryProbki.Take(ilosc).ToList(),
+            };
+            Renderuj();
+        }
+        kontrolka.Wzor = new Kwatermistrz.Core.Model.WzorKamuflazu
+        {
+            KoloryProbki = ["#NIEPOPRAWNY"],
+        };
+        Renderuj();
+        kontrolka.Wzor = null;
+        Renderuj();
+        kontrolka.Wzor = paleta;
+        Renderuj();
+    }
+
+    private void PrzepompujNawigacje()
+    {
+        var klatka = new System.Windows.Threading.DispatcherFrame();
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle,
+            new Action(() => klatka.Continue = false));
+        System.Windows.Threading.Dispatcher.PushFrame(klatka);
+    }
+
+    /// <summary>Regresja: poprzednio każde przejście pozostawiało niebieskie
+    /// podświetlenie poprzedniej pozycji NavigationView.</summary>
+    public void ZweryfikujJednoZaznaczenieMenu()
+    {
+        foreach (var ekran in new[]
+        {
+            "Pulpit", "Wyprawy", "Bronie", "Wyposazenie",
+            "Zestawy", "Raporty", "DoUzupelnienia", "Konflikty", "Slowniki",
+            "Import", "Pakiety", "Ustawienia", "Pulpit",
+        })
+        {
+            OtworzEkranZMenu(ekran);
+            PrzepompujNawigacje();
+
+            var aktywne = WszystkiePozycjeNawigacji()
+                .OfType<NavigationViewItem>()
+                .Where(item => item.IsActive).ToList();
+            if (aktywne.Count != 1 || aktywne[0].Tag as string != ekran)
+                throw new InvalidOperationException(
+                    $"Błędny stan menu po przejściu do '{ekran}': " +
+                    string.Join(", ", aktywne.Select(item => item.Tag)));
+        }
+    }
+
+    /// <summary>Windows smoke: prawdziwy edytor zestawu, dwie galerie, limit i zapis plików.</summary>
+    public void ZweryfikujGalerieZestawu()
+    {
+        PokazEkran("Zestawy");
+        PrzepompujNawigacje();
+        UpdateLayout();
+        if (ObszarZawartosci.Content is not ZestawyPage strona)
+            throw new InvalidOperationException("Nie udało się wyświetlić edytora zestawu.");
+
+        // Loaded odświeża Wiersze (i resetuje DataGrid.SelectedItem);
+        // wybór musi nastąpić po zakończeniu ładowania prawdziwego ekranu.
+        ViewModel!.Zestawy.Odswiez();
+        var wiersz = ViewModel.Zestawy.Wiersze.FirstOrDefault();
+        if (wiersz == null)
+            throw new InvalidOperationException("Brak zestawu do testu galerii.");
+        ViewModel.Zestawy.Wybrany = wiersz;
+        PrzepompujNawigacje();
+        strona.UpdateLayout();
+        var galerie = ZnajdzWizualne<Kwatermistrz.App.Controls.GaleriaZdjec>(strona).ToList();
+        if (galerie.Count != 2)
+            throw new InvalidOperationException($"Oczekiwano 2 galerii, znaleziono: {galerie.Count}.");
+
+        var wlasne = galerie.Single(g => g.MaksymalnaLiczbaZdjec == 0);
+        var referencje = galerie.Single(g => g.MaksymalnaLiczbaZdjec == 10);
+        if (!ReferenceEquals(wlasne.Sciezki, wiersz.Zestaw.Zdjecia) ||
+            !ReferenceEquals(referencje.Sciezki, wiersz.Zestaw.ZdjeciaReferencyjne) ||
+            !ReferenceEquals(wlasne.Opisy, wiersz.Zestaw.OpisyZdjec) ||
+            referencje.Serwis == null)
+            throw new InvalidOperationException(
+                $"Nieprawidłowe powiązania galerii: moje={ReferenceEquals(wlasne.Sciezki, wiersz.Zestaw.Zdjecia)}, " +
+                $"ref={ReferenceEquals(referencje.Sciezki, wiersz.Zestaw.ZdjeciaReferencyjne)}, " +
+                $"opisy={ReferenceEquals(wlasne.Opisy, wiersz.Zestaw.OpisyZdjec)}, " +
+                $"serwis={(referencje.Serwis != null)}; " +
+                $"Wybrany={(ViewModel.Zestawy.Wybrany?.Id ?? "null")}, " +
+                $"DataContext={strona.DataContext?.GetType().Name}.");
+
+        var plik = System.IO.Path.Combine(App.KatalogDanych, "probka-galerii.png");
+        var piksel = System.Windows.Media.Imaging.BitmapSource.Create(
+            1, 1, 96, 96, System.Windows.Media.PixelFormats.Bgra32, null,
+            new byte[] { 4, 15, 230, 255 }, 4);
+        var png = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(piksel));
+        using (var strumien = System.IO.File.Create(plik))
+            png.Save(strumien);
+        try
+        {
+            var własnaPoczatkowa = wiersz.Zestaw.Zdjecia.Count;
+            var refsPoczatkowe = wiersz.Zestaw.ZdjeciaReferencyjne.Count;
+            if (wlasne.DodajPliki([plik]) != 1 ||
+                wiersz.Zestaw.Zdjecia.Count != własnaPoczatkowa + 1)
+                throw new InvalidOperationException("Dodawanie własnego zdjęcia nie działa.");
+
+            var ileDodac = Math.Max(0, 10 - refsPoczatkowe);
+            if (referencje.DodajPliki(Enumerable.Repeat(plik, ileDodac)) != ileDodac ||
+                wiersz.Zestaw.ZdjeciaReferencyjne.Count != 10)
+                throw new InvalidOperationException("Dodawanie referencji do limitu 10 nie działa.");
+
+            // Gdy galeria jest pełna, przycisk dodawania musi zniknąć,
+            // ale żaden zapisany obraz nie może zostać automatycznie usunięty.
+            referencje.UpdateLayout();
+            var panelMiniatur = referencje.Template?.FindName("PART_Kontener", referencje)
+                as System.Windows.Controls.Panel;
+            if (panelMiniatur == null ||
+                panelMiniatur.Children.OfType<System.Windows.Controls.Button>().Any())
+                throw new InvalidOperationException("Pełna galeria referencji nadal pozwala dodać zdjęcie.");
+            if (ViewModel.Zestawy.LicznikReferencji != "10/10")
+                throw new InvalidOperationException("Licznik referencji nie odświeżył się po dodawaniu.");
+            var opisSciezka = wiersz.Zestaw.ZdjeciaReferencyjne.Last();
+            wiersz.Zestaw.OpisyZdjec[opisSciezka] = "Zdjęcie referencyjne — test";
+            ViewModel.Zestawy.ZapiszGalerie();
+
+            var odczyt = new Kwatermistrz.Core.Storage.MagazynJson(App.KatalogDanych).Wczytaj();
+            var zestaw = odczyt.Zestawy.Single(z => z.Id == wiersz.Id);
+            if (zestaw.Zdjecia.Count != wiersz.Zestaw.Zdjecia.Count ||
+                zestaw.ZdjeciaReferencyjne.Count != wiersz.Zestaw.ZdjeciaReferencyjne.Count ||
+                zestaw.OpisyZdjec[opisSciezka] != "Zdjęcie referencyjne — test" ||
+                !System.IO.File.Exists(referencje.Serwis.PelnaSciezka(opisSciezka)))
+                throw new InvalidOperationException("Zdjęcia i opisy zestawu nie zostały trwale zapisane.");
+        }
+        finally
+        {
+            // Plik źródłowy może zniknąć; skopiowane fotografie i JSON są w
+            // izolowanym profilu smoke i zostaną posprzątane przez runner.
+            System.IO.File.Delete(plik);
+        }
+        PokazEkran("Pulpit");
+    }
+
+    /// <summary>Test wizualnej regresji: podstawowe etykiety pulpitu nie mogą mieć czarnego tekstu w dark mode.</summary>
+    public void ZweryfikujKoloryPulpitu()
+    {
+        foreach (var motyw in new[] { Wpf.Ui.Appearance.ApplicationTheme.Dark, Wpf.Ui.Appearance.ApplicationTheme.Light })
+        {
+            Wpf.Ui.Appearance.ApplicationThemeManager.Apply(motyw);
+            App.UstawAliasyWykresow(motyw == Wpf.Ui.Appearance.ApplicationTheme.Light);
+            PokazEkran("Pulpit");
+            UpdateLayout();
+
+            if (!_strony.TryGetValue("Pulpit", out var pulpit))
+                throw new InvalidOperationException("Nie znaleziono Pulpitu do testu kolorów.");
+
+            var etykiety = ZnajdzTeksty(pulpit)
+                .Where(t => t.Text is "Pulpit" or "Wyprawy łącznie" or "Do zrobienia i sprawdzenia")
+                .ToList();
+            if (etykiety.Count != 3)
+                throw new InvalidOperationException($"Nie znaleziono etykiet Pulpitu: {etykiety.Count}/3.");
+
+            var wzorcowy = App.Kolory.Glowny as System.Windows.Media.SolidColorBrush;
+            if (wzorcowy == null)
+                throw new InvalidOperationException("Brak podstawowego pędzla tekstu WPF-UI.");
+
+            foreach (var etykieta in etykiety)
+            {
+                if (etykieta.Foreground is not System.Windows.Media.SolidColorBrush kolor ||
+                    kolor.Color != wzorcowy.Color)
+                    throw new InvalidOperationException(
+                        $"Nieprawidłowy kolor '{etykieta.Text}' w motywie {motyw}: " +
+                        $"Fore={etykieta.Foreground}, expected={wzorcowy.Color}, " +
+                        $"Page={pulpit.GetValue(System.Windows.Documents.TextElement.ForegroundProperty)}, " +
+                        $"style={etykieta.Style?.TargetType}.");
+            }
+        }
+        // Po zakończeniu testu motyw ustawiamy tak jak konfiguracja systemowa.
+        Wpf.Ui.Appearance.ApplicationThemeManager.Apply(Wpf.Ui.Appearance.ApplicationTheme.Dark);
+        App.UstawAliasyWykresow(jasny: false);
+    }
+
+    private static IEnumerable<System.Windows.Controls.TextBlock> ZnajdzTeksty(DependencyObject element)
+    {
+        if (element is System.Windows.Controls.TextBlock tekst)
+            yield return tekst;
+        for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(element); i++)
+        {
+            foreach (var potomny in ZnajdzTeksty(System.Windows.Media.VisualTreeHelper.GetChild(element, i)))
+                yield return potomny;
+        }
+    }
+
+    /// <summary>UI smoke: pasek przeciągania oraz czytelne, dopasowane kolumny tabel.</summary>
+    public void ZweryfikujTabeleIPasekTytulu()
+    {
+        if (!PasekTytulowy.IsVisible || PasekTytulowy.ActualHeight < 30 ||
+            !PasekTytulowy.ShowMinimize || !PasekTytulowy.ShowMaximize ||
+            !PasekTytulowy.ShowClose)
+            throw new InvalidOperationException("Brak aktywnego paska tytułowego i przycisków okna.");
+
+        foreach (var ekran in new[]
+        {
+            "Wyposazenie", "Bronie", "Wyprawy", "Zestawy",
+            "DoUzupelnienia", "Konflikty", "Slowniki", "Pakiety", "Raporty",
+        })
+        {
+            PokazEkran(ekran);
+            PrzepompujNawigacje();
+            UpdateLayout();
+
+            if (ObszarZawartosci.Content is not DependencyObject zawartosc)
+                throw new InvalidOperationException($"Brak widoku: {ekran}.");
+            if (ekran == "Zestawy" && zawartosc is ZestawyPage stronaZestawow)
+                stronaZestawow.ZweryfikujUklad();
+
+            var tabele = ZnajdzWizualne<System.Windows.Controls.DataGrid>(zawartosc).ToList();
+            if (tabele.Count == 0)
+                throw new InvalidOperationException($"Brak tabeli w ekranie: {ekran}.");
+
+            foreach (var tabela in tabele)
+            {
+                if (tabela.GridLinesVisibility != System.Windows.Controls.DataGridGridLinesVisibility.All ||
+                    !tabela.CanUserResizeColumns ||
+                    tabela.BorderThickness.Left < 1 ||
+                    tabela.HorizontalGridLinesBrush == null ||
+                    tabela.VerticalGridLinesBrush == null ||
+                    tabela.AlternationCount < 2)
+                    throw new InvalidOperationException($"Tabela {ekran} nie ma poprawnego wyglądu/resize.");
+
+                if (!tabela.ColumnWidth.IsStar ||
+                    !Kwatermistrz.App.Controls.ProporcjonalneKolumny.GetWlaczone(tabela))
+                    throw new InvalidOperationException(
+                        $"Tabela {ekran} nie ma włączonego automatycznego wypełniania szerokości.");
+
+                foreach (var kolumna in tabela.Columns.OfType<System.Windows.Controls.DataGridTextColumn>())
+                {
+                    if ((!kolumna.Width.IsStar && !kolumna.Width.IsAbsolute) ||
+                        kolumna.MinWidth < 40)
+                        throw new InvalidOperationException(
+                            $"Kolumna tekstowa '{kolumna.Header}' w {ekran} ma niepoprawny rozmiar.");
+                }
+            }
+        }
+        PokazEkran("Pulpit");
+    }
+
+    /// <summary>
+    /// Windows UI smoke: checkboxy w Broń muszą zmieścić się w komórce
+    /// przy pierwszym renderze, a zmiana rekonstrukcji musi aktualizować
+    /// widoczne wiersze bez ponownego otwierania zakładki.
+    /// </summary>
+    public void ZweryfikujCheckboxBroniIFiltrRekonstrukcji()
+    {
+        var vm = ViewModel ?? throw new InvalidOperationException("Brak kontekstu głównego.");
+        if (ObszarZawartosci.Content is not BroniePage widok)
+            throw new InvalidOperationException("Test filtra wymaga aktywnej zakładki Broń.");
+
+        var tabela = ZnajdzWizualne<System.Windows.Controls.DataGrid>(widok).Single();
+        if (tabela.Columns.FirstOrDefault() is not System.Windows.Controls.DataGridTemplateColumn kolumna ||
+            kolumna.MinWidth < 64 || kolumna.ActualWidth < 60 || kolumna.CanUserResize)
+            throw new InvalidOperationException(
+                $"Checkbox replik nadal ma uciętą kolumnę (szerokość: {tabela.Columns.FirstOrDefault()?.ActualWidth:F0}).");
+
+        if (vm.Repliki.Wiersze.Count < 2)
+            throw new InvalidOperationException("Brak replik do sprawdzenia pierwszego renderu.");
+
+        tabela.ScrollIntoView(vm.Repliki.Wiersze[0]);
+        PrzepompujNawigacje();
+        tabela.UpdateLayout();
+        var checkbox = ZnajdzWizualne<System.Windows.Controls.CheckBox>(tabela).FirstOrDefault()
+            ?? throw new InvalidOperationException("Checkbox porównania nie został wyrenderowany.");
+        if (checkbox.ActualWidth < 24 || checkbox.ActualHeight < 18)
+            throw new InvalidOperationException(
+                $"Checkbox replik jest zbyt mały: {checkbox.ActualWidth:F0}×{checkbox.ActualHeight:F0}px.");
+
+        DependencyObject? rodzic = System.Windows.Media.VisualTreeHelper.GetParent(checkbox);
+        while (rodzic != null && rodzic is not System.Windows.Controls.DataGridCell)
+            rodzic = System.Windows.Media.VisualTreeHelper.GetParent(rodzic);
+        if (rodzic is not System.Windows.Controls.DataGridCell komorka)
+            throw new InvalidOperationException("Checkbox porównania nie jest elementem komórki.");
+        var granice = checkbox.TransformToAncestor(komorka)
+            .TransformBounds(new Rect(new Point(0, 0), checkbox.RenderSize));
+        if (granice.Left < -1 || granice.Right > komorka.ActualWidth + 1 ||
+            granice.Top < -1 || granice.Bottom > komorka.ActualHeight + 1)
+            throw new InvalidOperationException(
+                $"Checkbox porównania jest obcięty: {granice}, komórka {komorka.ActualWidth:F0}×{komorka.ActualHeight:F0}.");
+
+        if (checkbox.DataContext is not WierszRepliki wiersz)
+            throw new InvalidOperationException("Checkbox nie ma kontekstu właściwej repliki.");
+        var poczatkoweZaznaczenie = wiersz.ZaznaczonaDoPorownania;
+        checkbox.IsChecked = !poczatkoweZaznaczenie;
+        if (wiersz.ZaznaczonaDoPorownania == poczatkoweZaznaczenie)
+            throw new InvalidOperationException("Checkbox nie aktualizuje zaznaczenia porównania.");
+        checkbox.IsChecked = poczatkoweZaznaczenie;
+
+        // Stan źródłowy jest odtwarzany po sprawdzeniu filtra.
+        var wszystkieId = vm.Repliki.Wiersze.Select(w => w.Id).ToHashSet(StringComparer.Ordinal);
+        var polska = vm.RekonstrukcjeLista.FirstOrDefault(r => r.Nazwa == "Polska")
+            ?? throw new InvalidOperationException("Import nie zawiera profilu Polska.");
+        vm.AktywnaRekonstrukcjaId = polska.Id;
+        PrzepompujNawigacje();
+        tabela.UpdateLayout();
+
+        var tylkoPolska = vm.Repliki.Wiersze;
+        if (tylkoPolska.Count == 0 || tylkoPolska.Count >= wszystkieId.Count ||
+            tylkoPolska.Any(w => w.Replika.RekonstrukcjeId.Count > 0 &&
+                                !w.Replika.RekonstrukcjeId.Contains(polska.Id)) ||
+            tabela.Items.Count != tylkoPolska.Count)
+            throw new InvalidOperationException(
+                $"Zmiana rekonstrukcji nie przefiltrowała widoku Broń: " +
+                $"wszystkie={wszystkieId.Count}, Polska={tylkoPolska.Count}, UI={tabela.Items.Count}.");
+
+        vm.AktywnaRekonstrukcjaId = "";
+        PrzepompujNawigacje();
+        tabela.UpdateLayout();
+        var przywrocone = vm.Repliki.Wiersze.Select(w => w.Id).ToHashSet(StringComparer.Ordinal);
+        if (!wszystkieId.SetEquals(przywrocone) || tabela.Items.Count != przywrocone.Count)
+            throw new InvalidOperationException("Powrót do Wszystkie nie przywrócił replik na tej samej stronie.");
+    }
+
+    /// <summary>
+    /// Regresja: wyposażenie po samym otwarciu strony ma wypełnić szerokie
+    /// okno i pokazywać pełne checkboxy; bez jakiejkolwiek interakcji użytkownika.
+    /// </summary>
+    public void ZweryfikujPierwszyRenderWyposazenia()
+    {
+        // CI ma wirtualny ekran ~1044 px: wymuszamy szerokość samego widoku,
+        // a nie Window.Width (Windows mógłby ograniczyć okno do rozmiaru ekranu).
+        var widok = new WyposazeniePage
+        {
+            DataContext = ViewModel!.Wyposazenie,
+            Width = 1650,
+        };
+        var okno = new Window
+        {
+            Title = "Kwatermistrz — test pierwszego renderowania wyposażenia",
+            Owner = this,
+            ShowInTaskbar = false,
+            WindowStartupLocation = WindowStartupLocation.Manual,
+            Left = 24,
+            Top = 24,
+            Width = 1650,
+            Height = 760,
+            Content = widok,
+        };
+        try
+        {
+            // Test świadomie NIE zmienia szerokości okna po Show().
+            okno.Show();
+            PrzepompujNawigacje();
+            okno.UpdateLayout();
+
+            var tabela = ZnajdzWizualne<System.Windows.Controls.DataGrid>(widok)
+                .SingleOrDefault()
+                ?? throw new InvalidOperationException("Brak tabeli wyposażenia.");
+            if (tabela.Items.Count < 100)
+                throw new InvalidOperationException("Nie wczytano danych wyposażenia do testu.");
+            if (tabela.ActualWidth < 1200)
+                throw new InvalidOperationException(
+                    $"Test nie odtworzył szerokiego widoku: DataGrid={tabela.ActualWidth:F0}px.");
+
+            var zajeta = tabela.Columns
+                .Where(k => k.Visibility == Visibility.Visible)
+                .Sum(k => k.ActualWidth);
+            if (zajeta < tabela.ActualWidth - 45)
+                throw new InvalidOperationException(
+                    $"Przy pierwszym renderze tabela nie wypełnia okna: " +
+                    $"kolumny={zajeta:F0}px, DataGrid={tabela.ActualWidth:F0}px.");
+
+            if (tabela.Columns[0].ActualWidth < 60)
+                throw new InvalidOperationException(
+                    $"Kolumna checkboxów jest za wąska: {tabela.Columns[0].ActualWidth:F0}px.");
+
+            var kolumnaMiejsca = tabela.Columns
+                .OfType<System.Windows.Controls.DataGridTextColumn>()
+                .SingleOrDefault(k => Equals(k.Header, "Miejsce"));
+            if (kolumnaMiejsca?.Binding is not System.Windows.Data.Binding bindingMiejsca ||
+                bindingMiejsca.Path?.Path != nameof(WierszPrzedmiotu.MiejsceNazwa))
+                throw new InvalidOperationException(
+                    "Wyposażenie nie używa nazwy miejsca wyliczonej przez model wiersza.");
+            foreach (var przedmiot in ViewModel!.Wyposazenie.Wiersze)
+                if (!string.IsNullOrWhiteSpace(przedmiot.MiejsceId) &&
+                    string.Equals(przedmiot.MiejsceNazwa, przedmiot.MiejsceId, StringComparison.Ordinal))
+                    throw new InvalidOperationException("Tabela pokazuje techniczne ID zamiast nazwy miejsca.");
+
+            var kolumnaNazwaDoPomiaru = tabela.Columns
+                .OfType<System.Windows.Controls.DataGridTextColumn>()
+                .Single(k => Equals(k.Header, "Nazwa"));
+            if (kolumnaNazwaDoPomiaru.MinWidth < 200 ||
+                kolumnaMiejsca.MinWidth < 180 || tabela.Columns[0].MinWidth < 60)
+                throw new InvalidOperationException("Minimalne szerokości kolumn wyposażenia są za małe.");
+            var tekst = new System.Windows.Controls.TextBlock
+            {
+                Style = (Style)FindResource("WierszTabeliTekst"),
+                Text = "Bardzo długa nazwa przedmiotu",
+            };
+            if (tekst.TextTrimming != TextTrimming.CharacterEllipsis ||
+                tekst.TextWrapping != TextWrapping.NoWrap)
+                throw new InvalidOperationException("Długi tekst w tabelach nie jest skracany wielokropkiem.");
+
+            var vm = ViewModel.Wyposazenie;
+            var pierwszy = vm.Wiersze.First();
+            var drugi = vm.Wiersze.Skip(1).First();
+            var menuWiersza = widok.ZbudujMenuKontekstowe(pierwszy);
+            var wpisy = menuWiersza.Items.OfType<System.Windows.Controls.MenuItem>().ToList();
+            if (!wpisy.Any(x => Equals(x.Header, "Usuń ten przedmiot…") &&
+                                  ReferenceEquals(x.CommandParameter, pierwszy)) ||
+                !wpisy.Any(x => Equals(x.Header, "Duplikuj ten przedmiot") &&
+                                  ReferenceEquals(x.CommandParameter, pierwszy)) ||
+                !wpisy.Any(x => Equals(x.Header, "Dodaj przedmiot w kategorii")))
+                throw new InvalidOperationException("PPM na wierszu nie pokazuje kompletu operacji.");
+
+            // Zaznaczenia checkboxami są niezależne od wiersza klikniętego PPM.
+            pierwszy.Zaznaczony = true;
+            drugi.Zaznaczony = true;
+            if (vm.LiczbaZaznaczonych != 2)
+                throw new InvalidOperationException("Licznik zaznaczonych checkboxami nie działa.");
+            var menuDlaDrugiego = widok.ZbudujMenuKontekstowe(drugi);
+            var wpisyDrugiego = menuDlaDrugiego.Items.OfType<System.Windows.Controls.MenuItem>().ToList();
+            if (!wpisyDrugiego.Any(x => Equals(x.Header, "Usuń zaznaczone (2)…")) ||
+                !wpisyDrugiego.Any(x => Equals(x.Header, "Usuń ten przedmiot…") &&
+                                        ReferenceEquals(x.CommandParameter, drugi)))
+                throw new InvalidOperationException("Menu myli usuwanie jednego przedmiotu z grupą.");
+            pierwszy.Zaznaczony = false;
+            drugi.Zaznaczony = false;
+
+            var checkbox = ZnajdzWizualne<System.Windows.Controls.CheckBox>(tabela)
+                .FirstOrDefault()
+                ?? throw new InvalidOperationException("Nie wyrenderowano checkboxa wiersza.");
+            if (checkbox.ActualWidth < 24 || checkbox.ActualHeight < 18)
+                throw new InvalidOperationException(
+                    $"Checkbox ma za mały rozmiar: {checkbox.ActualWidth:F0}×{checkbox.ActualHeight:F0}px.");
+
+            var rodzic = System.Windows.Media.VisualTreeHelper.GetParent(checkbox);
+            while (rodzic != null && rodzic is not System.Windows.Controls.DataGridCell)
+                rodzic = System.Windows.Media.VisualTreeHelper.GetParent(rodzic);
+            if (rodzic is not System.Windows.Controls.DataGridCell komorka)
+                throw new InvalidOperationException("Checkbox nie znajduje się w komórce tabeli.");
+
+            var granice = checkbox.TransformToAncestor(komorka)
+                .TransformBounds(new Rect(new Point(0, 0), checkbox.RenderSize));
+            if (granice.Left < -1 || granice.Right > komorka.ActualWidth + 1 ||
+                granice.Top < -1 || granice.Bottom > komorka.ActualHeight + 1)
+                throw new InvalidOperationException(
+                    $"Checkbox wychodzi poza komórkę: checkbox={granice}, " +
+                    $"komórka={komorka.ActualWidth:F0}×{komorka.ActualHeight:F0}px.");
+
+            // Ręcznie ustawiona szerokość kolumny powinna pozostać nietknięta
+            // podczas późniejszego rozszerzania okna; inne kolumny mogą rosnąć.
+            var kolumnaNazwa = tabela.Columns
+                .OfType<System.Windows.Controls.DataGridTextColumn>()
+                .Single(k => Equals(k.Header, "Nazwa"));
+            var kolumnaKomentarz = tabela.Columns
+                .OfType<System.Windows.Controls.DataGridTextColumn>()
+                .Single(k => Equals(k.Header, "Komentarz"));
+            kolumnaNazwa.Width = new System.Windows.Controls.DataGridLength(260);
+            PrzepompujNawigacje();
+            var nazwaPrzed = kolumnaNazwa.ActualWidth;
+            var komentarzPrzed = kolumnaKomentarz.ActualWidth;
+            widok.Width = 1850;
+            widok.UpdateLayout();
+            PrzepompujNawigacje();
+            if (Math.Abs(kolumnaNazwa.ActualWidth - 260) > 2)
+                throw new InvalidOperationException(
+                    $"Zmiana rozmiaru okna nadpisuje ręcznie wybraną szerokość kolumny: " +
+                    $"przed={nazwaPrzed:F1}, po={kolumnaNazwa.ActualWidth:F1}, " +
+                    $"Width={kolumnaNazwa.Width}, okno={okno.ActualWidth:F0}.");
+            if (kolumnaKomentarz.ActualWidth < komentarzPrzed + 10)
+                throw new InvalidOperationException(
+                    "Pozostałe kolumny nie wykorzystują przestrzeni po poszerzeniu okna.");
+        }
+        finally
+        {
+            okno.Close();
+        }
+    }
+
+    /// <summary>
+    /// Windows UI test: szerokość raportu należy rozdzielić na wszystkie kolumny,
+    /// a nie zostawiać pusty obszar po ostatniej, jak w zgłoszonym zrzucie.
+    /// </summary>
+    public void ZweryfikujProporcjonalneKolumny()
+    {
+        // Izolowane okno hostuje prawdziwy RaportyPage. Frame.Navigate ma własną
+        // kolejkę i potrafi przełączać poprzednią stronę w trakcie pomiaru;
+        // UI test ma badać resize, a nie wyścig kolejki nawigacji.
+        var poprzedniRaport = ViewModel!.Raporty.WybranyRaport;
+        ViewModel.Raporty.WybranyRaport = "Umundurowanie";
+        var widok = new RaportyPage { DataContext = ViewModel.Raporty };
+        var okno = new Window
+        {
+            Title = "Kwatermistrz — test szerokości kolumn",
+            Owner = this,
+            ShowInTaskbar = false,
+            WindowStartupLocation = WindowStartupLocation.Manual,
+            Left = 30,
+            Top = 30,
+            Width = 950,
+            Height = 650,
+            Content = widok,
+        };
+        try
+        {
+            okno.Show();
+            PrzepompujNawigacje();
+            okno.UpdateLayout();
+
+            var tabela = ZnajdzWizualne<System.Windows.Controls.DataGrid>(widok)
+                .SingleOrDefault(d => d.IsVisible &&
+                    d.Columns.Count(c => c is System.Windows.Controls.DataGridTextColumn) == 7)
+                ?? throw new InvalidOperationException("Nie załadowano siedmiu kolumn raportu Umundurowanie.");
+            var kolumny = tabela.Columns
+                .Where(c => c.Visibility == Visibility.Visible &&
+                    c is System.Windows.Controls.DataGridTextColumn)
+                .ToList();
+            if (kolumny.Count != 7)
+                throw new InvalidOperationException("Raport Umundurowanie nie ma 7 elastycznych kolumn.");
+
+            var waskie = kolumny.Select(c => c.ActualWidth).ToArray();
+            var szerokoscWaska = tabela.ActualWidth;
+            okno.Width = 1350;
+            okno.UpdateLayout();
+            PrzepompujNawigacje();
+            okno.UpdateLayout();
+            var szerokie = kolumny.Select(c => c.ActualWidth).ToArray();
+            var rosnie = kolumny.Where((_, i) => szerokie[i] > waskie[i] + 12).Count();
+            if (rosnie < 4)
+                throw new InvalidOperationException(
+                    $"Po poszerzeniu Raportów rośnie tylko {rosnie}/{kolumny.Count} kolumn; " +
+                    $"tabela: {szerokoscWaska:F0} -> {tabela.ActualWidth:F0} px; " +
+                    $"przed=[{string.Join(", ", waskie.Select(w => w.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)))}], " +
+                    $"po=[{string.Join(", ", szerokie.Select(w => w.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)))}].");
+
+            if (kolumny.Sum(c => c.ActualWidth) < tabela.ActualWidth - 45)
+                throw new InvalidOperationException("Po rozszerzeniu okna kolumny nie wypełniają szerokości tabeli.");
+        }
+        finally
+        {
+            okno.Close();
+            ViewModel.Raporty.WybranyRaport = poprzedniRaport;
+        }
+    }
+
+    /// <summary>Test regresji: realny import repozytoryjnego Excela po pokazaniu okna.</summary>
+    public void ZweryfikujImportPoStarcie(string sciezkaXlsx)
+    {
+        if (!System.IO.File.Exists(sciezkaXlsx))
+            throw new System.IO.FileNotFoundException("Brak arkusza do testu importu", sciezkaXlsx);
+
+        // Tworzymy i kończymy kreator tak samo jak użytkownik, w tym zdarzenie
+        // Zakonczono, zapis do JSON i zamknięcie okna modalnego.
+        var vm = new KreatorViewModel(App.Dane, App.Magazyn)
+        {
+            WybranyStart = "import",
+            SciezkaImportu = sciezkaXlsx,
+        };
+        var kreator = new KreatorWindow { Owner = this, DataContext = vm };
+        Exception? blad = null;
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, new Action(() =>
+        {
+            try
+            {
+                vm.PotwierdzCommand.Execute(null);
+                if (!string.IsNullOrWhiteSpace(vm.Komunikat))
+                    throw new InvalidOperationException(vm.Komunikat);
+            }
+            catch (Exception ex)
+            {
+                blad = ex;
+                kreator.Close();
+            }
+        }));
+        var wynik = kreator.ShowDialog();
+        if (blad != null)
+            throw new InvalidOperationException("Nie udało się zaimportować repozytoryjnego arkusza.", blad);
+        if (wynik != true)
+            throw new InvalidOperationException("Kreator importu nie zakończył się pomyślnie.");
+
+        ViewModel!.OdswiezWszystkieEkrany();
+
+        var zapisane = new Kwatermistrz.Core.Storage.MagazynJson(App.KatalogDanych).Wczytaj();
+        if (App.Dane.Repliki.Count < 27 || App.Dane.Przedmioty.Count < 105 ||
+            zapisane.Repliki.Count != App.Dane.Repliki.Count ||
+            zapisane.Przedmioty.Count != App.Dane.Przedmioty.Count)
+            throw new InvalidOperationException("Rekordy nie zostały poprawnie zaimportowane i zapisane.");
+
+        if (ViewModel.Pulpit.LacznaLiczbaWypraw != 89)
+            throw new InvalidOperationException(
+                $"Pulpit nie pokazuje 89 wypraw po imporcie; pokazuje {ViewModel.Pulpit.LacznaLiczbaWypraw}.");
+
+        // Historia bez konkretnych dat: 89 rekordów z arkusza rocznego musi
+        // pojawić się jako Wyprawa_N, NN-NN-NNNN, nie tylko jako licznik.
+        ViewModel.Wyprawy.Odswiez();
+        var historia = ViewModel.Wyprawy.Wiersze.Where(w => w.CzyWirtualna).ToList();
+        if (historia.Count != 89 ||
+            historia.Any(w => w.DataTekst != "NN-NN-NNNN") ||
+            !historia.Any(w => w.Nazwa == "Wyprawa_1"))
+            throw new InvalidOperationException(
+                $"Historyczne wyprawy nie są poprawnie widoczne: {historia.Count}/89.");
+
+        ViewModel.Konflikty.Odswiez();
+        if (ViewModel.Konflikty.LiczbaWyprawHistorycznych != 89 ||
+            ViewModel.Konflikty.Wiersze.Count < 89)
+            throw new InvalidOperationException("Nowa zakładka Konflikty nie zawiera nierozpoznanej historii.");
+        OtworzEkranZMenu("Konflikty");
+        PrzepompujNawigacje();
+        if (ObszarZawartosci.Content is not KonfliktyPage stronaKonfliktow ||
+            ZnajdzWizualne<System.Windows.Controls.DataGrid>(stronaKonfliktow).FirstOrDefault()?.Items.Count < 89)
+            throw new InvalidOperationException("Nie wyświetlono tabeli konfliktów po imporcie.");
+
+        // W środowisku CI podejmujemy prawdziwą decyzję użytkownika,
+        // zapisujemy JSON i kontrolujemy brak podwójnego liczenia.
+        var cel = ViewModel.Konflikty.Wiersze.First(w => w.CzyHistorycznaWirtualna);
+        var rokHistorii = cel.Rok ?? throw new InvalidOperationException("Historia straciła rok.");
+        ViewModel.Konflikty.Wybrany = cel;
+        ViewModel.Konflikty.Data = new DateTime(rokHistorii, 11, 11);
+        ViewModel.Konflikty.ZapiszRozwiazanieCommand.Execute(null);
+        if (App.Dane.Wyprawy.Count(w => w.CzyHistoryczna && !w.CzyUsunieta) != 1 ||
+            new Kwatermistrz.Core.Obliczenia.Kalkulator(App.Dane).LacznaLiczbaWypraw() != 89 ||
+            ViewModel.Konflikty.LiczbaWyprawHistorycznych != 88)
+            throw new InvalidOperationException("Rozpoznanie historii podwoiło liczbę wypraw lub nie zapisało zmian.");
+        var rozpoznana = App.Dane.Wyprawy.Single(w => w.CzyHistoryczna && !w.CzyUsunieta);
+        Kwatermistrz.Core.Obliczenia.RejestrWypraw.CofnijRozpoznanie(App.Dane, rozpoznana);
+        App.Magazyn.Zapisz(App.Dane);
+        ViewModel.OdswiezWszystkieEkrany();
+        if (ViewModel.Konflikty.LiczbaWyprawHistorycznych != 89 ||
+            ViewModel.Pulpit.LacznaLiczbaWypraw != 89)
+            throw new InvalidOperationException("Cofnięcie uzgodnienia nie przywróciło historycznych liczników.");
+
+        if (ViewModel.RekonstrukcjeLista.Count < 3)
+            throw new InvalidOperationException("Wybór rekonstrukcji nie odświeżył się po imporcie.");
+
+        // Sprawdzamy akcje użytkownika, a nie wyłącznie utworzenie widoków XAML.
+        ViewModel.DodajWypraweCommand.Execute(null);
+        PrzepompujNawigacje();
+        if (ViewModel.AktualnyEkran != "Wyprawy" || ObszarZawartosci.Content is not WyprawyPage)
+            throw new InvalidOperationException($"Przycisk 'Dodaj wyprawę' nie przełącza ekranu: " +
+                $"VM={ViewModel.AktualnyEkran}, Frame={ObszarZawartosci.Content?.GetType().Name ?? "null"}.");
+
+        ViewModel.NawigujCommand.Execute("Bronie");
+        PrzepompujNawigacje();
+        if (ViewModel.AktualnyEkran != "Bronie" || ObszarZawartosci.Content is not BroniePage)
+            throw new InvalidOperationException($"Komenda nawigacji do Broni nie działa: " +
+                $"VM={ViewModel.AktualnyEkran}, Frame={ObszarZawartosci.Content?.GetType().Name ?? "null"}.");
+
+        ZweryfikujCheckboxBroniIFiltrRekonstrukcji();
+
+        // Regresja: wejście w kartę repliki ładowało readonly Status/Wyprawy
+        // do Run.Text w trybie TwoWay i kończyło się InvalidOperationException.
+        var testowaneRepliki = ViewModel.Repliki.Wiersze.Take(2).ToList();
+        if (testowaneRepliki.Count < 2)
+            throw new InvalidOperationException("Brak dwóch replik do testowania kart.");
+        foreach (var replika in testowaneRepliki)
+        {
+            ViewModel.Repliki.Wybrana = replika;
+            OdswiezKarte();
+            PrzepompujNawigacje();
+            ZawartoscKarty.UpdateLayout();
+            if (ZawartoscKarty.Content is not KartaRepliki karta ||
+                !ReferenceEquals(karta.DataContext, replika) ||
+                !PanelKarty.IsVisible)
+                throw new InvalidOperationException("Wybranie repliki nie otwiera poprawnej karty.");
+
+            foreach (var blok in ZnajdzWizualne<System.Windows.Controls.TextBlock>(karta))
+            {
+                foreach (var run in blok.Inlines.OfType<System.Windows.Documents.Run>())
+                {
+                    var binding = System.Windows.Data.BindingOperations.GetBinding(run,
+                        System.Windows.Documents.Run.TextProperty);
+                    if (binding != null && binding.Mode != System.Windows.Data.BindingMode.OneWay)
+                        throw new InvalidOperationException(
+                            $"Run.Text w karcie repliki ma niebezpieczny tryb: {binding.Path?.Path}.");
+                }
+            }
+        }
+
+        // Regresja po zgłoszeniu 08.11: duża lista wyposażenia wcześniej wywoływała
+        // InvalidOperationException: nie wolno modyfikować zapieczętowanego Template.
+        ViewModel.NawigujCommand.Execute("Wyposazenie");
+        PrzepompujNawigacje();
+        if (ViewModel.AktualnyEkran != "Wyposazenie" ||
+            ObszarZawartosci.Content is not WyposazeniePage stronaWyposazenia)
+            throw new InvalidOperationException("Nie udało się otworzyć wyposażenia po imporcie.");
+
+        var tabela = ZnajdzWizualne<System.Windows.Controls.DataGrid>(stronaWyposazenia).FirstOrDefault()
+            ?? throw new InvalidOperationException("Nie znaleziono tabeli wyposażenia.");
+        if (tabela.Items.Count < 105)
+            throw new InvalidOperationException(
+                $"Wyposażenie ma za mało wierszy po imporcie: {tabela.Items.Count}.");
+
+        foreach (var indeks in new[] { 0, tabela.Items.Count / 4, tabela.Items.Count / 2,
+                                       tabela.Items.Count - 1 })
+        {
+            tabela.ScrollIntoView(tabela.Items[indeks]);
+            PrzepompujNawigacje();
+            tabela.UpdateLayout();
+        }
+
+        ZweryfikujRysowanieKamuflazu();
+
+        ViewModel.NawigujCommand.Execute("Pulpit");
+        PrzepompujNawigacje();
+        if (ViewModel.AktualnyEkran != "Pulpit" ||
+            ViewModel.Pulpit.LacznaLiczbaWypraw != 89)
+            throw new InvalidOperationException("Nie udało się powrócić do odświeżonego Pulpitu.");
     }
 
     /// <summary>Pokazuje ekran o podanym kluczu (bez zmiany zaznaczenia w nawigacji).</summary>
     public void PokazEkran(string ekran)
     {
-        if (!_strony.TryGetValue(ekran, out var strona))
+        if (!_fabrykiStron.TryGetValue(ekran, out var fabryka))
             return;
+        if (!_strony.TryGetValue(ekran, out var strona))
+        {
+            try
+            {
+                strona = fabryka();
+                _strony[ekran] = strona;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Błąd inicjalizacji ekranu: {ekran}", ex);
+            }
+        }
+        // Każda Page ma binding do palety INPC, aby wcześniej utworzone
+        // widoki nie przechowywały czarnego Foreground po przełączeniu motywu.
+        UstawWiazanieKoloru(strona);
         if (!ReferenceEquals(ObszarZawartosci.Content, strona))
             ObszarZawartosci.Navigate(strona);
         if (ekran == "Pulpit" && ViewModel?.Pulpit != null)
@@ -91,9 +951,11 @@ public partial class MainWindow : FluentWindow
         if (ViewModel == null)
             return;
         if (ekran == "Wyposazenie" && ViewModel.Wyposazenie.Wybrany != null)
-            PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany });
-        if (ekran == "Bronie" && ViewModel.Repliki.Wybrana != null)
-            PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana });
+            PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany, ViewModel = ViewModel.Wyposazenie });
+        else if (ekran == "Bronie" && ViewModel.Repliki.Wybrana != null)
+            PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana, ViewModel = ViewModel.Repliki });
+        else
+            UkryjKarte();
     }
 
     /// <summary>Odświeża kartę po prawej po zmianie wyboru (FR-204, FR-302).</summary>
@@ -102,19 +964,39 @@ public partial class MainWindow : FluentWindow
         if (ViewModel == null)
             return;
         if (ViewModel.AktualnyEkran == "Wyposazenie" && ViewModel.Wyposazenie.Wybrany != null)
-            PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany });
+            PokazKarte(new KartaPrzedmiotu { DataContext = ViewModel.Wyposazenie.Wybrany, ViewModel = ViewModel.Wyposazenie });
         else if (ViewModel.AktualnyEkran == "Bronie" && ViewModel.Repliki.Wybrana != null)
-            PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana });
+            PokazKarte(new KartaRepliki { DataContext = ViewModel.Repliki.Wybrana, ViewModel = ViewModel.Repliki });
+        else
+            UkryjKarte();
     }
+
+    private bool _synchronizujeNawigacje;
 
     private void ZaznaczNawigacje(string ekran)
     {
-        foreach (var pozycja in WszystkiePozycjeNawigacji())
-            if (pozycja is NavigationViewItem item && item.Tag as string == ekran)
-            {
-                item.Activate(Nawigacja);
-                return;
-            }
+        // WPF-UI Activate nie usuwa IsActive z pozostałych pozycji podczas
+        // ręcznego nawigowania we własnym Frame. Synchronizujemy cały pasek.
+        if (_synchronizujeNawigacje)
+            return;
+        _synchronizujeNawigacje = true;
+        try
+        {
+            var pozycje = WszystkiePozycjeNawigacji()
+                .OfType<NavigationViewItem>()
+                .ToList();
+            var aktywna = pozycje.FirstOrDefault(p => p.Tag as string == ekran);
+            foreach (var pozycja in pozycje)
+                if (!ReferenceEquals(pozycja, aktywna) && pozycja.IsActive)
+                    pozycja.Deactivate(Nawigacja);
+            if (aktywna != null && (!aktywna.IsActive ||
+                !ReferenceEquals(Nawigacja.SelectedItem, aktywna)))
+                aktywna.Activate(Nawigacja);
+        }
+        finally
+        {
+            _synchronizujeNawigacje = false;
+        }
     }
 
     private IEnumerable<INavigationViewItem> WszystkiePozycjeNawigacji()
@@ -127,14 +1009,40 @@ public partial class MainWindow : FluentWindow
                 yield return item;
     }
 
+    // WPF-UI może przetworzyć kliknięcie elementu menu przed zmianą SelectedItem.
+    // Obsługujemy też rzeczywisty klik myszy, nie polegamy wyłącznie na SelectionChanged.
+    private void Nawigacja_PreviewMouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        var element = e.OriginalSource as DependencyObject;
+        while (element != null && !ReferenceEquals(element, Nawigacja))
+        {
+            if (element is NavigationViewItem { Tag: string ekran })
+            {
+                OtworzEkranZMenu(ekran);
+                return;
+            }
+            element = System.Windows.Media.VisualTreeHelper.GetParent(element);
+        }
+    }
+
     private void Nawigacja_SelectionChanged(NavigationView sender, RoutedEventArgs args)
     {
-        if (sender.SelectedItem is not NavigationViewItem item)
+        if (_synchronizujeNawigacje)
             return;
-        var ekran = item.Tag as string;
-        if (ekran == null || ViewModel == null)
+        if (sender.SelectedItem is NavigationViewItem { Tag: string ekran })
+            OtworzEkranZMenu(ekran);
+    }
+
+    private bool _obslugaMenu;
+
+    private void OtworzEkranZMenu(string ekran)
+    {
+        if (ViewModel == null || _obslugaMenu)
             return;
-        PokazEkran(ekran);
+        _obslugaMenu = true;
+        try
+        {
+            PokazEkran(ekran);
         ViewModel.AktualnyEkran = ekran;
         // nawigacja przez menu czyści flagi ustawione skrótami z pulpitu (FR-104/105)
         WyczyscFlagiFiltru(ekran);
@@ -151,6 +1059,14 @@ public partial class MainWindow : FluentWindow
             ViewModel.Raporty.Odswiez();
         if (ekran == "DoUzupelnienia")
             ViewModel.DoUzupelnienia.Odswiez();
+        if (ekran == "Konflikty")
+            ViewModel.Konflikty.Odswiez();
+        ZaznaczNawigacje(ekran);
+        }
+        finally
+        {
+            _obslugaMenu = false;
+        }
     }
 
     /// <summary>Czyści flagi filtrów ustawiane skrótami z pulpitu — zostają włączone po powrocie przez menu, choć użytkownik oczekiwał pełnej listy.</summary>
@@ -179,8 +1095,11 @@ public partial class MainWindow : FluentWindow
         }
     }
 
-    private void ZamknijPanelKarty_Click(object sender, RoutedEventArgs e)
+    private void ZamknijPanelKarty_Click(object sender, RoutedEventArgs e) => UkryjKarte();
+
+    private void UkryjKarte()
     {
+        ZawartoscKarty.Content = null;
         PanelKarty.Visibility = Visibility.Collapsed;
     }
 
@@ -265,8 +1184,23 @@ public partial class MainWindow : FluentWindow
     /// <summary>Otwiera panel karty po prawej (§10.4).</summary>
     public void PokazKarte(FrameworkElement zawartosc)
     {
+        UstawWiazanieKoloru(zawartosc);
         ZawartoscKarty.Content = zawartosc;
         PanelKarty.Visibility = Visibility.Visible;
+    }
+
+    private static void UstawWiazanieKoloru(FrameworkElement element)
+    {
+        var wlasciwosc = System.Windows.Documents.TextElement.ForegroundProperty;
+        if (System.Windows.Data.BindingOperations.GetBindingBase(element, wlasciwosc) == null)
+        {
+            System.Windows.Data.BindingOperations.SetBinding(element, wlasciwosc,
+                new System.Windows.Data.Binding(nameof(App.Kolory.Glowny))
+                {
+                    Source = App.Kolory,
+                    Mode = System.Windows.Data.BindingMode.OneWay,
+                });
+        }
     }
 
     protected override void OnClosed(EventArgs e)

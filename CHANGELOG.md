@@ -1,6 +1,68 @@
+## Historia wypraw i konflikty — jeden uzgadniany rejestr (2026-11-11)
+
+- Importowane liczniki roczne są teraz widoczne na ekranie Wyprawy jako anonimowe `Wyprawa_1`, `Wyprawa_2` itd. Data nieznana jest prezentowana jako `NN-NN-NNNN`, a znany rok zostaje zachowany. Nazwy nie dublują się po rozpoznaniu wpisu.
+- Nowa zakładka `Konflikty`: użytkownik może wskazać poprawną datę, replikę, zestaw lub brakujące miejsce wyposażenia. Nie wybieramy relacji na podstawie heurystyk i nie zapisujemy sztucznych dat.
+- `RejestrWypraw` uzgadnia sumy historyczne z arkusza rocznego i kart replik jako dwie projekcje TEJ SAMEJ historii. Zidentyfikowana wyprawa przenosi dokładnie jedno wystąpienie do listy zdarzeń i w razie potrzeby pomniejsza użyte liczniki historyczne replik i wyposażenia.
+- Cofnięcie przypisania przywraca historyczne wystąpienia i wcześniej pomniejszone liczniki. Częściowe dane można uzupełnić później; zapisywane są atomowo w JSON.
+- Raporty lat, pulpit i indeks obliczeniowy odczytują sumy z tego samego rejestru. Zapisane wyprawy bez konkretnej daty nie są traktowane jako 1 stycznia roku 0001.
+- Zgodność wsteczna: oryginalne liczniki pozostają źródłem anonimowych wypraw do czasu rozpoznania; stare `dane.json` i `.kwreko` nie wymagają destrukcyjnej migracji.
+- Testy: import źródłowego arkusza (89 wypraw), numeracja, zgodność sum, korekta historycznych liczników, zapis/odczyt, cofnięcie oraz smoke WPF z nową zakładką.
+
+---
+
+## Wyposażenie — poprawa pierwszego renderowania tabel (2026-11-11)
+
+- Naprawiono ucięte pola zaznaczenia: kolumna selekcji ma teraz 64 px, a checkbox co najmniej 24×24 px i margines, dzięki czemu cały element mieści się w komórce.
+- Nowy mechanizm automatycznego wypełniania szerokości w 14 tabelach / 8 widokach uwzględnia rozmiar siatki już przy pierwszym Loaded, następnie reaguje na zmianę szerokości i zachowuje ręcznie regulowane kolumny.
+- Przy zbyt małej szerokości zachowano minimalne wymiary oraz poziome przewijanie.
+- Zamiast surowych ID/GUID w kolumnie Miejsce pokazują się teraz nazwy ze słownika.
+- Rozszerzono Windows UI smoke: rzeczywisty pierwszy render Wyposażenia w szerokim oknie bez interakcji, sprawdzenie zajętej szerokości, pozycji checkboxa w obrębie komórki, nazw miejsc i zachowania ręcznie ustawionego rozmiaru.
+
+## Tabele — proporcjonalne kolumny (2026-11-11)
+
+- Rozwiązano problem pustej prawej części raportów po powiększeniu okna: kolumny `Auto` nie rozdzielały wolnej szerokości.
+- W 14 tabelach na 8 ekranach kolumny tekstowe otrzymały ważone szerokości `*` oraz minimalne szerokości dla czytelności. Nazwy, opisy i komentarze dostają więcej miejsca niż `%` i liczniki.
+- Kolumny z przyciskami, ikonami, zdjęciami i checkboxami pozostają zwarte; szerokie tabele mogą być przewijane poziomo.
+- Ręczna zmiana szerokości nagłówków i dopasowanie szerokości do treści dwuklikiem pozostają dostępne.
+- Smoke Windows kontroluje proporcjonalny typ wszystkich kolumn oraz faktyczne rozciąganie kilku kolumn przy powiększeniu tabeli Raportów.
+
 # Changelog
 
 Wszystkie istotne zmiany w projekcie. Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie semantyczne.
+
+## Zestawy — elastyczny układ listy i edytora (2026-11-11)
+
+- Naprawiono stałą szerokość 280 px listy zestawów. Lista i karta dzielą teraz szerokość okna proporcjonalnie.
+- Dodano uchwyt pomiędzy listą i kartą do ręcznej zmiany proporcji (GridSplitter).
+- Zastąpiono StackPanel po lewej kontenerem Grid: tabela zajmuje pełną dostępną wysokość i przewija się we własnym obszarze.
+- Przy pustym wyborze karta pokazuje instrukcję; po wejściu w zestawy automatycznie zaznacza się pierwszy widoczny rekord.
+- Odświeżanie, filtrowanie i zapis zachowują wybrany zestaw, a kliknięcie w tabeli odświeża listę pakowania.
+- Windows smoke test sprawdza wymiary obu paneli, możliwość zmiany szerokości, widoczność karty i zachowanie selekcji po odświeżeniu.
+
+## [1.0.4] — stabilizacja startu, naprawa formularzy i CI Windows
+
+### Uruchamianie i diagnostyka
+- Dodatkowy punkt wejścia z ochroną przed błędami parsowania App.xaml; pełne wyjątki w `%AppData%\\Kwatermistrz\\error.log`.
+- Strony WPF są tworzone dopiero przy otwarciu; awaria pojedynczej strony nie blokuje inicjalizacji pozostałych.
+- Obsługa wyjątków zamyka niespójną aplikację bez automatycznego zapisu uszkodzonego stanu; poprawione zwalnianie mutexa drugiej instancji.
+- Tryb `--smoke-test` tworzy okno na Windows, sprawdza wszystkie widoki, karty i przejścia w `Frame`. Windows CI buduje .NET 10, uruchamia testy Core, wykonuje smoke test i publikuje archiwum przenośne.
+
+### Galerie zdjęć zestawów (1.0.4)
+- Rozdzielono istniejące zdjęcia zestawu na „Moje zdjęcia w stroju” (bez limitu) i nową kolekcję „Zdjęcia referencyjne” (maks. 10).
+- Galeria obsługuje wybór wielu plików, przeciąganie JPG/PNG/BMP, powiększenie, ustawianie zdjęcia głównego i opcjonalne opisy zdjęć.
+- Usuwanie wymaga potwierdzenia i odłącza zdjęcie od listy bez fizycznego kasowania pliku, aby zachować spójność innych rekordów i kopii zapasowych.
+- Zdjęcia i opisy są zapisywane od razu w danych JSON i przenoszone w eksporcie .kwreko. Import zabezpiecza istniejące lokalne pliki przy konfliktach nazw i aktualizuje referencje.
+- Testy regresyjne: stary JSON, zapis i ponowny odczyt dwóch galerii, archiwum .kwreko, zabezpieczenie kolizji nazw oraz interakcyjny smoke galerii w Windows.
+
+### Interfejs i dane
+- Poprawione powiązania akcji i słowników w kartach przedmiotów/replik, zakładki replik, zestawy oraz widoczność raportów.
+- Poprawione tryby MultiBinding RadioButton, obsługa dat DateOnly w DatePicker, focus wyszukiwania i nawigacja.
+- Przywrócenie z `.bak` archiwizuje uszkodzony plik przed zapisem, zachowując dobrą kopię. Dwa uszkodzone pliki są zabezpieczane z dopiskiem `.uszkodzony`, bez utraty oryginałów.
+- Skrypt wydania czyści katalog publikacji i pobiera numer wersji z projektu; uporządkowano `.gitignore`.
+
+### Weryfikacja
+- Testy Core oraz smoke WPF są uruchamiane automatycznie na Windows CI.
+- Ręczny test użytkowy na docelowym komputerze nadal jest potrzebny przed oznaczeniem wydania jako w pełni zatwierdzonego.
 
 ## [1.0.3] — naprawa hostowania stron (Frame) i bindingu kosztu zestawu
 

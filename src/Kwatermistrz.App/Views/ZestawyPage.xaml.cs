@@ -19,6 +19,61 @@ public partial class ZestawyPage : Page
         };
     }
 
+    /// <summary>Windows smoke: lista wypełnia wysokość, oba panele rozciągają
+    /// się na szerokość okna i rozdzielacz realnie zmienia wielkość.</summary>
+    public void ZweryfikujUklad()
+    {
+        UpdateLayout();
+        if (DataContext is not ViewModels.ZestawyViewModel vm)
+            throw new InvalidOperationException("Brak ViewModelu zestawów.");
+        if (SiatkaZestawow.ActualWidth < 650 || ListaZestawow.ActualHeight < 180)
+            throw new InvalidOperationException(
+                $"Tabela zestawów nie wypełnia dostępnego obszaru: " +
+                $"{SiatkaZestawow.ActualWidth:F0}×{ListaZestawow.ActualHeight:F0}.");
+        if (!PodzialZestawow.IsVisible ||
+            PodzialZestawow.ResizeDirection != GridResizeDirection.Columns)
+            throw new InvalidOperationException("Rozdzielacz listy i edytora nie jest aktywny.");
+
+        var przed = KolumnaListyZestawow.ActualWidth;
+        var poprzedniaSzerokosc = KolumnaListyZestawow.Width;
+        try
+        {
+            var nowa = przed < 650
+                ? Math.Min(740, przed + 85)
+                : Math.Max(335, przed - 85);
+            KolumnaListyZestawow.Width = new GridLength(nowa);
+            SiatkaZestawow.UpdateLayout();
+            if (Math.Abs(KolumnaListyZestawow.ActualWidth - przed) < 35)
+                throw new InvalidOperationException("Nie można zmienić szerokości listy zestawów.");
+        }
+        finally
+        {
+            KolumnaListyZestawow.Width = poprzedniaSzerokosc;
+            SiatkaZestawow.UpdateLayout();
+        }
+
+        if (vm.Wiersze.Count == 0)
+            return;
+        var wybraneId = vm.Wybrany?.Id
+            ?? throw new InvalidOperationException("Po załadowaniu zestawów nie wybrano żadnego.");
+        if (EdytorZestawu.Visibility != Visibility.Visible ||
+            EdytorZestawu.ActualWidth < 300)
+            throw new InvalidOperationException("Karta wybranego zestawu nie jest widoczna.");
+
+        vm.Odswiez();
+        UpdateLayout();
+        if (vm.Wybrany?.Id != wybraneId ||
+            ListaZestawow.SelectedItem is not ViewModels.WierszZestawu aktywny ||
+            aktywny.Id != wybraneId)
+            throw new InvalidOperationException("Odświeżenie listy zgubiło zaznaczony zestaw.");
+    }
+
+    private void GaleriaZdjec_Zmieniono(object? sender, EventArgs e)
+    {
+        if (DataContext is ViewModels.ZestawyViewModel vm)
+            vm.ZapiszGalerie();
+    }
+
     private void Domyslny_Checked(object sender, RoutedEventArgs e)
     {
         // RadioButton "Domyślny": DataContext = WariantSlotu, przodek DataTemplate = SlotZestawu

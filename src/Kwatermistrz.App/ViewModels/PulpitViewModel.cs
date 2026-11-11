@@ -39,7 +39,7 @@ public partial class PulpitViewModel : ObservableObject
         LacznaLiczbaWypraw = indeks.LacznaLiczbaWypraw;
         WyprawyWRoku = kalk.WyprawyWRoku(DateOnly.FromDateTime(DateTime.Today).Year);
         DataPierwszejWyprawy = kalk.DataPierwszejWyprawy();
-        var ostatnia = _dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(w => (DateOnly?)w.Data).Max();
+        var ostatnia = _dane.Wyprawy.Where(w => !w.CzyUsunieta && w.Data != default).Select(w => (DateOnly?)w.Data).Max();
         DataOstatniejWyprawy = ostatnia;
         DniOdOstatniej = ostatnia != null ? DateOnly.FromDateTime(DateTime.Today).DayNumber - ostatnia.Value.DayNumber : null;
         Kafelki = BudujKafelki(kalk, ostatnia);
@@ -176,22 +176,22 @@ public partial class PulpitViewModel : ObservableObject
                 : null;
             kafelki.Add(new KafelekWyprawy
             {
-                Rok = wyprawa.Data.Year,
-                CzyHistoryczny = false,
+                Rok = Kwatermistrz.Core.Obliczenia.RejestrWypraw.Rok(wyprawa),
+                CzyHistoryczny = wyprawa.CzyHistoryczna,
                 WyprawaId = wyprawa.Id,
                 MundurId = mundurId,
-                Etykieta = $"{wyprawa.Data:dd.MM.yyyy}{(replika != null ? $" — {replika}" : "")}{(zestaw != null ? $" — {zestaw}" : "")}",
+                Etykieta = $"{(wyprawa.NazwaHistoryczna != null ? wyprawa.NazwaHistoryczna + " — " : "")}{(wyprawa.Data == default ? "NN-NN-NNNN" : wyprawa.Data.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture))}{(replika != null ? $" — {replika}" : "")}{(zestaw != null ? $" — {zestaw}" : "")}",
             });
         }
-        // kafelki historyczne neutralne, w liczbie zgodnej z licznikiem roku (FR-102)
-        foreach (var (rok, liczba) in _dane.Ustawienia.HistoryczneWyprawyWgRok.OrderBy(x => x.Key))
-            for (var i = 0; i < liczba; i++)
-                kafelki.Add(new KafelekWyprawy
-                {
-                    Rok = rok,
-                    CzyHistoryczny = true,
-                    Etykieta = $"{rok} — wpis historyczny (bez daty)",
-                });
+        // Identyczna projekcja anonimowych zdarzeń co w Wyprawach i Konfliktach:
+        // nazwy Wyprawa_N są liczone w jednym miejscu, bez innych migawkowych liczników.
+        foreach (var wpis in Kwatermistrz.Core.Obliczenia.RejestrWypraw.Nierozpoznane(_dane))
+            kafelki.Add(new KafelekWyprawy
+            {
+                Rok = wpis.Rok,
+                CzyHistoryczny = true,
+                Etykieta = $"{wpis.Nazwa} — NN-NN-NNNN (rok {wpis.Rok})",
+            });
         return kafelki;
     }
 }

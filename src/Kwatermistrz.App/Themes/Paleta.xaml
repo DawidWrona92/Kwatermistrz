@@ -25,12 +25,20 @@
     <SolidColorBrush x:Key="PoprawnyCiemny" Color="#8CC495" />
     <SolidColorBrush x:Key="UwagaCiemny" Color="#E0B34A" />
 
+    <!-- Główne pędzle tekstowe własnej aplikacji. Zmieniamy je w App.UstawAliasyWykresow.
+         Nie polegamy na domyślnym czarnym Foreground kontrolek WPF. -->
+    <SolidColorBrush x:Key="TekstAplikacji" Color="#222725" />
+    <SolidColorBrush x:Key="TekstAplikacjiDrugorzedny" Color="#5F6562" />
+
     <!-- Kolory neutralne kafelków mozaiki (FR-102) -->
     <SolidColorBrush x:Key="KafelekNeutralny" Color="#ECEDEA" />
 
     <!-- Kolory wykresów (FR-909): aliasy zmieniane razem z motywem (UstawieniaViewModel) -->
     <SolidColorBrush x:Key="Stal" Color="#2F4A6B" />
     <SolidColorBrush x:Key="Linia" Color="#CDD0CA" />
+    <!-- Widoczne podziały tabel i delikatne naprzemienne tło wierszy. -->
+    <SolidColorBrush x:Key="LiniaTabeli" Color="#B3BDB8" />
+    <SolidColorBrush x:Key="WierszTabeliNaprzemienny" Color="#EEF0ED" />
     <SolidColorBrush x:Key="Sygnal" Color="#A83A2B" />
     <SolidColorBrush x:Key="Poprawny" Color="#4A7A52" />
     <SolidColorBrush x:Key="Uwaga" Color="#9A6B00" />

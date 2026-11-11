@@ -4,20 +4,27 @@ using Kwatermistrz.App.ViewModels;
 
 namespace Kwatermistrz.App.Views;
 
-/// <summary>Karta repliki (FR-302): zakładki Przegląd / Karta techniczna / Pomiary / Modyfikacje i koszty / Zadania / Wyprawy; galeria zdjęć (FR-211).</summary>
+/// <summary>Karta repliki: oddzielny model wiersza (DataContext) i ViewModel akcji/zakładek.</summary>
 public partial class KartaRepliki : UserControl
 {
+    public static readonly DependencyProperty ViewModelProperty = DependencyProperty.Register(
+        nameof(ViewModel), typeof(ReplikiViewModel), typeof(KartaRepliki));
+
+    public ReplikiViewModel? ViewModel
+    {
+        get => (ReplikiViewModel?)GetValue(ViewModelProperty);
+        set => SetValue(ViewModelProperty, value);
+    }
+
     public KartaRepliki()
     {
         InitializeComponent();
-        Loaded += (_, _) =>
-        {
-            // po zmianie zdjęć w galerii zapisujemy dane natychmiast (FR-1203)
-            Galeria.Zmieniono += (_, _) =>
-            {
-                if (Window.GetWindow(this)?.DataContext is MainWindowViewModel mw)
-                    mw.Repliki.ZapiszCicho();
-            };
-        };
+        Galeria.Zmieniono += (_, _) => ViewModel?.ZapiszCicho();
+    }
+
+    private void Zakladka_Checked(object sender, RoutedEventArgs e)
+    {
+        if (sender is RadioButton { Tag: string zakladka } && ViewModel != null)
+            ViewModel.Zakladka = zakladka;
     }
 }

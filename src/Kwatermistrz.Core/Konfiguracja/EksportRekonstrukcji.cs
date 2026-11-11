@@ -92,7 +92,11 @@ public static class EksportRekonstrukcji
             sciezkiZdjec.Add(rekonstrukcja.Zdjecie);
         foreach (var p in przedmioty) Dodaj(p.Zdjecia);
         foreach (var r in repliki) Dodaj(r.Zdjecia);
-        foreach (var z in zestawy) Dodaj(z.Zdjecia);
+        foreach (var z in zestawy)
+        {
+            Dodaj(z.Zdjecia);
+            Dodaj(z.ZdjeciaReferencyjne);
+        }
         foreach (var w in wyprawy) Dodaj(w.Zdjecia);
 
         var liczbaZdjec = 0;
@@ -140,25 +144,91 @@ public static class EksportRekonstrukcji
             .ToList();
     }
 
-    /// <summary>Wyodrębnia zdjęcia z eksportu do katalogu danych aplikacji (zwraca liczbę plików). Wpisy spoza katalogu danych („../”, ścieżki absolutne) są pomijane — plik .kwreko może pochodzić od innej osoby.</summary>
-    public static int WyodrebnijZdjecia(string sciezka, string katalogDanych)
+    /// <summary>
+    /// Wyodrębnia zdjęcia z eksportu; istniejących lokalnych plików nie nadpisuje.
+    /// Jeśli zawartość zdjęcia o tej samej ścieżce jest inna, nadaje unikatową
+    /// nazwę i aktualizuje referencje w importowanym modelu (przed scaleniem).
+    /// </summary>
+    public static int WyodrebnijZdjecia(string sciezka, string katalogDanych, DaneAplikacji? daneImportu = null)
     {
         var liczba = 0;
         var katalogPelny = Path.GetFullPath(katalogDanych);
+        var mapa = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         using var zip = ZipFile.OpenRead(sciezka);
-        foreach (var wpis in zip.Entries.Where(e => e.FullName.StartsWith(KatalogZdjec, StringComparison.Ordinal)))
+        foreach (var wpis in zip.Entries.Where(e =>
+            e.FullName.StartsWith(KatalogZdjec, StringComparison.Ordinal)))
         {
-            var wzgledna = wpis.FullName[KatalogZdjec.Length..];
-            var pelna = Path.GetFullPath(Path.Combine(katalogPelny, wzgledna.Replace('/', Path.DirectorySeparatorChar)));
-            // strażnik zip-slip: plik musi leżeć w katalogu danych; porównanie bez wielkości liter — Windows (NTFS) ich nie rozróżnia
-            if (!pelna.StartsWith(katalogPelny + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(wpis.Name))
                 continue;
+            var wzgledna = wpis.FullName[KatalogZdjec.Length..];
+            var normalizowana = wzgledna.Replace('\\', '/');
+            var pelna = Path.GetFullPath(Path.Combine(katalogPelny,
+                normalizowana.Replace('/', Path.DirectorySeparatorChar)));
+            // Zip-slip / absolute paths / katalog danych: nic poza root.
+            if (!pelna.StartsWith(katalogPelny + Path.DirectorySeparatorChar,
+                StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (File.Exists(pelna))
+            {
+                // Identyczna zawartość nie wymaga ponownego zapisu.
+                using var zrodloPorownanie = wpis.Open();
+                using var lokalny = File.OpenRead(pelna);
+                var hashNowy = System.Security.Cryptography.SHA256.HashData(zrodloPorownanie);
+                var hashLokalny = System.Security.Cryptography.SHA256.HashData(lokalny);
+                if (hashNowy.SequenceEqual(hashLokalny))
+                    continue;
+                if (daneImportu == null)
+                    continue; // Stare API bez mapowania nie nadpisuje lokalnych plików.
+                var folder = Path.GetDirectoryName(pelna)!;
+                var baza = Path.GetFileNameWithoutExtension(pelna);
+                var ext = Path.GetExtension(pelna);
+                string nowa;
+                do
+                {
+                    nowa = Path.Combine(folder, baza + "-import-" +
+                        Guid.NewGuid().ToString("N")[..10] + ext);
+                } while (File.Exists(nowa));
+                mapa[normalizowana] = Path.GetRelativePath(katalogPelny, nowa)
+                    .Replace('\\', '/');
+                pelna = nowa;
+            }
             Directory.CreateDirectory(Path.GetDirectoryName(pelna)!);
             using var zrodlo = wpis.Open();
-            using var docel = File.Create(pelna);
+            using var docel = new FileStream(pelna, FileMode.CreateNew, FileAccess.Write);
             zrodlo.CopyTo(docel);
             liczba++;
         }
+        if (daneImportu != null && mapa.Count > 0)
+            PrzemapujZdjecia(daneImportu, mapa);
         return liczba;
     }
+
+    private static void PrzemapujZdjecia(DaneAplikacji dane, Dictionary<string, string> mapa)
+    {
+        string Przemapuj(string sciezka)
+            => mapa.TryGetValue(sciezka.Replace('\\', '/'), out var nowa) ? nowa : sciezka;
+        void Lista(List<string> zdjecia)
+        {
+            for (var i = 0; i < zdjecia.Count; i++)
+                zdjecia[i] = Przemapuj(zdjecia[i]);
+        }
+        foreach (var p in dane.Przedmioty)
+            Lista(p.Zdjecia);
+        foreach (var r in dane.Repliki)
+            Lista(r.Zdjecia);
+        foreach (var w in dane.Wyprawy)
+            Lista(w.Zdjecia);
+        foreach (var z in dane.Zestawy)
+        {
+            Lista(z.Zdjecia);
+            Lista(z.ZdjeciaReferencyjne);
+            z.OpisyZdjec = z.OpisyZdjec.ToDictionary(
+                para => Przemapuj(para.Key), para => para.Value, StringComparer.OrdinalIgnoreCase);
+        }
+        foreach (var r in dane.Rekonstrukcje)
+            if (r.Zdjecie != null)
+                r.Zdjecie = Przemapuj(r.Zdjecie);
+    }
+
 }

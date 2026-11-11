@@ -30,6 +30,7 @@ public partial class MainWindowViewModel : ObservableObject
         WyprawyViewModel wyprawy,
         RaportyViewModel raporty,
         DoUzupelnieniaViewModel doUzupelnienia,
+        KonfliktyViewModel konflikty,
         SzukanieViewModel szukanie,
         MagazynJson magazyn)
     {
@@ -49,16 +50,19 @@ public partial class MainWindowViewModel : ObservableObject
         Wyprawy = wyprawy;
         Raporty = raporty;
         DoUzupelnienia = doUzupelnienia;
+        Konflikty = konflikty;
         Szukanie = szukanie;
         _stan.AktywnaRekonstrukcjaId = dane.Ustawienia.OstatniaRekonstrukcjaId;
         if (!string.IsNullOrEmpty(dane.Ustawienia.OstatniEkran))
             _stan.AktualnyEkran = dane.Ustawienia.OstatniEkran;
         // po przywróceniu danych z kopii wszystkie ekrany odświeżają listy (FR-1107)
         ustawienia.DanePrzywrocone += OdswiezWszystkieEkrany;
+        import.DaneZaimportowane += OdswiezWszystkieEkrany;
+        konflikty.DaneUzgodnione += OdswiezWszystkieEkrany;
     }
 
-    /// <summary>Odświeża wszystkie ekrany po przywróceniu danych z kopii (FR-1107).</summary>
-    private void OdswiezWszystkieEkrany()
+    /// <summary>Odświeża wszystkie ekrany po imporcie, konfiguracji początkowej i przywróceniu kopii.</summary>
+    public void OdswiezWszystkieEkrany()
     {
         Pulpit.Odswiez();
         Wyposazenie.Odswiez();
@@ -67,8 +71,10 @@ public partial class MainWindowViewModel : ObservableObject
         Wyprawy.Odswiez();
         Raporty.Odswiez();
         DoUzupelnienia.Odswiez();
+        Konflikty.Odswiez();
         OnPropertyChanged(nameof(RekonstrukcjeLista));
         OnPropertyChanged(nameof(AktywnaRekonstrukcjaNazwa));
+        Komunikat = $"Dane: {_dane.Przedmioty.Count} przedmiotów, {_dane.Repliki.Count} replik, {_dane.Zestawy.Count} zestawów; {_dane.Wyprawy.Count} wypraw zapisanych.";
     }
 
     private readonly MagazynJson _magazyn;
@@ -150,6 +156,11 @@ public partial class MainWindowViewModel : ObservableObject
             var pakiet = PakietKonfiguracji.Eksportuj(dane, "Z eksportu rekonstrukcji");
             var podglad = ImporterPakietuKonfiguracji.PrzygotujPodglad(_dane, pakiet);
             var mapy = ImporterPakietuKonfiguracji.Zastosuj(_dane, podglad);
+            // Zanim dołączymy obiekty do lokalnego magazynu, kopiujemy obrazy
+            // bez nadpisywania istniejących plików; kolizje nazw aktualizują
+            // referencje (również w obu galeriach zestawu i w opisach).
+            var liczbaZdjec = EksportRekonstrukcji.WyodrebnijZdjecia(
+                dialog.FileName, _magazyn.KatalogDanych, dane);
             // dane rekonstrukcji: pomiń już istniejące, przemapuj Id słowników na lokalne (ponowny import = bez duplikatów)
             var wynik = ScalaczRekordow.Scal(_dane, dane, mapy);
             // ustawienia z eksportu (dzień zerowy, liczniki historyczne wg rok) — tylko gdy lokalnie jeszcze pusto
@@ -159,10 +170,9 @@ public partial class MainWindowViewModel : ObservableObject
                 _dane.Ustawienia.HistoryczneWyprawyWgRok.TryAdd(rok, liczba);
             if (_dane.Ustawienia.DataPierwszejWyprawy == null && dane.Ustawienia.DataPierwszejWyprawy != null)
                 _dane.Ustawienia.DataPierwszejWyprawy = dane.Ustawienia.DataPierwszejWyprawy;
-            // zdjęcia do katalogu danych
-            var liczbaZdjec = EksportRekonstrukcji.WyodrebnijZdjecia(dialog.FileName, _magazyn.KatalogDanych);
             _magazyn.Zapisz(_dane);
             var pominieteInfo = wynik.Pominiete > 0 ? $" (pominięto {wynik.Pominiete} już istniejących)" : "";
+            OdswiezWszystkieEkrany();
             Komunikat = $"Zaimportowano rekonstrukcję: {_dane.Przedmioty.Count} przedmiotów (łącznie), {_dane.Repliki.Count} replik, " +
                 $"{_dane.Zestawy.Count} zestawów, {_dane.Wyprawy.Count} wypraw, {liczbaZdjec} zdjęć{pominieteInfo}. " +
                 "Nowe słowniki i kategorie dodano automatycznie (aliasami dopasowano istniejące).";
@@ -211,21 +221,39 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>ViewModel „Do uzupełnienia” (FR-1204).</summary>
     public DoUzupelnieniaViewModel DoUzupelnienia { get; }
+    public KonfliktyViewModel Konflikty { get; }
 
     /// <summary>ViewModel globalnego wyszukiwania (FR-1201).</summary>
     public SzukanieViewModel Szukanie { get; }
 
     /// <summary>Wszystkie rekonstrukcje do przełącznika (nowa instancja przy każdym odczycie —
     /// ItemsSource się odświeża po OnPropertyChanged).</summary>
-    public IReadOnlyList<Rekonstrukcja> RekonstrukcjeLista => _dane.Rekonstrukcje.ToList();
+    public IReadOnlyList<Rekonstrukcja> RekonstrukcjeLista =>
+        new[] { new Rekonstrukcja { Id = "", Nazwa = "Wszystkie rekonstrukcje" } }
+            .Concat(_dane.Rekonstrukcje).ToList();
 
     /// <summary>Aktywna rekonstrukcja (null = „Wszystkie”).</summary>
     public string? AktywnaRekonstrukcjaId
     {
-        get => _stan.AktywnaRekonstrukcjaId;
+        get => _stan.AktywnaRekonstrukcjaId ?? "";
         set
         {
-            _stan.AktywnaRekonstrukcjaId = value;
+            var noweId = string.IsNullOrWhiteSpace(value) ? null : value;
+            if (string.Equals(_stan.AktywnaRekonstrukcjaId, noweId, StringComparison.Ordinal))
+                return;
+
+            _stan.AktywnaRekonstrukcjaId = noweId;
+            // Nie wystarcza OnPropertyChanged: każda lista buforuje wiersze
+            // obliczone dla poprzedniej rekonstrukcji. Odświeżamy bez zmiany
+            // ItemsSource samego ComboBox (RekonstrukcjeLista), żeby nie wywołać
+            // ponownie SelectionChanged i nie resetować wybranego filtra.
+            Pulpit.Odswiez();
+            Wyposazenie.Odswiez();
+            Repliki.Odswiez();
+            Zestawy.Odswiez();
+            Wyprawy.Odswiez();
+            Raporty.Odswiez();
+            DoUzupelnienia.Odswiez();
             OnPropertyChanged(nameof(AktywnaRekonstrukcjaId));
             OnPropertyChanged(nameof(AktywnaRekonstrukcjaNazwa));
         }
@@ -243,6 +271,8 @@ public partial class MainWindowViewModel : ObservableObject
         get => _stan.AktualnyEkran;
         set
         {
+            if (_stan.AktualnyEkran == value)
+                return;
             _stan.AktualnyEkran = value;
             OnPropertyChanged();
             _dane.Ustawienia.OstatniEkran = value;

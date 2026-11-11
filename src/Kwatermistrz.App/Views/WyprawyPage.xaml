@@ -2,8 +2,9 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
       xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
-      Title="Wyprawy">
+      Title="Wyprawy" TextElement.Foreground="{DynamicResource TekstAplikacji}">
     <Page.Resources>
         <conv:KonwerterDaty x:Key="KonwerterDaty" />
         <conv:KonwerterNazwySlownika x:Key="KonwerterNazwySlownika" />
@@ -15,7 +16,11 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Wyprawy" Style="{StaticResource TytulEkranu}" />
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <TextBlock Text="Wyprawy" Style="{StaticResource TytulEkranu}" />
+            <TextBlock Margin="18,5,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       Text="Nierozpoznane wydarzenia: Wyprawa_N / NN-NN-NNNN. Uzupełnij w zakładce Konflikty." />
+        </StackPanel>
 
         <!-- Szybkie dodawanie (FR-802) -->
         <Border Grid.Row="1" Style="{StaticResource Karta}" Padding="10" Margin="0,8,0,8">
@@ -28,7 +33,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <DatePicker Grid.Column="0" SelectedDate="{Binding Nowa.Data}" ToolTip="Data (wymagana)" />
+                <DatePicker Grid.Column="0" SelectedDate="{Binding Nowa.Data, Converter={x:Static conv:KonwerterDateOnlyDateTime.Instance}}" ToolTip="Data (wymagana)" />
                 <ComboBox Grid.Column="1" MinWidth="160" Margin="8,0,0,0"
                           ItemsSource="{Binding Zestawy}"
                           SelectedValue="{Binding Nowa.ZestawId}" SelectedValuePath="Id" DisplayMemberPath="Nazwa"
@@ -77,18 +82,29 @@
                          IsReadOnly="True"
                          SelectionMode="Single"
                          SelectedItem="{Binding Wybrana}"
-                         HeadersVisibility="Column">
+                         HeadersVisibility="Column" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="*"
+                         HorizontalScrollBarVisibility="Auto" controls:ProporcjonalneKolumny.Wlaczone="True">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Data" Binding="{Binding Data, Converter={StaticResource KonwerterDaty}}" Width="90" />
-                    <DataGridTextColumn Header="Miejsce" Binding="{Binding Miejsce}" Width="*" />
-                    <DataGridTextColumn Header="Replika główna" Binding="{Binding ReplikaNazwa}" Width="160" />
-                    <DataGridTextColumn Header="Zestaw" Binding="{Binding ZestawNazwa}" Width="140" />
-                    <DataGridTextColumn Header="Mundur" Binding="{Binding MundurNazwa}" Width="140" />
-                    <DataGridTextColumn Header="Komentarz" Binding="{Binding Komentarz}" Width="160" />
-                    <DataGridTemplateColumn Header="Akcje" Width="70">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa"
+                                        Binding="{Binding Nazwa}" Width="1.2*" MinWidth="135" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Data"
+                                        Binding="{Binding DataTekst}" Width="1.3*" MinWidth="125" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Miejsce" Binding="{Binding Miejsce}" Width="1.6*" MinWidth="170" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Replika główna" Binding="{Binding ReplikaNazwa}" Width="2.1*" MinWidth="150" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Zestaw" Binding="{Binding ZestawNazwa}" Width="1.6*" MinWidth="145" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Mundur" Binding="{Binding MundurNazwa}" Width="1.6*" MinWidth="145" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Komentarz" Binding="{Binding Komentarz}" Width="2.5*" MinWidth="215" />
+                    <DataGridTemplateColumn Header="Akcje" Width="85" MinWidth="85">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <ui:Button Appearance="Danger" ToolTip="Usuń wyprawę"
+                                <ui:Button Appearance="Danger" ToolTip="Usuń wyprawę; nierozpoznaną historię uzupełnij w Konfliktach"
+                                           IsEnabled="{Binding CzyZapisana}"
                                            Command="{Binding DataContext.UsunCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                            CommandParameter="{Binding}">
                                     <ui:SymbolIcon Symbol="Dismiss24" />

@@ -78,6 +78,34 @@ public class MagazynJsonTests : IDisposable
         var (wczytane, kontrola) = magazyn.WczytajZKontrola();
         Assert.False(kontrola.CzyPoprawne);
         Assert.Single(wczytane.Przedmioty);
+        Assert.Single(Directory.GetFiles(_katalog, "dane.json.uszkodzony-*"));
+        // Przywrócenie pliku nie może uszkodzić ostatniej poprawnej kopii.
+        Assert.Single(magazyn.Wczytaj().Przedmioty);
+        Assert.Single(MagazynJson.WczytajZPliku(magazyn.SciezkaPliku + ".bak").Przedmioty);
+        magazyn.Zapisz(wczytane);
+        Assert.Single(MagazynJson.WczytajZPliku(magazyn.SciezkaPliku + ".bak").Przedmioty);
+    }
+
+    [Fact]
+    public void WczytajZKontrola_DwaUszkodzonePliki_NieNadpisujeOryginalow()
+    {
+        var magazyn = new MagazynJson(_katalog);
+        var dane = magazyn.Wczytaj();
+        magazyn.Zapisz(dane);
+        magazyn.Zapisz(dane);
+        File.WriteAllText(magazyn.SciezkaPliku, "{ uszkodzony");
+        File.WriteAllText(magazyn.SciezkaPliku + ".bak", "{ bak również uszkodzony");
+
+        var (nowe, kontrola) = magazyn.WczytajZKontrola();
+
+        Assert.False(kontrola.CzyPoprawne);
+        Assert.True(nowe.CzyPierwszeUruchomienie);
+        Assert.False(File.Exists(magazyn.SciezkaPliku));
+        Assert.Single(Directory.GetFiles(_katalog, "dane.json.uszkodzony-*"));
+        Assert.Single(Directory.GetFiles(_katalog, "dane.json.bak.uszkodzony-*"));
+
+        magazyn.Zapisz(nowe);
+        Assert.True(File.Exists(magazyn.SciezkaPliku));
     }
 
     [Fact]

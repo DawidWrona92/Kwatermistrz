@@ -2,7 +2,8 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-      Title="Do uzupełnienia">
+      xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
+      Title="Do uzupełnienia" TextElement.Foreground="{DynamicResource TekstAplikacji}">
     <Grid Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -19,10 +20,17 @@
         <ui:DataGrid Grid.Row="1"
                      ItemsSource="{Binding Pozycje}"
                      AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
-                     HeadersVisibility="Column">
+                     HeadersVisibility="Column" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="*"
+                         HorizontalScrollBarVisibility="Auto" controls:ProporcjonalneKolumny.Wlaczone="True">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Rodzaj" Binding="{Binding Rodzaj}" Width="180" />
-                <DataGridTextColumn Header="Opis" Binding="{Binding Opis}" Width="*" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Rodzaj" Binding="{Binding Rodzaj}" Width="1.25*" MinWidth="145" />
+                <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Opis" Binding="{Binding Opis}" Width="2.5*" MinWidth="215" />
                 <DataGridTemplateColumn Header="Akcja" Width="140">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>

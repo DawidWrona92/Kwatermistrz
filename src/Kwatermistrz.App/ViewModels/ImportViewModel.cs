@@ -21,6 +21,9 @@ public partial class ImportViewModel : ObservableObject
     private readonly DaneAplikacji _dane;
     private readonly MagazynJson _magazyn;
 
+    /// <summary>Powiadamia wszystkie widoki, że kolekcje danych zmieniły się po imporcie.</summary>
+    public event Action? DaneZaimportowane;
+
     public ImportViewModel(DaneAplikacji dane, MagazynJson magazyn)
     {
         _dane = dane;
@@ -92,7 +95,8 @@ public partial class ImportViewModel : ObservableObject
         _magazyn.UtworzKopieZapasowa(_dane);
         ImporterKwatermistrz.Zastosuj(Podglad, _dane);
         _magazyn.Zapisz(_dane);
-        Komunikat = "Import zakończony. Dane zapisane.";
+        DaneZaimportowane?.Invoke();
+        Komunikat = $"Import zakończony. Przedmioty: {_dane.Przedmioty.Count}, repliki: {_dane.Repliki.Count}, zestawy: {_dane.Zestawy.Count}.";
         Podglad = null;
         Sciezka = "";
     }
@@ -280,6 +284,7 @@ public partial class ImportViewModel
         _magazyn.UtworzKopieZapasowa(_dane); // FR-1107: przed importem kopia (kopia zawiera stan sprzed importu)
         var liczba = ImporterOgolny.Zastosuj(_dane, _podgladOgolny.Select(w => { w.Wiersz.Pomin = w.Pomin; return w.Wiersz; }));
         _magazyn.Zapisz(_dane);
+        DaneZaimportowane?.Invoke();
         Komunikat = $"Zaimportowano {liczba} przedmiotów. Rekordy mają znacznik „z importu, do przeglądu” (FR-1110).";
         _podgladOgolny = new List<WierszPodgladuOgolnegoVm>();
         OnPropertyChanged(nameof(PodgladOgolny));

@@ -2,8 +2,9 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
       xmlns:sys="clr-namespace:System;assembly=System.Runtime"
-      Title="Pakiety konfiguracji">
+      Title="Pakiety konfiguracji" TextElement.Foreground="{DynamicResource TekstAplikacji}">
     <Page.Resources>
         <x:Array x:Key="AkcjeWartosci" Type="sys:String">
             <sys:String>Dodaj nową</sys:String>
@@ -48,12 +49,19 @@
                          Margin="0,12,0,0" MinHeight="120"
                          HeadersVisibility="Column" IsReadOnly="True"
                          Visibility="{Binding Wiersze.Count, Converter={x:Static conv:KonwerterWiekszeOdZera.Instance}, ConverterParameter=Visibility}"
-                         xmlns:conv="clr-namespace:Kwatermistrz.App.Converters">
+                         xmlns:conv="clr-namespace:Kwatermistrz.App.Converters" GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         CanUserResizeColumns="True" ColumnWidth="*"
+                         HorizontalScrollBarVisibility="Auto" controls:ProporcjonalneKolumny.Wlaczone="True">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Rodzaj" Binding="{Binding Rodzaj}" Width="140" />
-                    <DataGridTextColumn Header="Nazwa z pakietu" Binding="{Binding Nazwa}" Width="200" />
-                    <DataGridTextColumn Header="Szczegóły" Binding="{Binding Opis}" Width="180" />
-                    <DataGridTextColumn Header="Istniejąca" Binding="{Binding Istniejaca}" Width="140" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Rodzaj" Binding="{Binding Rodzaj}" Width="1.25*" MinWidth="145" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa z pakietu" Binding="{Binding Nazwa}" Width="2.6*" MinWidth="215" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Szczegóły" Binding="{Binding Opis}" Width="2.5*" MinWidth="215" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Istniejąca" Binding="{Binding Istniejaca}" Width="1.6*" MinWidth="145" />
                     <DataGridTemplateColumn Header="Decyzja" Width="180">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

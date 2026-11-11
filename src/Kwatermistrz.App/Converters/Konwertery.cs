@@ -36,6 +36,19 @@ public class KonwerterDaty : IValueConverter
         => Binding.DoNothing;
 }
 
+/// <summary>WPF DatePicker obsługuje DateTime?, model domenowy przechowuje DateOnly/DateOnly?.</summary>
+public sealed class KonwerterDateOnlyDateTime : IValueConverter
+{
+    public static readonly KonwerterDateOnlyDateTime Instance = new();
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is DateOnly data ? data.ToDateTime(TimeOnly.MinValue) : value is null ? null! : Binding.DoNothing;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is DateTime data ? DateOnly.FromDateTime(data)
+            : targetType == typeof(DateOnly) ? Binding.DoNothing : null!;
+}
+
 /// <summary>Nazwa wartości słownika po Id; puste dla null.</summary>
 public class KonwerterNazwySlownika : IValueConverter
 {
@@ -48,6 +61,21 @@ public class KonwerterNazwySlownika : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => Binding.DoNothing;
+}
+
+/// <summary>Id oraz słownik przekazane przez MultiBinding → czytelna nazwa zamiast GUID.</summary>
+public sealed class KonwerterNazwySlownikaMulti : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values.Length >= 2 && values[0] is string id &&
+            values[1] is IEnumerable<WartoscSlownika> slownik)
+            return slownik.FirstOrDefault(w => w.Id == id)?.Nazwa ?? "";
+        return "";
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
 }
 
 /// <summary>Wiele Id → nazwy połączone przecinkiem.</summary>
