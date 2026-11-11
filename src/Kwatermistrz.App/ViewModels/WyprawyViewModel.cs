@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kwatermistrz.App.Services;
 using Kwatermistrz.Core.Model;
+using Kwatermistrz.Core.Obliczenia;
 using Kwatermistrz.Core.Storage;
 
 namespace Kwatermistrz.App.ViewModels;
@@ -14,6 +15,7 @@ public partial class WyprawyViewModel : ObservableObject
     private readonly MagazynJson _magazyn;
     private readonly KalkulatorSerwis _kalkulator;
     private readonly StanAplikacji _stan;
+    private readonly OperacjeNaWyprawach _operacje;
 
     public WyprawyViewModel(DaneAplikacji dane, MagazynJson magazyn, KalkulatorSerwis kalkulator, StanAplikacji stan)
     {
@@ -21,6 +23,7 @@ public partial class WyprawyViewModel : ObservableObject
         _magazyn = magazyn;
         _kalkulator = kalkulator;
         _stan = stan;
+        _operacje = new OperacjeNaWyprawach(dane);
     }
 
     /// <summary>Wiersze listy wypraw (FR-808).</summary>
@@ -29,6 +32,18 @@ public partial class WyprawyViewModel : ObservableObject
     /// <summary>Wybrana wyprawa (edycja).</summary>
     [ObservableProperty]
     private WierszWyprawy? _wybrana;
+
+    /// <summary>Oddzielna kopia edycji: anulowanie nie zmienia danych na dysku.</summary>
+    [ObservableProperty]
+    private Wyprawa? _edytowana;
+
+    [ObservableProperty]
+    private bool _pokazUsuniete;
+
+    [ObservableProperty]
+    private string? _zestawEdycjiId;
+
+    public ObservableCollection<WyborWariantuWyprawy> WariantyEdycji { get; } = new();
 
     /// <summary>Nowa wyprawa — formularz szybkiego dodawania (FR-802).</summary>
     [ObservableProperty]
@@ -67,7 +82,7 @@ public partial class WyprawyViewModel : ObservableObject
 
     /// <summary>Lata dostępne w filtrze (historyczne + zapisane wyprawy).</summary>
     public IReadOnlyList<int> Lata => _dane.Ustawienia.HistoryczneWyprawyWgRok.Keys
-        .Concat(_dane.Wyprawy.Where(w => !w.CzyUsunieta).Select(w => w.Data.Year))
+        .Concat(_dane.Wyprawy.Select(w => w.Data.Year))
         .Distinct()
         .OrderByDescending(y => y)
         .ToList();
@@ -76,7 +91,7 @@ public partial class WyprawyViewModel : ObservableObject
     public void Odswiez()
     {
         var kalk = _kalkulator.Kalkulator();
-        var zapytanie = _dane.Wyprawy.Where(w => !w.CzyUsunieta).AsEnumerable();
+        var zapytanie = _dane.Wyprawy.Where(w => w.CzyUsunieta == PokazUsuniete).AsEnumerable();
         if (_stan.AktywnaRekonstrukcjaId != null)
             zapytanie = zapytanie.Where(w => w.RekonstrukcjaId == null || w.RekonstrukcjaId == _stan.AktywnaRekonstrukcjaId);
         if (FiltrRok != null)
@@ -117,16 +132,70 @@ public partial class WyprawyViewModel : ObservableObject
     partial void OnFiltrReplikaIdChanged(string? value) => Odswiez();
     partial void OnFiltrZestawIdChanged(string? value) => Odswiez();
     partial void OnFiltrTekstChanged(string value) => Odswiez();
+    partial void OnPokazUsunieteChanged(bool value) => Odswiez();
 
-    /// <summary>Wybiera wyprawę do edycji (FR-808) — zapamiętuje wpływ na liczniki historyczne
-    /// sprzed edycji (do cofnięcia korekty FR-807 przy zapisie).</summary>
-    [RelayCommand]
-    private void Wybierz(WierszWyprawy? wiersz)
+    partial void OnWybranaChanged(WierszWyprawy? value)
     {
-        Wybrana = wiersz;
-        if (wiersz != null)
-            _wplywSprzedEdycji[wiersz.Wyprawa.Id] = _kalkulator.Kalkulator().WplywNaLicznikiHistoryczne(wiersz.Wyprawa);
+        Edytowana = value != null && !value.CzyUsunieta
+            ? OperacjeNaWyprawach.Kopia(value.Wyprawa) : null;
+        ZestawEdycjiId = Edytowana?.ZestawId;
+        PrzygotujWariantyEdycji();
     }
+
+    partial void OnZestawEdycjiIdChanged(string? value)
+    {
+        if (Edytowana == null || Edytowana.ZestawId == value)
+            return;
+        Edytowana.ZestawId = value;
+        Edytowana.WybraneWarianty.Clear();
+        var zestaw = _dane.Zestawy.FirstOrDefault(z => z.Id == value);
+        if (zestaw != null)
+        {
+            foreach (var slot in zestaw.Sloty)
+            {
+                var wariant = slot.Warianty.FirstOrDefault(w => w.Id == slot.WariantDomyslnyId)
+                    ?? slot.Warianty.FirstOrDefault();
+                if (wariant != null)
+                    Edytowana.WybraneWarianty[slot.Id] = wariant.Id;
+            }
+        }
+        PrzygotujWariantyEdycji();
+    }
+
+    private void PrzygotujWariantyEdycji()
+    {
+        WariantyEdycji.Clear();
+        if (Edytowana?.ZestawId == null)
+            return;
+        var zestaw = _dane.Zestawy.FirstOrDefault(z => z.Id == Edytowana.ZestawId);
+        if (zestaw == null)
+            return;
+        foreach (var slot in zestaw.Sloty.OrderBy(s => s.Kolejnosc))
+        {
+            var opcje = slot.Warianty.Select(w => new OpcjaWariantuWyprawy(
+                w.Id, w.CzyPuste ? "Puste" : w.Elementy.Count == 0 ? "(brak elementów)" :
+                    string.Join(" + ", w.Elementy.Select(NazwaElementu)))).ToList();
+            var wybrany = Edytowana.WybraneWarianty.TryGetValue(slot.Id, out var id)
+                && slot.Warianty.Any(w => w.Id == id)
+                ? id : slot.Warianty.FirstOrDefault(w => w.Id == slot.WariantDomyslnyId)?.Id
+                    ?? slot.Warianty.FirstOrDefault()?.Id;
+            var wybor = new WyborWariantuWyprawy(slot.Id, slot.Nazwa, opcje, wybrany);
+            wybor.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName != nameof(WyborWariantuWyprawy.WybranyWariantId) || Edytowana == null)
+                    return;
+                if (wybor.WybranyWariantId is { } wariantId)
+                    Edytowana.WybraneWarianty[wybor.SlotId] = wariantId;
+                else
+                    Edytowana.WybraneWarianty.Remove(wybor.SlotId);
+            };
+            WariantyEdycji.Add(wybor);
+        }
+    }
+
+    /// <summary>Zaznaczenie w tabeli również tworzy migawkę przez OnWybranaChanged.</summary>
+    [RelayCommand]
+    private void Wybierz(WierszWyprawy? wiersz) => Wybrana = wiersz;
 
     /// <summary>Ustawia zestaw nowej wyprawy i warianty domyślne/zapamiętane (FR-803, FR-704).</summary>
     public void UstawZestaw(Zestaw? zestaw)
@@ -190,143 +259,123 @@ public partial class WyprawyViewModel : ObservableObject
             UstawZestaw(_dane.Zestawy.FirstOrDefault(z => z.Id == value.ZestawId));
     }
 
-    /// <summary>FR-807: korekta licznika historycznego jest odwracalna — usunięcie/przywrócenie
-    /// lub edycja daty wyprawy sprzed dnia zerowego cofa/powtarza odjęcie (delta +1/-1).</summary>
-    private void ZmienLicznikHistoryczny(string rodzaj, string id, int delta)
-    {
-        switch (rodzaj)
-        {
-            case "Replika":
-                var replika = _dane.Repliki.FirstOrDefault(r => r.Id == id);
-                if (replika != null && replika.LicznikHistorycznyWypraw + delta >= 0)
-                    replika.LicznikHistorycznyWypraw += delta;
-                break;
-            case "Mundur":
-                var mundur = _dane.Przedmioty.FirstOrDefault(p => p.Id == id);
-                if (mundur != null && mundur.LicznikHistoryczny + delta >= 0)
-                    mundur.LicznikHistoryczny += delta;
-                break;
-            case "Rok":
-                if (int.TryParse(id, out var rok) && _dane.Ustawienia.HistoryczneWyprawyWgRok.TryGetValue(rok, out var liczba) && liczba + delta >= 0)
-                    _dane.Ustawienia.HistoryczneWyprawyWgRok[rok] = liczba + delta;
-                break;
-        }
-    }
+    private static void PokazBlad(string blad) =>
+        System.Windows.MessageBox.Show(blad, "Wyprawy",
+            System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
 
-    /// <summary>FR-807: odlicza wyprawę od liczników historycznych i zaznacza korektę jako aktywną (flaga w danych).</summary>
-    private void OdliczOdLicznikow(Wyprawa wyprawa)
-    {
-        foreach (var (rodzaj, id, _) in _kalkulator.Kalkulator().WplywNaLicznikiHistoryczne(wyprawa))
-            ZmienLicznikHistoryczny(rodzaj, id, -1);
-        wyprawa.OdliczonaOdLicznikow = true;
-    }
-
-    /// <summary>FR-807: cofa korektę liczników historycznych (usunięcie/przywrócenie/edycja wyprawy).
-    /// <paramref name="wplyw"/> to wpływ sprzed zmiany — przy edycji bierące pola mogą być już zmienione przez binding.</summary>
-    private void CofnijOdliczenie(Wyprawa wyprawa, IReadOnlyList<(string Rodzaj, string Id, string Opis)>? wplyw = null)
-    {
-        if (!wyprawa.OdliczonaOdLicznikow)
-            return;
-        wyprawa.OdliczonaOdLicznikow = false;
-        foreach (var (rodzaj, id, _) in wplyw ?? _kalkulator.Kalkulator().WplywNaLicznikiHistoryczne(wyprawa))
-            ZmienLicznikHistoryczny(rodzaj, id, +1);
-    }
-
-    /// <summary>Migawka wpływu na liczniki historyczne przy otwarciu edycji wyprawy (FR-807).</summary>
-    private readonly Dictionary<string, List<(string Rodzaj, string Id, string Opis)>> _wplywSprzedEdycji = new(StringComparer.Ordinal);
-
-    /// <summary>Szybkie dodanie wyprawy (FR-802): Enter, domyślna data dziś, zestaw ostatni (FR-803).</summary>
+    /// <summary>Dodawanie z jawną decyzją o historycznej korekcie.</summary>
     [RelayCommand]
     private void DodajWyprawe()
     {
         if (Nowa.Data == default)
-            Nowa.Data = DateOnly.FromDateTime(DateTime.Today);
-        if (Nowa.RekonstrukcjaId == null)
-            Nowa.RekonstrukcjaId = _stan.AktywnaRekonstrukcjaId;
-        // FR-807: wyprawa z datą ≤ dzień zerowy — użytkownik decyduje o odjęciu od liczników historycznych
+        {
+            PokazBlad("Wybierz datę wyprawy.");
+            return;
+        }
+        Nowa.RekonstrukcjaId ??= _stan.AktywnaRekonstrukcjaId;
+        var odlicz = false;
         if (CzyPrzedDniemZerowym && KandydaciOdejmowania.Count > 0)
         {
             var tresc = string.Join("\n", KandydaciOdejmowania.Select(k => "• " + k.Opis));
-            var wynik = System.Windows.MessageBox.Show(
-                $"Ta wyprawa ma datę sprzed dnia zerowego ({_dane.Ustawienia.DzienZerowy:dd.MM.yyyy}).\n" +
-                "Liczy się jako uzupełnienie historii — żeby nie liczyć jej podwójnie, aplikacja może odjąć ją od liczników historycznych:\n" +
-                tresc + "\n\nOdjąć od liczników historycznych?",
-                "Dzień zerowy (FR-807)",
-                System.Windows.MessageBoxButton.YesNoCancel,
-                System.Windows.MessageBoxImage.Question);
-            if (wynik == System.Windows.MessageBoxResult.Cancel)
+            var wybor = System.Windows.MessageBox.Show(
+                $"Ta wyprawa jest sprzed dnia zerowego ({_dane.Ustawienia.DzienZerowy:dd.MM.yyyy}).\n" +
+                "Czy odjąć poniższe pozycje od liczników historycznych, aby nie liczyć ich podwójnie?\n" +
+                tresc + "\n\nTak — odlicz, Nie — dodaj bez korekty, Anuluj — przerwij.",
+                "Wyprawy — korekta historyczna",
+                System.Windows.MessageBoxButton.YesNoCancel, System.Windows.MessageBoxImage.Question);
+            if (wybor == System.Windows.MessageBoxResult.Cancel)
                 return;
-            OdejmijOdLicznikow = wynik == System.Windows.MessageBoxResult.Yes;
-            if (OdejmijOdLicznikow)
-                OdliczOdLicznikow(Nowa);
-            OdejmijOdLicznikow = true;
+            odlicz = wybor == System.Windows.MessageBoxResult.Yes;
         }
-        _dane.Wyprawy.Add(Nowa);
-        _magazyn.ZapiszDebounce(_dane);
-        // zapamiętaj warianty jako ostatnio użyte (FR-704) — po Id wariantu
-        if (Nowa.ZestawId != null)
+        var nowa = Nowa;
+        if (!_operacje.SprobujDodac(nowa, odlicz, out var blad))
         {
-            var zestaw = _dane.Zestawy.FirstOrDefault(z => z.Id == Nowa.ZestawId);
+            PokazBlad(blad);
+            return;
+        }
+        if (nowa.ZestawId != null)
+        {
+            var zestaw = _dane.Zestawy.FirstOrDefault(z => z.Id == nowa.ZestawId);
             if (zestaw != null)
-                foreach (var (slotId, wariantId) in Nowa.WybraneWarianty)
+                foreach (var (slotId, wariantId) in nowa.WybraneWarianty)
                     zestaw.OstatnieWarianty[slotId] = wariantId;
         }
-        Nowa = new Wyprawa { Data = DateOnly.FromDateTime(DateTime.Today), ZestawId = Nowa.ZestawId };
-        OnPropertyChanged(nameof(Nowa));
+        _magazyn.ZapiszDebounce(_dane);
+        Nowa = new Wyprawa { Data = DateOnly.FromDateTime(DateTime.Today), ZestawId = nowa.ZestawId };
         Odswiez();
     }
 
-    /// <summary>Zapisuje edycję wybranej wyprawy (FR-808, FR-809). Przy zmianie daty/repliki/zestawu
-    /// korekta liczników historycznych (FR-807) jest przeliczana: stary wpływ cofany, nowy stosowany.</summary>
+    /// <summary>Zapisuje szkic; w przypadku błędu oryginał zostaje bez zmian.</summary>
     [RelayCommand]
     private void ZapiszWybrana()
     {
-        if (Wybrana == null)
+        if (Wybrana == null || Edytowana == null)
             return;
-        var wyprawa = Wybrana.Wyprawa;
-        // korekta sprzed edycji jest cofana po migawce z momentu otwarcia edycji (pola mogą być już zmienione)
-        _wplywSprzedEdycji.TryGetValue(wyprawa.Id, out var staryWplyw);
-        CofnijOdliczenie(wyprawa, staryWplyw);
-        if (CzyPrzedDniemZerowymDla(wyprawa))
-            OdliczOdLicznikow(wyprawa);
+        if (!_operacje.SprobujZapisac(Wybrana.Wyprawa, Edytowana, out var blad))
+        {
+            PokazBlad(blad);
+            return;
+        }
         _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
-    private bool CzyPrzedDniemZerowymDla(Wyprawa wyprawa)
+    /// <summary>Porzuca niezapisany szkic bez modyfikacji źródła prawdy.</summary>
+    [RelayCommand]
+    private void AnulujEdycje()
     {
-        var dzienZerowy = _dane.Ustawienia.DzienZerowy;
-        return dzienZerowy != null && wyprawa.Data != default && wyprawa.Data <= dzienZerowy.Value
-            && !wyprawa.CzyUsunieta;
+        Edytowana = Wybrana != null && !Wybrana.CzyUsunieta
+            ? OperacjeNaWyprawach.Kopia(Wybrana.Wyprawa) : null;
+        ZestawEdycjiId = Edytowana?.ZestawId;
+        PrzygotujWariantyEdycji();
     }
 
-    /// <summary>Usuwa wyprawę (oznacza jako usuniętą; FR-808/809 — liczniki aktualizują się od razu).
-    /// Korekta liczników historycznych (FR-807) jest cofana — przywrócenie wyprawy ją powtórzy.</summary>
     [RelayCommand]
     private void Usun(WierszWyprawy? wiersz)
     {
-        if (wiersz == null)
+        if (wiersz == null || wiersz.CzyUsunieta)
             return;
-        var odpowiedz = System.Windows.MessageBox.Show(
+        var wybor = System.Windows.MessageBox.Show(
             $"Usunąć wyprawę z dnia {wiersz.Wyprawa.Data:dd.MM.yyyy}?\nMożna ją później przywrócić.",
-            "Kwatermistrz", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
-        if (odpowiedz != System.Windows.MessageBoxResult.Yes)
+            "Wyprawy", System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Question);
+        if (wybor != System.Windows.MessageBoxResult.Yes)
             return;
-        wiersz.Wyprawa.CzyUsunieta = true;
-        CofnijOdliczenie(wiersz.Wyprawa);
+        if (!_operacje.SprobujUsun(wiersz.Wyprawa, out var blad))
+        {
+            PokazBlad(blad);
+            return;
+        }
         _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
 
-    /// <summary>Przywraca usuniętą wyprawę (cofnięcie, FR-808) — powtarza korektę liczników historycznych.</summary>
     [RelayCommand]
     private void Przywroc(WierszWyprawy? wiersz)
     {
-        if (wiersz == null || !wiersz.Wyprawa.CzyUsunieta)
+        if (wiersz == null || !wiersz.CzyUsunieta)
             return;
-        wiersz.Wyprawa.CzyUsunieta = false;
-        if (CzyPrzedDniemZerowymDla(wiersz.Wyprawa))
-            OdliczOdLicznikow(wiersz.Wyprawa);
+        var odlicz = false;
+        // Stare wersje zerowały flagę przy usuwaniu: nie odtwarzamy jej z domysłów.
+        if (!wiersz.Wyprawa.OdliczonaOdLicznikow
+            && _operacje.CzyHistoryczna(wiersz.Wyprawa)
+            && _kalkulator.Kalkulator().WplywNaLicznikiHistoryczne(wiersz.Wyprawa).Count > 0)
+        {
+            var wybor = System.Windows.MessageBox.Show(
+                "Ta wyprawa jest sprzed dnia zerowego, ale nie ma zapisanej informacji o korekcie.\n" +
+                "Czy odjąć ją od liczników historycznych?\n" +
+                "Tak — odlicz; Nie — przywróć bez korekty; Anuluj — przerwij.",
+                "Wyprawy — przywracanie historii",
+                System.Windows.MessageBoxButton.YesNoCancel, System.Windows.MessageBoxImage.Question);
+            if (wybor == System.Windows.MessageBoxResult.Cancel)
+                return;
+            odlicz = wybor == System.Windows.MessageBoxResult.Yes;
+        }
+        if (!_operacje.SprobujPrzywroc(wiersz.Wyprawa, odlicz, out var blad))
+        {
+            PokazBlad(blad);
+            return;
+        }
         _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }
@@ -361,4 +410,31 @@ public partial class WyprawyViewModel : ObservableObject
         Nowa.ZestawId != null
             ? _dane.Zestawy.FirstOrDefault(z => z.Id == Nowa.ZestawId)?.Sloty.OrderBy(s => s.Kolejnosc).ToList() ?? new List<SlotZestawu>()
             : new List<SlotZestawu>();
+}
+
+/// <summary>Czytelna opcja wariantu. Typ UI, nie jest częścią JSON.</summary>
+public sealed record OpcjaWariantuWyprawy(string Id, string Opis);
+
+/// <summary>Wiersz edytora wariantów.</summary>
+public sealed class WyborWariantuWyprawy : ObservableObject
+{
+    public WyborWariantuWyprawy(string slotId, string nazwaSlotu,
+        IReadOnlyList<OpcjaWariantuWyprawy> opcje, string? wybranyWariantId)
+    {
+        SlotId = slotId;
+        NazwaSlotu = nazwaSlotu;
+        Opcje = opcje;
+        _wybranyWariantId = wybranyWariantId;
+    }
+
+    public string SlotId { get; }
+    public string NazwaSlotu { get; }
+    public IReadOnlyList<OpcjaWariantuWyprawy> Opcje { get; }
+
+    private string? _wybranyWariantId;
+    public string? WybranyWariantId
+    {
+        get => _wybranyWariantId;
+        set => SetProperty(ref _wybranyWariantId, value);
+    }
 }
