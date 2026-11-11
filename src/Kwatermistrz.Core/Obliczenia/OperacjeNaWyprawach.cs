@@ -4,7 +4,7 @@ using Kwatermistrz.Core.Model;
 namespace Kwatermistrz.Core.Obliczenia;
 
 /// <summary>
-/// Operacje na wyprawach i historycznych licznikach. Nie zmienia schematu JSON.
+/// Operacje na wyprawach i historycznych licznikach. Opcjonalna migawka korekty nie wymaga migracji JSON.
 /// Edycja odbywa się na kopii, a liczniki są sprawdzane przed jakąkolwiek zmianą danych.
 /// </summary>
 public sealed class OperacjeNaWyprawach
@@ -28,6 +28,10 @@ public sealed class OperacjeNaWyprawach
             Typ = e.Typ, ElementId = e.ElementId, NazwaSzkicu = e.NazwaSzkicu,
         }).ToList(),
         OdliczonaOdLicznikow = zrodlo.OdliczonaOdLicznikow,
+        SkladnikiKorekty = zrodlo.SkladnikiKorekty?.Select(s => new SkladnikKorektyHistorycznej
+        {
+            Rodzaj = s.Rodzaj, Id = s.Id,
+        }).ToList(),
         Komentarz = zrodlo.Komentarz,
         Zdjecia = new List<string>(zrodlo.Zdjecia),
         CzyUsunieta = zrodlo.CzyUsunieta,
@@ -48,9 +52,11 @@ public sealed class OperacjeNaWyprawach
             return false;
         }
         odlicz = odlicz && CzyHistoryczna(wyprawa);
-        if (!SprobujPrzeliczyc(null, false, wyprawa, odlicz, out blad))
+        var plan = odlicz ? SkladnikiDoOdliczenia(wyprawa) : null;
+        if (!SprobujPrzeliczyc(null, false, wyprawa, odlicz, out blad, plan))
             return false;
         wyprawa.OdliczonaOdLicznikow = odlicz;
+        wyprawa.SkladnikiKorekty = plan;
         wyprawa.CzyUsunieta = false;
         wyprawa.OstatniaZmiana = DateTime.Now;
         _dane.Wyprawy.Add(wyprawa);
@@ -73,8 +79,14 @@ public sealed class OperacjeNaWyprawach
             return false;
 
         var byloOdliczone = oryginal.OdliczonaOdLicznikow;
-        var maBycOdliczone = byloOdliczone && CzyHistoryczna(szkic);
-        if (!SprobujPrzeliczyc(oryginal, byloOdliczone, szkic, maBycOdliczone, out blad))
+        var zmieniaSklad = CzyZmianaWplywaNaKorekte(oryginal, szkic);
+        var maBycOdliczone = zmieniaSklad ? byloOdliczone && CzyHistoryczna(szkic) : byloOdliczone;
+        // Zmiana samego opisu/zdjęcia nie może przeliczyć historycznej wyprawy
+        // według dzisiejszego składu zestawu.
+        var plan = maBycOdliczone && zmieniaSklad ? SkladnikiDoOdliczenia(szkic)
+            : oryginal.SkladnikiKorekty;
+        if (zmieniaSklad && !SprobujPrzeliczyc(oryginal, byloOdliczone,
+            szkic, maBycOdliczone, out blad, plan))
             return false;
 
         oryginal.Data = szkic.Data;
@@ -90,6 +102,10 @@ public sealed class OperacjeNaWyprawach
         oryginal.Komentarz = szkic.Komentarz;
         oryginal.Zdjecia = new List<string>(szkic.Zdjecia);
         oryginal.OdliczonaOdLicznikow = maBycOdliczone;
+        oryginal.SkladnikiKorekty = maBycOdliczone ? plan?.Select(s => new SkladnikKorektyHistorycznej
+        {
+            Rodzaj = s.Rodzaj, Id = s.Id,
+        }).ToList() : null;
         oryginal.OstatniaZmiana = DateTime.Now;
         return true;
     }
@@ -126,8 +142,13 @@ public sealed class OperacjeNaWyprawach
             return false;
         }
         var maBycOdliczone = wyprawa.OdliczonaOdLicznikow || (odlicz && CzyHistoryczna(wyprawa));
-        if (!SprobujPrzeliczyc(null, false, wyprawa, maBycOdliczone, out blad))
+        // Przywrócenie wykorzystuje dokładnie zapisane składniki wcześniejszego
+        // odliczenia, a nie nową konfigurację zestawu zmienioną po wyprawie.
+        var plan = maBycOdliczone
+            ? wyprawa.SkladnikiKorekty ?? SkladnikiDoOdliczenia(wyprawa) : null;
+        if (!SprobujPrzeliczyc(null, false, wyprawa, maBycOdliczone, out blad, plan))
             return false;
+        wyprawa.SkladnikiKorekty = plan;
         wyprawa.OdliczonaOdLicznikow = maBycOdliczone;
         wyprawa.CzyUsunieta = false;
         wyprawa.OstatniaZmiana = DateTime.Now;
@@ -140,18 +161,34 @@ public sealed class OperacjeNaWyprawach
         return blad.Length == 0;
     }
 
+    /// <summary>Zmiana pól, które mogą wpłynąć na historyczną korektę.</summary>
+    public static bool CzyZmianaWplywaNaKorekte(Wyprawa stara, Wyprawa szkic) =>
+        stara.Data != szkic.Data ||
+        stara.ReplikaGlownaId != szkic.ReplikaGlownaId ||
+        stara.RekonstrukcjaId != szkic.RekonstrukcjaId ||
+        stara.ZestawId != szkic.ZestawId ||
+        stara.WybraneWarianty.Count != szkic.WybraneWarianty.Count ||
+        stara.WybraneWarianty.Any(k => !szkic.WybraneWarianty.TryGetValue(k.Key, out var v) || v != k.Value) ||
+        !stara.SkladReczny.Select(e => (e.Typ, e.ElementId, e.NazwaSzkicu))
+            .SequenceEqual(szkic.SkladReczny.Select(e => (e.Typ, e.ElementId, e.NazwaSzkicu)));
+
+    private List<SkladnikKorektyHistorycznej> SkladnikiDoOdliczenia(Wyprawa wyprawa) =>
+        new Kalkulator(_dane).WplywNaLicznikiHistoryczne(wyprawa)
+            .Select(w => new SkladnikKorektyHistorycznej { Rodzaj = w.Rodzaj, Id = w.Id })
+            .ToList();
+
     private bool SprobujPrzeliczyc(Wyprawa? poprzednia, bool bylaKorekta,
-        Wyprawa? nowa, bool nowaKorekta, out string blad)
+        Wyprawa? nowa, bool nowaKorekta, out string blad,
+        IReadOnlyList<SkladnikKorektyHistorycznej>? planNowej = null)
     {
         blad = "";
         var delty = new Dictionary<(string Rodzaj, string Id), int>();
-        var kalk = new Kalkulator(_dane);
         if (poprzednia != null && bylaKorekta)
-            foreach (var (rodzaj, id, _) in kalk.WplywNaLicznikiHistoryczne(poprzednia))
-                DodajDelte(rodzaj, id, +1);
+            foreach (var s in poprzednia.SkladnikiKorekty ?? SkladnikiDoOdliczenia(poprzednia))
+                DodajDelte(s.Rodzaj, s.Id, +1);
         if (nowa != null && nowaKorekta)
-            foreach (var (rodzaj, id, _) in kalk.WplywNaLicznikiHistoryczne(nowa))
-                DodajDelte(rodzaj, id, -1);
+            foreach (var s in planNowej ?? SkladnikiDoOdliczenia(nowa))
+                DodajDelte(s.Rodzaj, s.Id, -1);
 
         // Transakcja w pamięci: jeśli choć jeden licznik byłby ujemny albo brakujący,
         // nie dotykamy żadnego licznika ani wyprawy.
