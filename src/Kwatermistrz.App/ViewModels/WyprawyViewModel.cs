@@ -155,9 +155,10 @@ public partial class WyprawyViewModel : ObservableObject
     /// <summary>Po imporcie lub przywróceniu zawartości bazy odrzuca stary szkic.</summary>
     public void PrzeladujPoWymianieDanych()
     {
+        // Formularz dodawania może wskazywać na stary zestaw nieobecny w nowej bazie.
+        Nowa = new Wyprawa { Data = DateOnly.FromDateTime(DateTime.Today) };
         Odswiez();
         AnulujEdycje();
-        PrzygotujWariantyNowej();
     }
 
     partial void OnZestawEdycjiIdChanged(string? value)
