@@ -64,4 +64,34 @@ public class TransakcyjnyImportPakietuTests
         Assert.Contains(rekPoImporcie.SzablonSlotow, s => s.Nazwa == "Broń szturmowa");
         Assert.Equal(1, dane.SchemaVersion);
     }
+
+    [Fact]
+    public void JawneDodajNowa_PrzyKolizjiId_NieTworzyDuplikatuIdWJson()
+    {
+        var dane = new DaneAplikacji { Slowniki = StartoweSlowniki.Utworz() };
+        var staraRola = dane.Slowniki.Role.Single(r => r.Nazwa == "Wsparcie");
+        var pakiet = new PakietKonfiguracji();
+        pakiet.Slowniki.Add(new WartoscSlownikaPakietu
+        {
+            Slownik = "Role",
+            Wartosc = new WartoscSlownika
+            {
+                Id = staraRola.Id,
+                Nazwa = "Wsparcie",
+                Aliasy = new() { "Inna nazwa" },
+            },
+        });
+        var podglad = ImporterPakietuKonfiguracji.PrzygotujPodglad(dane, pakiet);
+        var decyzja = podglad.Slowniki.Single(x => x.Rodzaj.Klucz == "Role").Decyzje.Single();
+        decyzja.Akcja = AkcjaWartosci.DodajNowa;
+        var mapa = TransakcjaDanych.Wykonaj(dane, robocza =>
+            ImporterPakietuKonfiguracji.Zastosuj(robocza, podglad));
+
+        Assert.Equal(2, dane.Slowniki.Role.Count(w => w.Nazwa == "Wsparcie"));
+        Assert.Equal(dane.Slowniki.Role.Count,
+            dane.Slowniki.Role.Select(r => r.Id).Distinct(StringComparer.Ordinal).Count());
+        Assert.NotEqual(staraRola.Id, mapa.Slowniki["Role"][staraRola.Id]);
+        Assert.Contains(dane.Slowniki.Role, r => r.Id == staraRola.Id);
+    }
+
 }
