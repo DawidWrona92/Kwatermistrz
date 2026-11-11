@@ -526,6 +526,27 @@ public partial class MainWindow : FluentWindow
                 throw new InvalidOperationException(
                     $"Checkbox wychodzi poza komórkę: checkbox={granice}, " +
                     $"komórka={komorka.ActualWidth:F0}×{komorka.ActualHeight:F0}px.");
+
+            // Ręcznie ustawiona szerokość kolumny powinna pozostać nietknięta
+            // podczas późniejszego rozszerzania okna; inne kolumny mogą rosnąć.
+            var kolumnaNazwa = tabela.Columns
+                .OfType<System.Windows.Controls.DataGridTextColumn>()
+                .Single(k => Equals(k.Header, "Nazwa"));
+            var kolumnaKomentarz = tabela.Columns
+                .OfType<System.Windows.Controls.DataGridTextColumn>()
+                .Single(k => Equals(k.Header, "Komentarz"));
+            kolumnaNazwa.Width = new System.Windows.Controls.DataGridLength(260);
+            PrzepompujNawigacje();
+            var komentarzPrzed = kolumnaKomentarz.ActualWidth;
+            okno.Width = 1850;
+            okno.UpdateLayout();
+            PrzepompujNawigacje();
+            if (Math.Abs(kolumnaNazwa.ActualWidth - 260) > 2)
+                throw new InvalidOperationException(
+                    "Zmiana rozmiaru okna nadpisuje ręcznie wybraną szerokość kolumny.");
+            if (kolumnaKomentarz.ActualWidth < komentarzPrzed + 10)
+                throw new InvalidOperationException(
+                    "Pozostałe kolumny nie wykorzystują przestrzeni po poszerzeniu okna.");
         }
         finally
         {
