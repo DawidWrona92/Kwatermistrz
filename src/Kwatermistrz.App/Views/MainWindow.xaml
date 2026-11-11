@@ -14,7 +14,7 @@
                  UseLayoutRounding="True"
                  SnapsToDevicePixels="True">
     <Window.InputBindings>
-        <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding NawigujCommand}" CommandParameter="Wyprawa" />
+        <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding DodajWypraweCommand}" />
         <KeyBinding Key="F" Modifiers="Ctrl" Command="{Binding FokusujSzukanieCommand}" />
     </Window.InputBindings>
     <Grid>
@@ -70,7 +70,7 @@
                           ToolTip="Aktywna rekonstrukcja — filtruje wszystko (FR-1303)" />
                 <ui:Button Grid.Column="2" Margin="12,0,0,0" Appearance="Primary"
                            Command="{Binding DodajWypraweCommand}"
-                           ToolTip="Dodaj wyprawę (Ctrl+N)">
+                           ToolTip="Otwórz formularz dodawania wyprawy (Ctrl+N)">
                     <StackPanel Orientation="Horizontal">
                         <ui:SymbolIcon Symbol="Add24" />
                         <TextBlock Text="Dodaj wyprawę" Margin="6,0,0,0" />
