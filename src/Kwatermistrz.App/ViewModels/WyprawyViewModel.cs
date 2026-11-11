@@ -80,6 +80,10 @@ public partial class WyprawyViewModel : ObservableObject
         .OrderBy(r => r.ModelProducenta)
         .ToList();
 
+    /// <summary>W edycji pokazujemy też sprzedane/wycofane repliki, by nie gubić relacji historycznych.</summary>
+    public IReadOnlyList<Replika> ReplikiHistoryczne => _dane.Repliki
+        .OrderBy(r => r.ModelProducenta).ToList();
+
     /// <summary>Lata dostępne w filtrze (historyczne + zapisane wyprawy).</summary>
     public IReadOnlyList<int> Lata => _dane.Ustawienia.HistoryczneWyprawyWgRok.Keys
         .Concat(_dane.Wyprawy.Select(w => w.Data.Year))
@@ -179,15 +183,17 @@ public partial class WyprawyViewModel : ObservableObject
                 && slot.Warianty.Any(w => w.Id == id)
                 ? id : slot.Warianty.FirstOrDefault(w => w.Id == slot.WariantDomyslnyId)?.Id
                     ?? slot.Warianty.FirstOrDefault()?.Id;
+            var szkic = Edytowana;
             var wybor = new WyborWariantuWyprawy(slot.Id, slot.Nazwa, opcje, wybrany);
             wybor.PropertyChanged += (_, e) =>
             {
-                if (e.PropertyName != nameof(WyborWariantuWyprawy.WybranyWariantId) || Edytowana == null)
+                if (e.PropertyName != nameof(WyborWariantuWyprawy.WybranyWariantId)
+                    || !ReferenceEquals(Edytowana, szkic) || szkic.ZestawId != zestaw.Id)
                     return;
                 if (wybor.WybranyWariantId is { } wariantId)
-                    Edytowana.WybraneWarianty[wybor.SlotId] = wariantId;
+                    szkic.WybraneWarianty[wybor.SlotId] = wariantId;
                 else
-                    Edytowana.WybraneWarianty.Remove(wybor.SlotId);
+                    szkic.WybraneWarianty.Remove(wybor.SlotId);
             };
             WariantyEdycji.Add(wybor);
         }
@@ -244,10 +250,6 @@ public partial class WyprawyViewModel : ObservableObject
             return dzienZerowy != null && Nowa.Data != default && Nowa.Data <= dzienZerowy.Value;
         }
     }
-
-    /// <summary>FR-807: odpowiedź na monit o odjęcie od liczników historycznych; domyślnie „tak”.</summary>
-    [ObservableProperty]
-    private bool _odejmijOdLicznikow = true;
 
     partial void OnNowaChanged(Wyprawa value)
     {
