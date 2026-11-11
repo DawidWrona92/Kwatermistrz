@@ -38,7 +38,7 @@ public static class RejestrWypraw
         // wciąż nieznane: wydarzenie nadal znajduje się w starym łącznym
         // liczniku replik. Nie wolno naliczyć go drugi raz.
         var historiaBezRepliki = dane.Wyprawy.Count(w => !w.CzyUsunieta &&
-            w.CzyHistoryczna && w.ReplikaGlownaId == null);
+            (w.CzyHistoryczna || w.OdliczonaOdLicznikow) && w.ReplikaGlownaId == null);
         wedlugReplik = Math.Max(0, wedlugReplik - historiaBezRepliki);
         return checked(rzeczywiste + Math.Max(wedlugLat, wedlugReplik));
     }
@@ -193,5 +193,5 @@ public static class RejestrWypraw
         => dane.Ustawienia.HistoryczneWyprawyWgRok.Values.Sum()
            - Math.Max(0, dane.Repliki.Sum(r => r.LicznikHistorycznyWypraw)
                - dane.Wyprawy.Count(w => !w.CzyUsunieta &&
-                   w.CzyHistoryczna && w.ReplikaGlownaId == null));
+                   (w.CzyHistoryczna || w.OdliczonaOdLicznikow) && w.ReplikaGlownaId == null));
 }
