@@ -119,9 +119,19 @@ public partial class ReplikiViewModel : ObservableObject
         for (var i = 0; i < wiersze.Count; i++)
             wiersze[i].MiejsceWRankingu = i + 1;
 
+        // Przebudowa ObservableCollection tworzy nowe obiekty wierszy.
+        // Zachowujemy wybór karty i checkboxy porównania tylko dla replik,
+        // które pozostały widoczne po zmianie filtra/rekonstrukcji.
+        var idWybranej = Wybrana?.Id;
+        var porownywaneId = Wiersze.Where(w => w.ZaznaczonaDoPorownania)
+            .Select(w => w.Id).ToHashSet(StringComparer.Ordinal);
+        foreach (var w in wiersze)
+            w.ZaznaczonaDoPorownania = porownywaneId.Contains(w.Id);
+
         Wiersze.Clear();
         foreach (var w in wiersze)
             Wiersze.Add(w);
+        Wybrana = idWybranej == null ? null : Wiersze.FirstOrDefault(w => w.Id == idWybranej);
         OnPropertyChanged(nameof(LiczbaWierszy));
     }
 
