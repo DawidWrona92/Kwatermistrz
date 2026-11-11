@@ -35,6 +35,12 @@ public partial class MainWindow : FluentWindow
                     PokazEkran(vm.AktualnyEkran);
                     ZaznaczNawigacje(vm.AktualnyEkran);
                 }
+                else if (args.PropertyName == nameof(MainWindowViewModel.AktywnaRekonstrukcjaId))
+                {
+                    // Po przefiltrowaniu listy karta nie może dalej pokazywać
+                    // repliki/przedmiotu niewidocznego w wybranej rekonstrukcji.
+                    OdswiezKarte();
+                }
             };
         }
         // globalne wyszukiwanie (FR-1201): wyniki pod polem, Enter otwiera pierwszy
