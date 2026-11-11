@@ -119,3 +119,9 @@ Możesz nadal przeciągnąć granicę nagłówka, żeby ręcznie zmienić szerok
 kolumny, lub kliknąć tę granicę dwukrotnie, żeby dopasować ją do treści.
 Przy pierwszym otwarciu i przy zmianie szerokości okna kolumny zachowują
 proporcjonalny układ. Kolumny akcji i ikon nie zajmują niepotrzebnie miejsca.
+
+## Wyświetlanie i dopasowanie kolumn tabel
+
+Tabele automatycznie wypełniają dostępną szerokość już po otwarciu ekranu, bez konieczności przeciągania czy maksymalizowania okna. Kolumny z danymi dzielą dodatkowe miejsce według wag, ale zachowują minimalne szerokości. Jeśli okno jest zbyt wąskie, pojawia się przewijanie poziome. Po ręcznej zmianie szerokości kolumny aplikacja zachowuje wybraną przez użytkownika szerokość podczas dalszego zmieniania rozmiaru okna.
+
+W Wyposażeniu checkboxy do edycji zbiorczej mieszczą się w kolumnie wyboru. Kolumna „Miejsce” prezentuje nazwę ze słownika zamiast wewnętrznego identyfikatora.
