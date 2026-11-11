@@ -132,6 +132,13 @@ public partial class WyposazenieViewModel : ObservableObject
     /// <summary>Odświeża listę po zmianie danych/filtrów.</summary>
     public void Odswiez()
     {
+        // Przy wymianie bazy (np. przywracanie kopii) filtr kategorii może
+        // wskazywać na usuniętą pozycję. Wyłącz filtr, nie zostawiaj pustej listy.
+        if (WybranaKategoria != null && !_dane.Slowniki.Kategorie.Any(k => k.Id == WybranaKategoria.Id))
+        {
+            WybranaKategoria = null;
+            return; // setter odświeża widok z pełnym katalogiem
+        }
         // indeks obliczeniowy budowany raz na odświeżenie — O(P·W) zamiast O(P²·W) przy NFR-04
         var indeks = new IndeksObliczeniowy(_dane);
         var zapytanie = _dane.Przedmioty.AsEnumerable();
