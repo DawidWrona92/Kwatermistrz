@@ -461,7 +461,13 @@ public partial class MainWindow : FluentWindow
     /// </summary>
     public void ZweryfikujPierwszyRenderWyposazenia()
     {
-        var widok = new WyposazeniePage { DataContext = ViewModel!.Wyposazenie };
+        // CI ma wirtualny ekran ~1044 px: wymuszamy szerokość samego widoku,
+        // a nie Window.Width (Windows mógłby ograniczyć okno do rozmiaru ekranu).
+        var widok = new WyposazeniePage
+        {
+            DataContext = ViewModel!.Wyposazenie,
+            Width = 1650,
+        };
         var okno = new Window
         {
             Title = "Kwatermistrz — test pierwszego renderowania wyposażenia",
@@ -486,6 +492,9 @@ public partial class MainWindow : FluentWindow
                 ?? throw new InvalidOperationException("Brak tabeli wyposażenia.");
             if (tabela.Items.Count < 100)
                 throw new InvalidOperationException("Nie wczytano danych wyposażenia do testu.");
+            if (tabela.ActualWidth < 1200)
+                throw new InvalidOperationException(
+                    $"Test nie odtworzył szerokiego widoku: DataGrid={tabela.ActualWidth:F0}px.");
 
             var zajeta = tabela.Columns
                 .Where(k => k.Visibility == Visibility.Visible)
@@ -539,8 +548,8 @@ public partial class MainWindow : FluentWindow
             PrzepompujNawigacje();
             var nazwaPrzed = kolumnaNazwa.ActualWidth;
             var komentarzPrzed = kolumnaKomentarz.ActualWidth;
-            okno.Width = 1850;
-            okno.UpdateLayout();
+            widok.Width = 1850;
+            widok.UpdateLayout();
             PrzepompujNawigacje();
             if (Math.Abs(kolumnaNazwa.ActualWidth - 260) > 2)
                 throw new InvalidOperationException(
