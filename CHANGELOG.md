@@ -1,3 +1,11 @@
+## Wyposażenie — poprawa pierwszego renderowania tabel (2026-11-11)
+
+- Naprawiono ucięte pola zaznaczenia: kolumna selekcji ma teraz 64 px, a checkbox co najmniej 24×24 px i margines, dzięki czemu cały element mieści się w komórce.
+- Nowy mechanizm automatycznego wypełniania szerokości w 14 tabelach / 8 widokach uwzględnia rozmiar siatki już przy pierwszym Loaded, następnie reaguje na zmianę szerokości i zachowuje ręcznie regulowane kolumny.
+- Przy zbyt małej szerokości zachowano minimalne wymiary oraz poziome przewijanie.
+- Zamiast surowych ID/GUID w kolumnie Miejsce pokazują się teraz nazwy ze słownika.
+- Rozszerzono Windows UI smoke: rzeczywisty pierwszy render Wyposażenia w szerokim oknie bez interakcji, sprawdzenie zajętej szerokości, pozycji checkboxa w obrębie komórki, nazw miejsc i zachowania ręcznie ustawionego rozmiaru.
+
 ## Tabele — proporcjonalne kolumny (2026-11-11)
 
 - Rozwiązano problem pustej prawej części raportów po powiększeniu okna: kolumny `Auto` nie rozdzielały wolnej szerokości.
