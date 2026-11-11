@@ -21,6 +21,23 @@ public partial class ImportViewModel : ObservableObject
     private readonly DaneAplikacji _dane;
     private readonly MagazynJson _magazyn;
 
+    /// <summary>Powiadomienie po udanym imporcie: wszystkie zakładki odświeżają dane.</summary>
+    public event Action? DaneZmienione;
+
+    [ObservableProperty]
+    private bool _czyZajety;
+
+    public bool CzyNieZajety => !CzyZajety;
+    public bool MaPodglad => Podglad != null && CzyNieZajety;
+    public bool MaPodgladOgolny => _podgladOgolny.Count > 0 && CzyNieZajety;
+
+    partial void OnCzyZajetyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CzyNieZajety));
+        OnPropertyChanged(nameof(MaPodglad));
+        OnPropertyChanged(nameof(MaPodgladOgolny));
+    }
+
     public ImportViewModel(DaneAplikacji dane, MagazynJson magazyn)
     {
         _dane = dane;
@@ -51,6 +68,7 @@ public partial class ImportViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(LiczbaRekordow));
         OnPropertyChanged(nameof(Konflikty));
+        OnPropertyChanged(nameof(MaPodglad));
         if (value != null)
             foreach (var konflikt in value.Konflikty)
                 if (konflikt.WyborUzytkownika == null && konflikt.DomyslnyWybor >= 0)
@@ -59,7 +77,7 @@ public partial class ImportViewModel : ObservableObject
 
     /// <summary>Wybiera plik xlsx i przygotowuje podgląd importu (FR-1102). Nic nie jest zapisywane.</summary>
     [RelayCommand]
-    private void WybierzPlik()
+    private async Task WybierzPlik()
     {
         var dialog = new OpenFileDialog
         {
@@ -71,14 +89,23 @@ public partial class ImportViewModel : ObservableObject
             return;
         try
         {
+            CzyZajety = true;
+            Podglad = null;
             Sciezka = dialog.FileName;
-            Podglad = ImporterKwatermistrz.PrzygotujPodglad(dialog.FileName);
-            Komunikat = $"Podgląd gotowy: {Podglad.Konflikty.Count} pozycji do rozstrzygnięcia.";
+            Komunikat = "Wczytywanie arkusza i przygotowywanie podglądu…";
+            var wynik = await Task.Run(() => ImporterKwatermistrz.PrzygotujPodglad(dialog.FileName));
+            Podglad = wynik;
+            Komunikat = $"Podgląd gotowy: {wynik.Konflikty.Count} pozycji do rozstrzygnięcia.";
         }
         catch (Exception ex)
         {
             Podglad = null;
+            Sciezka = "";
             Komunikat = $"Nie udało się odczytać pliku: {ex.Message}";
+        }
+        finally
+        {
+            CzyZajety = false;
         }
     }
 
@@ -86,15 +113,45 @@ public partial class ImportViewModel : ObservableObject
     [RelayCommand]
     private void Zastosuj()
     {
-        if (Podglad == null)
+        if (Podglad == null || CzyZajety)
             return;
-        _magazyn.Zapisz(_dane);
-        _magazyn.UtworzKopieZapasowa(_dane);
-        ImporterKwatermistrz.Zastosuj(Podglad, _dane);
-        _magazyn.Zapisz(_dane);
-        Komunikat = "Import zakończony. Dane zapisane.";
-        Podglad = null;
-        Sciezka = "";
+        if (_dane.Przedmioty.Count > 0 || _dane.Repliki.Count > 0 || _dane.Wyprawy.Count > 0)
+        {
+            var decyzja = System.Windows.MessageBox.Show(
+                "Baza zawiera już dane. Ten import doda kolejne rekordy i może utworzyć duplikaty " +
+                "przy ponownym wczytaniu tego samego arkusza.\n" +
+                "Istniejący dzień zerowy i liczniki historyczne nie zostaną nadpisane.\n\n" +
+                "Czy mimo to kontynuować?",
+                "Import do istniejącej bazy",
+                System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning);
+            if (decyzja != System.Windows.MessageBoxResult.Yes)
+                return;
+        }
+        try
+        {
+            CzyZajety = true;
+            // Kopia przed zmianą, potem import na niezależnym obiekcie.
+            _magazyn.UtworzKopieZapasowa(_dane);
+            TransakcjaDanych.Wykonaj(_dane, robocza =>
+            {
+                ImporterKwatermistrz.Zastosuj(Podglad, robocza);
+                return true;
+            });
+            _magazyn.Zapisz(_dane);
+            Podglad = null;
+            Sciezka = "";
+            Komunikat = "Import zakończony. Dane zapisane, poprzedni stan w kopii zapasowej.";
+            DaneZmienione?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            Podglad = null; // nie ponawiaj automatycznie częściowo przetworzonego podglądu
+            Komunikat = "Błąd importu. Sprawdź kopię zapasową: " + ex.Message;
+        }
+        finally
+        {
+            CzyZajety = false;
+        }
     }
 }
 
@@ -133,6 +190,19 @@ public partial class ImportViewModel
 {
     private MagazynMapowan? _magazynMapowan;
     private List<WierszPodgladuOgolnegoVm> _podgladOgolny = new();
+
+    private void UniewaznijPodgladOgolny()
+    {
+        if (_podgladOgolny.Count == 0)
+            return;
+        _podgladOgolny = new();
+        OnPropertyChanged(nameof(PodgladOgolny));
+        OnPropertyChanged(nameof(LiczbaPodgladOgolny));
+        OnPropertyChanged(nameof(MaPodgladOgolny));
+    }
+
+    partial void OnKategoriaDocelowaChanged(Kategoria? value) => UniewaznijPodgladOgolny();
+    partial void OnSciezkaOgolnaChanged(string value) => UniewaznijPodgladOgolny();
 
     /// <summary>Inicjalizuje magazyn mapowań (katalog danych).</summary>
     public void InicjalizujMapowania()
@@ -207,7 +277,7 @@ public partial class ImportViewModel
 
     /// <summary>Wybiera plik xlsx/csv do importu ogólnego i pokazuje mapowanie kolumn z sugestią (FR-1403).</summary>
     [RelayCommand]
-    private void WybierzPlikOgolny()
+    private async Task WybierzPlikOgolny()
     {
         var dialog = new OpenFileDialog
         {
@@ -219,28 +289,48 @@ public partial class ImportViewModel
             return;
         try
         {
+            CzyZajety = true;
             SciezkaOgolna = dialog.FileName;
-            _arkuszeOgolne = ImporterOgolny.WczytajPlik(dialog.FileName);
-            var arkusz = _arkuszeOgolne.First();
+            _arkuszeOgolne.Clear();
+            MapowanieKolumny.Clear();
+            Komunikat = "Wczytywanie arkusza i nagłówków…";
+            var arkusze = await Task.Run(() => ImporterOgolny.WczytajPlik(dialog.FileName));
+            var arkusz = arkusze.FirstOrDefault(a => a.Wiersze.Any(w => w.Komorki.Any(c => !string.IsNullOrWhiteSpace(c))));
+            if (arkusz == null)
+                throw new InvalidDataException("Brak niepustego arkusza z nagłówkami.");
+            _arkuszeOgolne = new List<ArkuszXlsx> { arkusz };
             NazwaArkusza = arkusz.Nazwa;
-            // pierwszy niepusty wiersz to nagłówek — dane zaczynają się od następnego (inaczej nagłówek leciałby jako rekord)
             _wierszNaglowkaOgolny = arkusz.Wiersze.FindIndex(w => w.Komorki.Any(c => !string.IsNullOrWhiteSpace(c)));
             var sugestia = ImporterOgolny.SugerujMapowanie(arkusz, _wierszNaglowkaOgolny);
-            MapowanieKolumny.Clear();
             var maxKol = arkusz.Wiersze.Select(w => w.Komorki.Count).DefaultIfEmpty(0).Max();
-            var naglowek = arkusz.Wiersze.FirstOrDefault();
+            var naglowek = arkusz.Wiersze[_wierszNaglowkaOgolny];
             for (var i = 0; i < maxKol; i++)
-                MapowanieKolumny.Add(new WierszMapowaniaKolumny
+            {
+                var w = new WierszMapowaniaKolumny
                 {
                     Indeks = i,
-                    Naglowek = naglowek?.Komorka(i),
+                    Naglowek = naglowek.Komorka(i),
                     Pole = sugestia.Kolumny.TryGetValue(i, out var p) ? p : PoleImportu.Puste,
-                });
-            Komunikat = $"Plik wczytany: {arkusz.Wiersze.Count} wierszy. Ustaw mapowanie kolumn i kliknij „Podgląd”.";
+                };
+                w.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName == nameof(WierszMapowaniaKolumny.Pole))
+                        UniewaznijPodgladOgolny();
+                };
+                MapowanieKolumny.Add(w);
+            }
+            Komunikat = $"Plik wczytany: {arkusz.Wiersze.Count} wierszy. Sprawdź mapowanie i kliknij „Podgląd”.";
         }
         catch (Exception ex)
         {
+            _arkuszeOgolne.Clear();
+            SciezkaOgolna = "";
+            MapowanieKolumny.Clear();
             Komunikat = $"Nie udało się odczytać pliku: {ex.Message}";
+        }
+        finally
+        {
+            CzyZajety = false;
         }
     }
 
@@ -248,9 +338,22 @@ public partial class ImportViewModel
     [RelayCommand]
     private void PodgladOgolnyKomenda()
     {
-        if (_arkuszeOgolne.Count == 0)
+        if (_arkuszeOgolne.Count == 0 || CzyZajety)
         {
             Komunikat = "Najpierw wybierz plik.";
+            return;
+        }
+        if (!MapowanieKolumny.Any(w => w.Pole is PoleImportu.Nazwa or PoleImportu.Firma))
+        {
+            UniewaznijPodgladOgolny();
+            Komunikat = "Przypisz co najmniej jedną kolumnę do pola „Nazwa” lub „Firma”.";
+            return;
+        }
+        if (MapowanieKolumny.Where(w => w.Pole != PoleImportu.Puste)
+            .GroupBy(w => w.Pole).Any(g => g.Count() > 1))
+        {
+            UniewaznijPodgladOgolny();
+            Komunikat = "Jedno pole docelowe nie może być przypisane do wielu kolumn.";
             return;
         }
         var mapowanie = new MapowanieKolumn
@@ -265,6 +368,7 @@ public partial class ImportViewModel
             w.PropertyChanged += (_, _) => OnPropertyChanged(nameof(LiczbaPodgladOgolny));
         OnPropertyChanged(nameof(PodgladOgolny));
         OnPropertyChanged(nameof(LiczbaPodgladOgolny));
+        OnPropertyChanged(nameof(MaPodgladOgolny));
         Komunikat = $"Podgląd: {LiczbaPodgladOgolny} przedmiotów do dodania (zaznacz „Pomiń”, aby wykluczyć wiersz).";
     }
 
@@ -272,18 +376,35 @@ public partial class ImportViewModel
     [RelayCommand]
     private void ZastosujOgolny()
     {
-        if (_podgladOgolny.Count == 0)
+        if (_podgladOgolny.Count == 0 || CzyZajety)
         {
             Komunikat = "Najpierw przygotuj podgląd.";
             return;
         }
-        _magazyn.UtworzKopieZapasowa(_dane); // FR-1107: przed importem kopia (kopia zawiera stan sprzed importu)
-        var liczba = ImporterOgolny.Zastosuj(_dane, _podgladOgolny.Select(w => { w.Wiersz.Pomin = w.Pomin; return w.Wiersz; }));
-        _magazyn.Zapisz(_dane);
-        Komunikat = $"Zaimportowano {liczba} przedmiotów. Rekordy mają znacznik „z importu, do przeglądu” (FR-1110).";
-        _podgladOgolny = new List<WierszPodgladuOgolnegoVm>();
-        OnPropertyChanged(nameof(PodgladOgolny));
-        OnPropertyChanged(nameof(LiczbaPodgladOgolny));
+        try
+        {
+            CzyZajety = true;
+            var wybrane = _podgladOgolny.Select(w =>
+            {
+                w.Wiersz.Pomin = w.Pomin;
+                return w.Wiersz;
+            }).ToList();
+            _magazyn.UtworzKopieZapasowa(_dane);
+            var liczba = TransakcjaDanych.Wykonaj(_dane, robocza => ImporterOgolny.Zastosuj(robocza, wybrane));
+            _magazyn.Zapisz(_dane);
+            UniewaznijPodgladOgolny();
+            Komunikat = $"Zaimportowano {liczba} przedmiotów. Rekordy mają znacznik „z importu, do przeglądu”.";
+            DaneZmienione?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            UniewaznijPodgladOgolny();
+            Komunikat = "Błąd importu ogólnego: " + ex.Message;
+        }
+        finally
+        {
+            CzyZajety = false;
+        }
     }
 
     /// <summary>Zapisuje bieżące mapowanie pod nazwą (FR-1403 — wielokrotnego użytku).</summary>
@@ -325,5 +446,6 @@ public partial class ImportViewModel
             : null;
         foreach (var w in MapowanieKolumny)
             w.Pole = mapowanie.Kolumny.TryGetValue(w.Indeks, out var p) ? p : PoleImportu.Puste;
+        UniewaznijPodgladOgolny();
     }
 }
