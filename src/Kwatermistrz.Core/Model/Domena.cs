@@ -248,7 +248,14 @@ public class ElementWariantu
 public class Wyprawa
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    /// <summary>Import historyczny: nieznana data pozostaje default (nie 01.01).</summary>
     public DateOnly Data { get; set; }
+    /// <summary>Znany rok przy nieznanym dniu/miesiącu.</summary>
+    public int? RokHistoryczny { get; set; }
+    /// <summary>Nazwa nadana przy identyfikacji z historii, np. Wyprawa_12.</summary>
+    public string? NazwaHistoryczna { get; set; }
+    /// <summary>Prawda dla historycznej wyprawy, nie dla zwykłego, nowego wpisu.</summary>
+    public bool CzyHistoryczna { get; set; }
     public string? RekonstrukcjaId { get; set; }
     public string? Miejsce { get; set; }
     public string? ReplikaGlownaId { get; set; }
