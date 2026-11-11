@@ -52,6 +52,18 @@ public partial class ImportViewModel : ObservableObject
     [ObservableProperty]
     private string _sciezka = "";
 
+    /// <summary>Inne importy mogły zmienić słowniki; stary podgląd należy zbudować od nowa.</summary>
+    public void OdswiezZrodla()
+    {
+        OnPropertyChanged(nameof(Kategorie));
+        if (Podglad != null)
+        {
+            Podglad = null;
+            Komunikat = "Dane zmieniły się. Wczytaj plik ponownie, aby przygotować aktualny podgląd.";
+        }
+        UniewaznijPodgladOgolny();
+    }
+
     /// <summary>Komunikat dla użytkownika (wynik importu lub błąd).</summary>
     [ObservableProperty]
     private string _komunikat = "";
