@@ -83,15 +83,15 @@
                          BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
                          AlternationCount="2"
                          AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
-                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         CanUserResizeColumns="True" ColumnWidth="*"
                          HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Data" Binding="{Binding Data, Converter={StaticResource KonwerterDaty}}" Width="Auto" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Miejsce" Binding="{Binding Miejsce}" Width="Auto" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Replika główna" Binding="{Binding ReplikaNazwa}" Width="Auto" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Zestaw" Binding="{Binding ZestawNazwa}" Width="Auto" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Mundur" Binding="{Binding MundurNazwa}" Width="Auto" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Komentarz" Binding="{Binding Komentarz}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Data" Binding="{Binding Data, Converter={StaticResource KonwerterDaty}}" Width="1.3*" MinWidth="100" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Miejsce" Binding="{Binding Miejsce}" Width="1.6*" MinWidth="120" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Replika główna" Binding="{Binding ReplikaNazwa}" Width="2.1*" MinWidth="150" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Zestaw" Binding="{Binding ZestawNazwa}" Width="1.6*" MinWidth="120" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Mundur" Binding="{Binding MundurNazwa}" Width="1.6*" MinWidth="120" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Komentarz" Binding="{Binding Komentarz}" Width="2.5*" MinWidth="145" />
                     <DataGridTemplateColumn Header="Akcje" Width="70">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

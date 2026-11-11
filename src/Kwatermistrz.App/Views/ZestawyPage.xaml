@@ -64,17 +64,17 @@
                          BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
                          AlternationCount="2"
                          AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
-                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         CanUserResizeColumns="True" ColumnWidth="*"
                          HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Wyprawy" Binding="{Binding Wyprawy}" Width="Auto" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="%" Width="Auto">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="2.6*" MinWidth="155" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Wyprawy" Binding="{Binding Wyprawy}" Width="0.95*" MinWidth="75" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="%" Width="0.65*" MinWidth="58">
                         <DataGridTextColumn.Binding>
                             <Binding Path="Procent" Converter="{StaticResource KonwerterProcentu}" />
                         </DataGridTextColumn.Binding>
                     </DataGridTextColumn>
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Ostatnie" Width="Auto">
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Ostatnie" Width="1.3*" MinWidth="100">
                         <DataGridTextColumn.Binding>
                             <Binding Path="OstatnieUzycie" Converter="{StaticResource KonwerterDaty}" />
                         </DataGridTextColumn.Binding>

@@ -54,13 +54,13 @@
                          BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
                          AlternationCount="2"
                          AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
-                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         CanUserResizeColumns="True" ColumnWidth="*"
                          HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Rodzaj" Binding="{Binding Rodzaj}" Width="Auto" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa z pakietu" Binding="{Binding Nazwa}" Width="Auto" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Szczegóły" Binding="{Binding Opis}" Width="Auto" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Istniejąca" Binding="{Binding Istniejaca}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Rodzaj" Binding="{Binding Rodzaj}" Width="1.25*" MinWidth="90" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa z pakietu" Binding="{Binding Nazwa}" Width="2.6*" MinWidth="155" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Szczegóły" Binding="{Binding Opis}" Width="2.5*" MinWidth="145" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Istniejąca" Binding="{Binding Istniejaca}" Width="1.6*" MinWidth="120" />
                     <DataGridTemplateColumn Header="Decyzja" Width="180">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

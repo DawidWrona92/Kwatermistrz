@@ -32,10 +32,10 @@
                          BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
                          AlternationCount="2"
                          AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
-                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         CanUserResizeColumns="True" ColumnWidth="*"
                          HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="2.6*" MinWidth="155" />
                     <DataGridTemplateColumn Header="Akcje" Width="120">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

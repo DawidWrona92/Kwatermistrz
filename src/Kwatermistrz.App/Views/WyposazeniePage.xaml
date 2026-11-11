@@ -85,7 +85,7 @@
                          BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
                          AlternationCount="2"
                          AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
-                         CanUserResizeColumns="True" ColumnWidth="Auto"
+                         CanUserResizeColumns="True" ColumnWidth="*"
                          HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
                     <DataGridTemplateColumn Header="" Width="30">
@@ -96,7 +96,7 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                     <!-- NFR-08: próbka wzoru zawsze ma obok nazwę (tekst), tooltip z nazwą przy najechaniu -->
-                    <DataGridTemplateColumn Header="Wzór" Width="Auto">
+                    <DataGridTemplateColumn Header="Wzór" Width="1.6*" MinWidth="120">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -127,7 +127,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Firma" Binding="{Binding Firma}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Firma" Binding="{Binding Firma}" Width="1.25*" MinWidth="90" />
                     <DataGridTemplateColumn Header="Zdjęcie" Width="56">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -137,11 +137,11 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="Auto" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Miejsce" Binding="{Binding MiejsceId}" Width="Auto" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Użycia" Binding="{Binding Uzycia}" Width="Auto" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Status" Binding="{Binding Status}" Width="Auto" />
-                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Komentarz" Binding="{Binding Komentarz}" Width="Auto" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Nazwa" Binding="{Binding Nazwa}" Width="2.6*" MinWidth="155" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Miejsce" Binding="{Binding MiejsceId}" Width="1.6*" MinWidth="120" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Użycia" Binding="{Binding Uzycia}" Width="0.95*" MinWidth="75" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Status" Binding="{Binding Status}" Width="1.25*" MinWidth="90" />
+                    <DataGridTextColumn ElementStyle="{StaticResource WierszTabeliTekst}" Header="Komentarz" Binding="{Binding Komentarz}" Width="2.5*" MinWidth="145" />
                 </DataGrid.Columns>
             </ui:DataGrid>
 
