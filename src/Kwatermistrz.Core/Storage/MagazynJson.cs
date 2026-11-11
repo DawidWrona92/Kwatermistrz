@@ -29,6 +29,9 @@ public class MagazynJson
     private readonly string _sciezka;
     private readonly object _blokada = new();
 
+    /// <summary>Powiadomienie o zmianie dokumentu; nie jest zdarzeniem okresowego flush na dysk.</summary>
+    public event Action? DaneZmienione;
+
     public MagazynJson(string katalogDanych)
     {
         KatalogDanych = katalogDanych;
@@ -131,8 +134,10 @@ public class MagazynJson
     /// <summary>Zapisuje dane atomowo: najpierw plik tymczasowy, potem zamiana. Po powrocie tej metody dane są na dysku (NFR-05).</summary>
     public void Zapisz(DaneAplikacji dane)
     {
+        bool bezWczesniejszegoPowiadomienia;
         lock (_blokada)
         {
+            bezWczesniejszegoPowiadomienia = !_brudne;
             Directory.CreateDirectory(KatalogDanych);
             dane.OstatniaZmiana = DateTime.Now;
             var start = System.Diagnostics.Stopwatch.StartNew();
@@ -157,6 +162,10 @@ public class MagazynJson
             if (start.ElapsedMilliseconds > 500)
                 ZanotujWolnyZapis(start.ElapsedMilliseconds);
         }
+        // Zapis bez ZapiszDebounce to również zmiana w aplikacji.
+        // Flush już ogłoszonej zmiany nie powoduje kolejnego odświeżania.
+        if (bezWczesniejszegoPowiadomienia)
+            DaneZmienione?.Invoke();
     }
 
     /// <summary>Flaga „są niezapisane zmiany” — ustawiana przez ZapiszDebounce, zdejmowana przez Zapisz/ZapiszJezeliBrudne.</summary>
@@ -172,6 +181,9 @@ public class MagazynJson
             _brudne = true;
             dane.OstatniaZmiana = DateTime.Now;
         }
+        // Podnosimy zdarzenie PO wyjściu z locka. Odbiorcy tylko planują
+        // odświeżenie UI, bez zapisu i bez ponownej serializacji.
+        DaneZmienione?.Invoke();
     }
 
     /// <summary>Czy są odłożone (niezapisane) zmiany.</summary>
