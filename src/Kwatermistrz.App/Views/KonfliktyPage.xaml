@@ -1,0 +1,99 @@
+<Page x:Class="Kwatermistrz.App.Views.KonfliktyPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:controls="clr-namespace:Kwatermistrz.App.Controls"
+      xmlns:conv="clr-namespace:Kwatermistrz.App.Converters"
+      Title="Konflikty" TextElement.Foreground="{DynamicResource TekstAplikacji}">
+    <Page.Resources>
+        <conv:KonwerterBoolToVisibility x:Key="WidoczneGdyTrue" />
+    </Page.Resources>
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="Konflikty i uzgadnianie historii"
+                   Style="{StaticResource TytulEkranu}" />
+        <TextBlock Grid.Row="1" Margin="0,8,0,12" TextWrapping="Wrap"
+                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                   Text="Nieznane wyprawy są odtworzone z historycznych liczników. Nie zakładamy fikcyjnych dat ani nie przypisujemy replik na podstawie domysłów. Wybierz pozycję poniżej i uzupełnij dostępne informacje. Historia i raporty korzystają z tego samego rejestru."/>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*" MinWidth="380"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="2*" MinWidth="310"/>
+            </Grid.ColumnDefinitions>
+            <ui:DataGrid x:Name="ListaKonfliktow" Grid.Column="0"
+                         ItemsSource="{Binding Wiersze}"
+                         AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                         SelectedItem="{Binding Wybrany}"
+                         CanUserResizeColumns="True" ColumnWidth="*" HeadersVisibility="Column"
+                         HorizontalScrollBarVisibility="Auto"
+                         GridLinesVisibility="All"
+                         HorizontalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         VerticalGridLinesBrush="{DynamicResource LiniaTabeli}"
+                         BorderBrush="{DynamicResource LiniaTabeli}" BorderThickness="1"
+                         AlternationCount="2"
+                         AlternatingRowBackground="{DynamicResource WierszTabeliNaprzemienny}"
+                         controls:ProporcjonalneKolumny.Wlaczone="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Typ" Binding="{Binding Typ}" Width="1.5*" MinWidth="165"
+                                        ElementStyle="{StaticResource WierszTabeliTekst}"/>
+                    <DataGridTextColumn Header="Pozycja" Binding="{Binding Nazwa}" Width="1.4*" MinWidth="145"
+                                        ElementStyle="{StaticResource WierszTabeliTekst}"/>
+                    <DataGridTextColumn Header="Opis problemu" Binding="{Binding Szczegoly}" Width="3*" MinWidth="260"
+                                        ElementStyle="{StaticResource WierszTabeliTekst}"/>
+                </DataGrid.Columns>
+            </ui:DataGrid>
+            <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                          Width="8" Cursor="SizeWE" ResizeDirection="Columns"
+                          Background="{DynamicResource LiniaTabeli}" />
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Margin="14,0,0,0">
+                <StackPanel>
+                    <TextBlock Text="Uzupełnij wybraną pozycję" Style="{StaticResource NaglowekSekcji}"/>
+                    <TextBlock Text="{Binding Wybrany.Nazwa}" FontWeight="SemiBold" Margin="0,10,0,3"/>
+                    <TextBlock Text="{Binding Wybrany.Szczegoly}" TextWrapping="Wrap" Margin="0,0,0,12"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <StackPanel Visibility="{Binding CzyWyprawa, Converter={StaticResource WidoczneGdyTrue}}">
+                        <TextBlock Text="Data wyprawy (opcjonalnie — nieznana to NN-NN-NNNN)" TextWrapping="Wrap"/>
+                        <DatePicker SelectedDate="{Binding Data, Mode=TwoWay}" Margin="0,5,0,12"
+                                    HorizontalAlignment="Left" Width="200" />
+                        <TextBlock Text="Replika (opcjonalnie; tylko jeśli można uzgodnić historyczne użycie)"/>
+                        <ComboBox ItemsSource="{Binding Repliki}" SelectedValue="{Binding ReplikaId}"
+                                  SelectedValuePath="Id" DisplayMemberPath="ModelProducenta"
+                                  IsEditable="False" Margin="0,5,0,12" />
+                        <TextBlock Text="Zestaw (opcjonalnie)" />
+                        <ComboBox ItemsSource="{Binding Zestawy}" SelectedValue="{Binding ZestawId}"
+                                  SelectedValuePath="Id" DisplayMemberPath="Nazwa"
+                                  Margin="0,5,0,12" />
+                        <TextBlock Text="Nieznane daty, replikę i zestaw możesz uzupełnić później. Zidentyfikowana wyprawa zastępuje jedną pozycję licznika rocznego."
+                                   TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+                    <StackPanel Visibility="{Binding CzyMiejsce, Converter={StaticResource WidoczneGdyTrue}}">
+                        <TextBlock Text="Poprawne miejsce przechowywania"/>
+                        <ComboBox ItemsSource="{Binding Miejsca}" DisplayMemberPath="Nazwa"
+                                  SelectedValuePath="Id" SelectedValue="{Binding MiejsceId}"
+                                  Margin="0,5,0,8"/>
+                        <TextBlock Text="Id istniejącego rekordu nie zostanie zmienione. Modyfikujemy tylko powiązanie z właściwą nazwą miejsca."
+                                   TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <ui:Button Appearance="Primary" Content="Zapisz uzgodnienie" Margin="0,18,0,0"
+                               HorizontalAlignment="Left" Padding="16,8"
+                               Command="{Binding ZapiszRozwiazanieCommand}" />
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+        <StackPanel Grid.Row="3" Margin="0,10,0,0">
+            <TextBlock Text="{Binding Komunikat}" TextWrapping="Wrap"/>
+            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Do uzgodnienia: "/>
+                <TextBlock Text="{Binding LiczbaKonfliktow}"/>
+                <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="   W tym nierozpoznane wyprawy: "/>
+                <TextBlock Text="{Binding LiczbaWyprawHistorycznych}"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Page>
