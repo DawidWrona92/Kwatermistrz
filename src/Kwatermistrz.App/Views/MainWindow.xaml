@@ -147,6 +147,11 @@
                     </ui:NavigationViewItem>
                 </ui:NavigationView.MenuItems>
                 <ui:NavigationView.FooterMenuItems>
+                    <ui:NavigationViewItem Content="Rekonstrukcje" Tag="Rekonstrukcje">
+                        <ui:NavigationViewItem.Icon>
+                            <ui:SymbolIcon Symbol="People24" />
+                        </ui:NavigationViewItem.Icon>
+                    </ui:NavigationViewItem>
                     <ui:NavigationViewItem Content="Słowniki" Tag="Slowniki">
                         <ui:NavigationViewItem.Icon>
                             <ui:SymbolIcon Symbol="List24" />
