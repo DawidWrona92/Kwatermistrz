@@ -37,6 +37,19 @@ public partial class WierszDecyzji : ObservableObject
     /// <summary>Czy wiersz reprezentuje wartość, którą można scalić (ma dopasowanie lokalne).</summary>
     [ObservableProperty]
     private bool _czyMoznaScalac;
+
+    /// <summary>Opcje zależą od rodzaju i od tego, czy istnieje rekord do scalenia.</summary>
+    public IReadOnlyList<string> OpcjeAkcji => Rodzaj switch
+    {
+        "Szablon karty" => new[] { "Dodaj nowy", "Pomiń" },
+        "Rekonstrukcja" when CzyMoznaScalac => new[] { "Dodaj nową", "Scal szablony", "Pomiń" },
+        "Rekonstrukcja" => new[] { "Dodaj nową", "Pomiń" },
+        _ when CzyMoznaScalac => new[] { "Dodaj nową", "Scal z istniejącą", "Pomiń" },
+        _ => new[] { "Dodaj nową", "Pomiń" },
+    };
+
+    partial void OnCzyMoznaScalacChanged(bool value) =>
+        OnPropertyChanged(nameof(OpcjeAkcji));
 }
 
 /// <summary>ViewModel ekranu pakietów konfiguracji (FR-1404): eksport konfiguracji bez danych o sprzęcie, import z podglądem i scalaniem słowników (FR-1003).</summary>
@@ -45,6 +58,9 @@ public partial class PakietyViewModel : ObservableObject
     private readonly DaneAplikacji _dane;
     private readonly MagazynJson _magazyn;
     private PodgladPakietuKonfiguracji? _podglad;
+
+    public event Action? DaneZmienione;
+    public bool MaPodglad => _podglad != null;
 
     public PakietyViewModel(DaneAplikacji dane, MagazynJson magazyn)
     {
@@ -110,10 +126,17 @@ public partial class PakietyViewModel : ObservableObject
                 $"wartości do dodania: {_podglad.LiczbaWartosciDoDodania}, do scalenia: {_podglad.LiczbaWartosciDoScalenia}, " +
                 $"rekonstrukcje: {_podglad.LiczbaRekonstrukcjiDoDodania}, szablony kart: {_podglad.LiczbaSzablonowDoDodania}";
             BudujWiersze();
+            OnPropertyChanged(nameof(MaPodglad));
             Komunikat = "";
         }
         catch (Exception ex)
         {
+            _podglad = null;
+            Wiersze.Clear();
+            SciezkaPakietu = "";
+            InfoPakietu = "";
+            OnPropertyChanged(nameof(MaPodglad));
+            OnPropertyChanged(nameof(MaPodglad));
             Komunikat = "Nie udało się wczytać pakietu: " + ex.Message;
         }
     }
@@ -174,7 +197,7 @@ public partial class PakietyViewModel : ObservableObject
         {
             AkcjaWartosci.DodajNowa => 0,
             AkcjaWartosci.ScalZIstniejaca => 1,
-            _ => 2,
+            _ => wiersz.CzyMoznaScalac ? 2 : 1,
         };
         wiersz.Akcja = akcja switch
         {
@@ -197,7 +220,7 @@ public partial class PakietyViewModel : ObservableObject
         {
             AkcjaRekonstrukcji.DodajNowa => 0,
             AkcjaRekonstrukcji.ScalSzablony => 1,
-            _ => 2,
+            _ => wiersz.CzyMoznaScalac ? 2 : 1,
         };
         wiersz.Akcja = d.Akcja switch
         {
@@ -222,41 +245,44 @@ public partial class PakietyViewModel : ObservableObject
         return wiersz;
     }
 
-    /// <summary>Zmiana decyzji w wierszu podglądu (indeks 0/1/2 zależy od rodzaju).</summary>
+    /// <summary>Decyzja jest mapowana po etykiecie, nie indeksie (różne opcje przy braku dopasowania).</summary>
     [RelayCommand]
-    private static void ZmienDecyzje(WierszDecyzji wiersz)
+    private static void ZmienDecyzje(WierszDecyzji? wiersz)
     {
         if (wiersz == null)
             return;
+        var wybor = wiersz.OpcjeAkcji.ElementAtOrDefault(wiersz.IndeksAkcji) ?? "Pomiń";
+        wiersz.Akcja = wybor;
         switch (wiersz.Decyzja)
         {
             case DecyzjaRekonstrukcji dr:
-                dr.Akcja = wiersz.IndeksAkcji switch
+                dr.Akcja = wybor switch
                 {
-                    0 => AkcjaRekonstrukcji.DodajNowa,
-                    1 => AkcjaRekonstrukcji.ScalSzablony,
+                    "Dodaj nową" => AkcjaRekonstrukcji.DodajNowa,
+                    "Scal szablony" => AkcjaRekonstrukcji.ScalSzablony,
                     _ => AkcjaRekonstrukcji.Pominij,
                 };
                 break;
             case DecyzjaSzablonuKarty ds:
-                ds.Akcja = wiersz.IndeksAkcji == 0 ? AkcjaSzablonuKarty.DodajNowy : AkcjaSzablonuKarty.Pominij;
+                ds.Akcja = wybor == "Dodaj nowy"
+                    ? AkcjaSzablonuKarty.DodajNowy : AkcjaSzablonuKarty.Pominij;
                 break;
             case DecyzjaWartosc<WartoscSlownika> d:
-                d.Akcja = IndeksDoAkcji(wiersz.IndeksAkcji);
+                d.Akcja = WyborWartosci(wybor);
                 break;
             case DecyzjaWartosc<WzorKamuflazu> d:
-                d.Akcja = IndeksDoAkcji(wiersz.IndeksAkcji);
+                d.Akcja = WyborWartosci(wybor);
                 break;
             case DecyzjaWartosc<Kategoria> d:
-                d.Akcja = IndeksDoAkcji(wiersz.IndeksAkcji);
+                d.Akcja = WyborWartosci(wybor);
                 break;
         }
     }
 
-    private static AkcjaWartosci IndeksDoAkcji(int indeks) => indeks switch
+    private static AkcjaWartosci WyborWartosci(string wybor) => wybor switch
     {
-        0 => AkcjaWartosci.DodajNowa,
-        1 => AkcjaWartosci.ScalZIstniejaca,
+        "Dodaj nową" => AkcjaWartosci.DodajNowa,
+        "Scal z istniejącą" => AkcjaWartosci.ScalZIstniejaca,
         _ => AkcjaWartosci.Pominij,
     };
 
@@ -271,13 +297,17 @@ public partial class PakietyViewModel : ObservableObject
         }
         try
         {
-            _magazyn.Zapisz(_dane);
             _magazyn.UtworzKopieZapasowa(_dane);
-            ImporterPakietuKonfiguracji.Zastosuj(_dane, _podglad);
+            TransakcjaDanych.Wykonaj(_dane, robocza =>
+            {
+                ImporterPakietuKonfiguracji.Zastosuj(robocza, _podglad);
+                return true;
+            });
             _magazyn.Zapisz(_dane);
             Komunikat = $"Zaimportowano: {_podglad.LiczbaWartosciDoDodania} nowych wartości, " +
                 $"{_podglad.LiczbaWartosciDoScalenia} scalonych, {_podglad.LiczbaRekonstrukcjiDoDodania} rekonstrukcji, " +
                 $"{_podglad.LiczbaSzablonowDoDodania} szablonów kart.";
+            DaneZmienione?.Invoke();
             _podglad = null;
             Wiersze.Clear();
             SciezkaPakietu = "";
