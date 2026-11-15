@@ -36,6 +36,9 @@ jobs:
       - name: Testy Core
         run: dotnet test tests/Kwatermistrz.Core.Tests/Kwatermistrz.Core.Tests.csproj --configuration Release --no-build
 
+      - name: Smoke test WPF — próbka kamuflażu (STA)
+        run: dotnet run --project tests/Kwatermistrz.App.Smoke/Kwatermistrz.App.Smoke.csproj --configuration Release
+
 
       - name: Publikuj gotową aplikację Windows x64 (bez wymagania .NET)
         run: >
@@ -61,7 +64,7 @@ jobs:
           łącznie z dane.json, kopią zapasową i zdjęciami.
           To build testowy PR, nie wydanie stabilne.
           
-          Wyprawy 1.1 i Import 1.2 — wymagają ręcznej akceptacji.
+          Wyprawy 1.1, Import 1.2 i Jedno źródło prawdy 1.3 — wymagają ręcznej akceptacji.
           Instrukcje testów są w docs/testy-wypraw-1.1.md
           i docs/testy-import-1.2.md w repozytorium.
           '@ | Set-Content -Path dist/Kwatermistrz/PRZECZYTAJ-PRZED-STARTEM.txt -Encoding UTF8
