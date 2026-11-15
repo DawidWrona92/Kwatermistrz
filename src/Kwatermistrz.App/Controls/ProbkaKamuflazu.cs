@@ -63,7 +63,7 @@ public class ProbkaKamuflazu : Control
         ApplyTemplate();
     }
 
-    private static Brush Pedzel(string kolor)
+    private static SolidColorBrush Pedzel(string kolor)
     {
         try
         {
