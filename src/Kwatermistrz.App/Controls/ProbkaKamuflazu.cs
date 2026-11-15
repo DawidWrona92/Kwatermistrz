@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using Kwatermistrz.Core.Model;
 
@@ -21,7 +22,8 @@ public class ProbkaKamuflazu : Control
 
     static ProbkaKamuflazu()
     {
-        DefaultStyleKeyProperty.OverrideMetadata(typeof(ProbkaKamuflazu), new FrameworkPropertyMetadata(typeof(ProbkaKamuflazu)));
+        DefaultStyleKeyProperty.OverrideMetadata(typeof(ProbkaKamuflazu),
+            new FrameworkPropertyMetadata(typeof(ProbkaKamuflazu)));
     }
 
     private static void OnWzorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -32,19 +34,55 @@ public class ProbkaKamuflazu : Control
 
     private void Rysuj()
     {
-        Template = new ControlTemplate(typeof(ProbkaKamuflazu));
-        var grid = new FrameworkElementFactory(typeof(Grid));
-        var kolory = Wzor?.KoloryProbki.Count > 0 ? Wzor.KoloryProbki : new List<string> { "#CDD0CA" };
-        var liczba = Math.Min(kolory.Count, 4);
-        for (var i = 0; i < liczba; i++)
+        // WAŻNE: najpierw budujemy CAŁY ControlTemplate, a dopiero potem przypisujemy
+        // go do kontrolki. Po pierwszym ApplyTemplate WPF pieczętuje szablon —
+        // ustawianie Template.VisualTree na już używanym szablonie powodowało
+        // InvalidOperationException i pętlę wyjątków podczas startu aplikacji.
+        var siatka = new FrameworkElementFactory(typeof(UniformGrid));
+        siatka.SetValue(UniformGrid.RowsProperty, 2);
+        siatka.SetValue(UniformGrid.ColumnsProperty, 2);
+
+        var kolory = Wzor?.KoloryProbki?
+            .Where(k => !string.IsNullOrWhiteSpace(k))
+            .Take(4)
+            .ToArray() ?? Array.Empty<string>();
+
+        for (var i = 0; i < 4; i++)
         {
             var prostokat = new FrameworkElementFactory(typeof(Border));
-            prostokat.SetValue(Grid.RowProperty, i / 2);
-            prostokat.SetValue(Grid.ColumnProperty, i % 2);
-            prostokat.SetValue(Border.BackgroundProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString(kolory[i])));
-            grid.AppendChild(prostokat);
+            var kolor = kolory.Length > 0 ? kolory[i % kolory.Length] : "#CDD0CA";
+            prostokat.SetValue(Border.BackgroundProperty, Pedzel(kolor));
+            siatka.AppendChild(prostokat);
         }
-        Template.VisualTree = grid;
+
+        var szablon = new ControlTemplate(typeof(ProbkaKamuflazu))
+        {
+            VisualTree = siatka,
+        };
+        Template = szablon;
         ApplyTemplate();
+    }
+
+    private static Brush Pedzel(string kolor)
+    {
+        try
+        {
+            if (ColorConverter.ConvertFromString(kolor) is Color odczytany)
+            {
+                var pedzel = new SolidColorBrush(odczytany);
+                pedzel.Freeze();
+                return pedzel;
+            }
+        }
+        catch (FormatException)
+        {
+            // Uszkodzony kolor z importu nie może zamknąć całej aplikacji.
+        }
+        catch (NotSupportedException)
+        {
+            // Nierozpoznany zapis koloru: bezpieczny zamiennik.
+        }
+
+        return Brushes.LightGray;
     }
 }
