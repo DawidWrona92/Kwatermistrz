@@ -92,7 +92,7 @@
                                Visibility="{Binding OstatniPomiar.NaMaksimum, Converter={StaticResource KonwerterBoolToVisibility}}" />
                 </StackPanel>
                 <TextBlock Margin="0,4,0,0">
-                    <Run Text="Ostatni test: " /><Run Text="{Binding Data, Mode=OneWayOstatniegoTestu, Mode=OneWay, Converter={StaticResource KonwerterDaty}}" />
+                    <Run Text="Ostatni test: " /><Run Text="{Binding DataOstatniegoTestu, Mode=OneWay, Converter={StaticResource KonwerterDaty}}" />
                 </TextBlock>
                 <TextBlock Margin="0,4,0,0">
                     <Run Text="Otwarte zadania: " /><Run Text="{Binding OtwarteZadania, Mode=OneWay}" />
@@ -102,7 +102,7 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Margin="0,2">
-                                <Run Text="{Binding Data, Converter={StaticResource KonwerterDaty}}" />
+                                <Run Text="{Binding Data, Mode=OneWay, Converter={StaticResource KonwerterDaty}}" />
                                 <Run Text=" — " />
                                 <Run Text="{Binding Miejsce, Mode=OneWay}" />
                             </TextBlock>
