@@ -49,8 +49,9 @@ internal static class Program
 
         void SprawdzSiatke(string nazwa)
         {
-            if (!probka.ApplyTemplate())
-                throw new InvalidOperationException($"Nie zastosowano szablonu: {nazwa}");
+            probka.ApplyTemplate(); // może zwrócić false, gdy szablon zastosowano już w OnWzorChanged
+            if (probka.Template == null)
+                throw new InvalidOperationException($"Brak szablonu: {nazwa}");
             probka.Measure(new Size(24, 24));
             probka.Arrange(new Rect(0, 0, 24, 24));
             if (VisualTreeHelper.GetChildrenCount(probka) != 1
