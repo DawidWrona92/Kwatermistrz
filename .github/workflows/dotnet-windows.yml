@@ -15,6 +15,9 @@ permissions:
 jobs:
   build-and-test:
     name: Kompilacja WPF i testy Core (.NET 10)
+    # Draft PR-y są rozwijane etapami: nie uruchamiaj kosztownego buildu po każdym commicie.
+    # Sprawdzaj main oraz PR gotowy do przeglądu; ręczny workflow_dispatch działa zawsze.
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: windows-latest
     timeout-minutes: 25
 
