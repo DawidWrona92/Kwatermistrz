@@ -42,8 +42,8 @@ public partial class KreatorViewModel : ObservableObject
     [ObservableProperty]
     private string _wybranyStart = SzablonyKonfiguracji.Pusta;
 
-    /// <summary>Lista punktów startu: publiczne właściwości Klucz/Nazwa wiązane przez WPF.</summary>
-    public static IReadOnlyList<OpcjaStartu> Starty { get; } = SzablonyKonfiguracji.Lista
+    /// <summary>Instancyjna lista opcji — wiązanie ItemsSource={Binding Starty} działa na DataContext kreatora.</summary>
+    public IReadOnlyList<OpcjaStartu> Starty { get; } = SzablonyKonfiguracji.Lista
         .Select(w => new OpcjaStartu(w.Klucz, w.Nazwa))
         .Append(new OpcjaStartu("import", "Import z arkusza Excel (Dane_zrodlowe_Kwatermistrz.xlsx)"))
         .ToList();
