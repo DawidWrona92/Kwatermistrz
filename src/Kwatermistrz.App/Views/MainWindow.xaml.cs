@@ -304,10 +304,15 @@ public partial class MainWindow : FluentWindow
 
     protected override void OnClosed(EventArgs e)
     {
-        var u = App.Dane.Ustawienia;
-        u.SzerokoscOkna = Width;
-        u.WysokoscOkna = Height;
-        App.Magazyn.ZapiszDebounce(App.Dane);
+        // Anulowany kreator nie może zapisać pustej konfiguracji przez
+        // zamykanie głównego okna wywołane przez Application.Shutdown().
+        if (!App.Dane.CzyPierwszeUruchomienie)
+        {
+            var u = App.Dane.Ustawienia;
+            u.SzerokoscOkna = Width;
+            u.WysokoscOkna = Height;
+            App.Magazyn.ZapiszDebounce(App.Dane);
+        }
         base.OnClosed(e);
     }
 }
