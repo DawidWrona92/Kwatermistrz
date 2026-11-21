@@ -82,7 +82,7 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="0,16,0,0">
                 <TextBlock Text="Punkt startu" FontWeight="SemiBold" />
-                <ItemsControl ItemsSource="{Binding Starty}" Margin="0,4,0,0">
+                <ItemsControl x:Name="ListaStartow" ItemsSource="{Binding Starty}" Margin="0,4,0,0">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <RadioButton GroupName="Start" Margin="0,4,0,0"
