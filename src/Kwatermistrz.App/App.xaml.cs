@@ -153,7 +153,13 @@ public partial class App : Application
                 Owner = mainWindow,
                 DataContext = new KreatorViewModel(dane, Magazyn),
             };
-            kreator.ShowDialog();
+            // Zamknięcie kreatora krzyżykiem oznacza anulowanie pierwszego uruchomienia.
+            // Nie zostawiamy włączonego głównego okna z nieukończoną konfiguracją.
+            if (kreator.ShowDialog() != true)
+            {
+                Shutdown();
+                return;
+            }
         }
 
         if (!kontrola.CzyPoprawne && kontrola.Komunikat != null)
