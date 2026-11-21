@@ -41,6 +41,16 @@
             <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
             <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
             <Setter Property="MinHeight" Value="28" />
+            <Style.Triggers>
+                <Trigger Property="IsHighlighted" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                    <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                    <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
         <Style x:Key="PrzyciskKreatora" TargetType="{x:Type Button}">
             <Setter Property="Background" Value="#2F4A6B" />
@@ -108,7 +118,10 @@
                           ItemsSource="{Binding Strony}"
                           SelectedValue="{Binding WybranaStronaId}"
                           SelectedValuePath="Id"
-                          DisplayMemberPath="Nazwa" />
+                          DisplayMemberPath="Nazwa"
+                          ToolTip="Opcjonalne: możesz zostawić pole bez wyboru." />
+                <TextBlock Text="Możesz pozostawić to pole puste." FontSize="12" Margin="0,5,0,0"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <TextBlock Text="{Binding Komunikat}" TextWrapping="Wrap" Margin="0,12,0,0"
                            Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
             </StackPanel>
