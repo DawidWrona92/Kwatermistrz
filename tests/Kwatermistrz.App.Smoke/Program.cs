@@ -7,6 +7,7 @@ using Kwatermistrz.App.ViewModels;
 using Kwatermistrz.App.Views;
 using System.Windows.Data;
 using Kwatermistrz.Core.Model;
+using Kwatermistrz.Core.Storage;
 
 internal static class Program
 {
@@ -43,7 +44,8 @@ internal static class Program
 
         // Regresja FR-1401: ValueTuple miał tylko pola Item1/Item2, więc binding
         // do Nazwa/Klucz pokazywał trzy puste przyciski radiowe.
-        var starty = KreatorViewModel.Starty;
+        var modelKreatora = new KreatorViewModel(new DaneAplikacji(), new MagazynJson(Path.GetTempPath()));
+        var starty = modelKreatora.Starty;
         if (starty.Count != 3 || starty.Select(x => x.Klucz).Distinct().Count() != 3)
             throw new InvalidOperationException("Kreator: nieprawidłowe opcje startowe.");
         foreach (var start in starty)
@@ -56,12 +58,17 @@ internal static class Program
                 || nazwa != start.Nazwa)
                 throw new InvalidOperationException($"Kreator: brak etykiety dla {start.Klucz}.");
         }
-        var kreator = new KreatorWindow();
+        var kreator = new KreatorWindow { DataContext = modelKreatora };
+        if (kreator.FindName("ListaStartow") is not ItemsControl lista)
+            throw new InvalidOperationException("Kreator: brak kontrolki listy startowej.");
+        lista.GetBindingExpression(ItemsControl.ItemsSourceProperty)?.UpdateTarget();
+        if (lista.Items.Count != 3)
+            throw new InvalidOperationException($"Kreator: ItemsSource nie pokazało trzech opcji (jest {lista.Items.Count}).");
         if (kreator.WindowStyle != WindowStyle.SingleBorderWindow
             || kreator.ResizeMode != ResizeMode.CanMinimize
             || !kreator.ShowInTaskbar)
             throw new InvalidOperationException("Kreator: brak natywnego paska tytułu z minimalizacją.");
-        Console.WriteLine("OK: Kreator — 3 widoczne etykiety i natywny pasek z minimalizacją.");
+        Console.WriteLine("OK: Kreator — 3 pozycje ItemsSource, widoczne etykiety i natywny pasek z minimalizacją.");
 
         Console.WriteLine("OK: ProbkaKamuflazu — zmiany wzoru, wielokrotny ApplyTemplate i błędny kolor.");
         return 0;
