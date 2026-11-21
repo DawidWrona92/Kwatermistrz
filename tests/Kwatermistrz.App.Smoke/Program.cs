@@ -3,6 +3,9 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using Kwatermistrz.App.Controls;
+using Kwatermistrz.App.ViewModels;
+using Kwatermistrz.App.Views;
+using System.Windows.Data;
 using Kwatermistrz.Core.Model;
 
 internal static class Program
@@ -37,6 +40,28 @@ internal static class Program
         // VisualTree już zapieczętowanego ControlTemplate i wyrzucała wyjątek.
         for (var i = 0; i < 10; i++)
             Sprawdz(new WzorKamuflazu { KoloryProbki = new() { "#00AACC" } }, $"zmiana {i}");
+
+        // Regresja FR-1401: ValueTuple miał tylko pola Item1/Item2, więc binding
+        // do Nazwa/Klucz pokazywał trzy puste przyciski radiowe.
+        var starty = KreatorViewModel.Starty;
+        if (starty.Count != 3 || starty.Select(x => x.Klucz).Distinct().Count() != 3)
+            throw new InvalidOperationException("Kreator: nieprawidłowe opcje startowe.");
+        foreach (var start in starty)
+        {
+            var radio = new RadioButton { DataContext = start };
+            BindingOperations.SetBinding(radio, ContentControl.ContentProperty,
+                new Binding(nameof(OpcjaStartu.Nazwa)));
+            radio.GetBindingExpression(ContentControl.ContentProperty)?.UpdateTarget();
+            if (radio.Content is not string nazwa || string.IsNullOrWhiteSpace(nazwa)
+                || nazwa != start.Nazwa)
+                throw new InvalidOperationException($"Kreator: brak etykiety dla {start.Klucz}.");
+        }
+        var kreator = new KreatorWindow();
+        if (kreator.WindowStyle != WindowStyle.SingleBorderWindow
+            || kreator.ResizeMode != ResizeMode.CanMinimize
+            || !kreator.ShowInTaskbar)
+            throw new InvalidOperationException("Kreator: brak natywnego paska tytułu z minimalizacją.");
+        Console.WriteLine("OK: Kreator — 3 widoczne etykiety i natywny pasek z minimalizacją.");
 
         Console.WriteLine("OK: ProbkaKamuflazu — zmiany wzoru, wielokrotny ApplyTemplate i błędny kolor.");
         return 0;
