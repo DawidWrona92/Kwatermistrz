@@ -15,12 +15,14 @@
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,12,0,8">
             <ui:Button Content="Wybierz plik .xlsx…" Appearance="Primary"
-                       Command="{Binding WybierzPlikCommand}" />
+                       Command="{Binding WybierzPlikCommand}" IsEnabled="{Binding CzyNieZajety}" />
             <TextBlock Text="{Binding Sciezka}" VerticalAlignment="Center" Margin="12,0,0,0"
                        TextTrimming="CharacterEllipsis" MaxWidth="500" />
         </StackPanel>
 
-        <Grid Grid.Row="2">
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+            <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="280" />
                 <ColumnDefinition Width="*" />
@@ -67,17 +69,17 @@
             </StackPanel>
         </Grid>
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,12,0,0">
+        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
             <ui:Button Content="Zastosuj import" Appearance="Primary"
-                       Command="{Binding ZastosujCommand}" />
+                       Command="{Binding ZastosujCommand}" IsEnabled="{Binding MaPodglad}" />
             <TextBlock Text="{Binding Komunikat}" VerticalAlignment="Center" Margin="12,0,0,0" />
         </StackPanel>
 
         <!-- Import ogólny z mapowaniem kolumn (FR-1403) -->
-        <Expander Grid.Row="2" Margin="0,16,0,0" Header="Import ogólny — dowolny plik xlsx/csv z mapowaniem kolumn (FR-1403)">
+        <Expander Margin="0,16,0,0" Header="Import ogólny — plik xlsx/csv z mapowaniem kolumn">
             <StackPanel Margin="0,8,0,0">
                 <StackPanel Orientation="Horizontal">
-                    <ui:Button Content="Wybierz plik xlsx/csv…" Command="{Binding WybierzPlikOgolnyCommand}" />
+                    <ui:Button Content="Wybierz plik xlsx/csv…" Command="{Binding WybierzPlikOgolnyCommand}" IsEnabled="{Binding CzyNieZajety}" />
                     <TextBlock Text="{Binding SciezkaOgolna}" VerticalAlignment="Center" Margin="12,0,0,0"
                                TextTrimming="CharacterEllipsis" MaxWidth="400" />
                 </StackPanel>
@@ -129,8 +131,8 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                    <ui:Button Content="Podgląd" Appearance="Primary" Command="{Binding PodgladOgolnyKomendaCommand}" />
-                    <ui:Button Content="Zastosuj import ogólny" Margin="8,0,0,0" Command="{Binding ZastosujOgolnyCommand}" />
+                    <ui:Button Content="Podgląd" Appearance="Primary" Command="{Binding PodgladOgolnyKomendaCommand}" IsEnabled="{Binding CzyNieZajety}" />
+                    <ui:Button Content="Zastosuj import ogólny" Margin="8,0,0,0" Command="{Binding ZastosujOgolnyCommand}" IsEnabled="{Binding MaPodgladOgolny}" />
                     <TextBlock Text="{Binding LiczbaPodgladOgolny, StringFormat=Do dodania: {0}}" VerticalAlignment="Center" Margin="12,0,0,0" />
                 </StackPanel>
 
@@ -167,5 +169,7 @@
                 </ScrollViewer>
             </StackPanel>
         </Expander>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Page>

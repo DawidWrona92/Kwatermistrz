@@ -9,6 +9,9 @@ using Microsoft.Win32;
 
 namespace Kwatermistrz.App.ViewModels;
 
+/// <summary>Pozycja startowa z publicznymi właściwościami dla WPF Binding (ValueTuple ma pola Item1/Item2).</summary>
+public sealed record OpcjaStartu(string Klucz, string Nazwa);
+
 /// <summary>ViewModel kreatora pierwszego uruchomienia (FR-1401): wariant pusty, szablon konfiguracji (FR-1406) lub import z arkusza (FR-1101).</summary>
 public partial class KreatorViewModel : ObservableObject
 {
@@ -39,9 +42,10 @@ public partial class KreatorViewModel : ObservableObject
     [ObservableProperty]
     private string _wybranyStart = SzablonyKonfiguracji.Pusta;
 
-    /// <summary>Lista punktów startu: klucz → opis.</summary>
-    public static IReadOnlyList<(string Klucz, string Nazwa)> Starty { get; } = SzablonyKonfiguracji.Lista
-        .Concat(new[] { ("import", "Import z arkusza Excel (Dane_zrodlowe_Kwatermistrz.xlsx)") })
+    /// <summary>Instancyjna lista opcji — wiązanie ItemsSource={Binding Starty} działa na DataContext kreatora.</summary>
+    public IReadOnlyList<OpcjaStartu> Starty { get; } = SzablonyKonfiguracji.Lista
+        .Select(w => new OpcjaStartu(w.Klucz, w.Nazwa))
+        .Append(new OpcjaStartu("import", "Import z arkusza Excel (Dane_zrodlowe_Kwatermistrz.xlsx)"))
         .ToList();
 
     /// <summary>Ścieżka pliku do importu (wariant „import”).</summary>
@@ -71,7 +75,11 @@ public partial class KreatorViewModel : ObservableObject
     {
         var nazwa = Normalizacja.Przytnij(NazwaRekonstrukcji);
         if (nazwa == null && WybranyStart != "import")
+        {
+            Komunikat = "Podaj nazwę rekonstrukcji, aby rozpocząć.";
             return;
+        }
+        Komunikat = "";
         try
         {
             if (WybranyStart == "import")

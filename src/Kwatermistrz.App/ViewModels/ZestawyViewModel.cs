@@ -82,13 +82,17 @@ public partial class ZestawyViewModel : ObservableObject
             var szukane = Normalizacja.TekstDoPorownania(tekst);
             zapytanie = zapytanie.Where(z => Normalizacja.TekstDoPorownania(z.Nazwa).Contains(szukane));
         }
+        var wybranyId = Wybrany?.Id;
         Wiersze.Clear();
         foreach (var z in zapytanie.OrderBy(z => z.Nazwa, StringComparer.CurrentCulture))
         {
             var (wyprawy, procent, ostatnie) = kalk.StatystykiZestawu(z);
             Wiersze.Add(new WierszZestawu(z, wyprawy, procent, ostatnie));
         }
+        Wybrany = Wiersze.FirstOrDefault(w => w.Id == wybranyId);
     }
+
+    partial void OnWybranyChanged(WierszZestawu? value) => OdswiezPakowanie();
 
     partial void OnFiltrTekstChanged(string value) => Odswiez();
     partial void OnTylkoSzkiceChanged(bool value) => Odswiez();
@@ -153,7 +157,21 @@ public partial class ZestawyViewModel : ObservableObject
     {
         if (wiersz == null)
             return;
+        if (_dane.Wyprawy.Any(w => !w.CzyUsunieta && w.ZestawId == wiersz.Id))
+        {
+            System.Windows.MessageBox.Show(
+                "Nie można usunąć zestawu używanego na wyprawach. Najpierw zmień powiązania historycznych wypraw.",
+                "Kwatermistrz", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        var wynik = System.Windows.MessageBox.Show(
+            $"Czy na pewno usunąć zestaw „{wiersz.Zestaw.Nazwa}”?",
+            "Kwatermistrz", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
+        if (wynik != System.Windows.MessageBoxResult.Yes)
+            return;
         _dane.Zestawy.Remove(wiersz.Zestaw);
+        if (Wybrany?.Id == wiersz.Id)
+            Wybrany = null;
         _magazyn.ZapiszDebounce(_dane);
         Odswiez();
     }

@@ -97,8 +97,14 @@
                      SelectedItem="{Binding Wybrana}"
                      HeadersVisibility="Column">
             <DataGrid.Columns>
-                <DataGridCheckBoxColumn Header="Por." Width="36"
-                                         Binding="{Binding ZaznaczonaDoPorownania, Mode=TwoWay}" />
+                <DataGridTemplateColumn Header="Por." Width="54" MinWidth="54">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding ZaznaczonaDoPorownania, Mode=TwoWay}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTextColumn Header="#" Binding="{Binding MiejsceWRankingu}" Width="36" />
                 <DataGridTextColumn Header="Nazwa" Binding="{Binding NazwaPelna}" Width="*" />
                 <DataGridTextColumn Header="Strona" Binding="{Binding NazwyStron}" Width="90" />

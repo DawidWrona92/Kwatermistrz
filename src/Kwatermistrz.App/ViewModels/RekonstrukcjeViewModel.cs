@@ -20,6 +20,13 @@ public partial class RekonstrukcjeViewModel : ObservableObject
     /// <summary>Lista rekonstrukcji (nowa instancja przy każdym odczycie — ItemsSource się odświeża po OnPropertyChanged).</summary>
     public IReadOnlyList<Rekonstrukcja> Rekonstrukcje => _dane.Rekonstrukcje.ToList();
 
+    public void Odswiez()
+    {
+        var id = Wybrana?.Id;
+        OnPropertyChanged(nameof(Rekonstrukcje));
+        Wybrana = _dane.Rekonstrukcje.FirstOrDefault(r => r.Id == id);
+    }
+
     /// <summary>Wybrana rekonstrukcja do edycji.</summary>
     [ObservableProperty]
     private Rekonstrukcja? _wybrana;

@@ -123,9 +123,12 @@ public partial class ImporterKwatermistrz
         daneBazowe.Zestawy.AddRange(dane.Zestawy);
         daneBazowe.Wyprawy.AddRange(dane.Wyprawy);
         daneBazowe.Zadania.AddRange(dane.Zadania);
-        daneBazowe.Ustawienia.DzienZerowy = podglad.DzienZerowy;
-        daneBazowe.Ustawienia.HistoryczneWyprawyWgRok = dane.Ustawienia.HistoryczneWyprawyWgRok;
-        daneBazowe.Ustawienia.DataPierwszejWyprawy = dane.Ustawienia.DataPierwszejWyprawy;
+        // Nie nadpisujemy historycznych liczników ani dnia zerowego w istniejącej bazie.
+        // Nowa instalacja dostaje wartości z arkusza, a istniejąca zachowuje swoje.
+        daneBazowe.Ustawienia.DzienZerowy ??= podglad.DzienZerowy;
+        foreach (var (rok, liczba) in dane.Ustawienia.HistoryczneWyprawyWgRok)
+            daneBazowe.Ustawienia.HistoryczneWyprawyWgRok.TryAdd(rok, liczba);
+        daneBazowe.Ustawienia.DataPierwszejWyprawy ??= dane.Ustawienia.DataPierwszejWyprawy;
         daneBazowe.CzyPierwszeUruchomienie = false;
         return wynik;
     }

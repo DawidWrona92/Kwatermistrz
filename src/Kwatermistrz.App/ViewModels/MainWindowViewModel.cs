@@ -1,3 +1,5 @@
+using System.Windows;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Kwatermistrz.App.Services;
@@ -55,19 +57,105 @@ public partial class MainWindowViewModel : ObservableObject
             _stan.AktualnyEkran = dane.Ustawienia.OstatniEkran;
         // po przywróceniu danych z kopii wszystkie ekrany odświeżają listy (FR-1107)
         ustawienia.DanePrzywrocone += OdswiezWszystkieEkrany;
+        import.DaneZmienione += OdswiezWszystkieEkrany;
+        pakiety.DaneZmienione += OdswiezWszystkieEkrany;
+        // Jedno źródło powiadomień dla zwykłych zapisów (również z innych zakładek).
+        magazyn.DaneZmienione += ZaplanujOdswiezenieDanych;
     }
 
-    /// <summary>Odświeża wszystkie ekrany po przywróceniu danych z kopii (FR-1107).</summary>
+    private bool _odswiezanieZaplanowane;
+
+    /// <summary>
+    /// Jeden sygnał zmiany danych: odświeżenie widoków po zakończeniu bieżącej operacji,
+    /// bez ponownego liczenia wszystkiego przy każdej serializacji lub klawiszu.
+    /// </summary>
+    private void ZaplanujOdswiezenieDanych()
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher == null || dispatcher.HasShutdownStarted)
+            return;
+        if (!dispatcher.CheckAccess())
+        {
+            dispatcher.BeginInvoke(new Action(ZaplanujOdswiezenieDanych), DispatcherPriority.Background);
+            return;
+        }
+        if (_odswiezanieZaplanowane)
+            return;
+        _odswiezanieZaplanowane = true;
+        dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (!_odswiezanieZaplanowane)
+                return; // pełna wymiana danych mogła już odświeżyć wszystkie widoki
+            _odswiezanieZaplanowane = false;
+            OdswiezWidokiZalezne();
+        }), DispatcherPriority.ContextIdle);
+    }
+
+    /// <summary>
+    /// Zwykła edycja: aktualizuje widoki zależne, ale nie przebudowuje aktualnie
+    /// edytowanego formularza (utrata fokusu i niezapisanych zmian).
+    /// Ekran docelowy odświeża się ponadto przy wejściu na niego.
+    /// </summary>
+    private void OdswiezWidokiZalezne()
+    {
+        var aktywny = _stan.AktualnyEkran;
+        if (aktywny != "Slowniki")
+            Slowniki.Odswiez();
+        if (aktywny != "Wyposazenie")
+        {
+            Kategorie.Odswiez();
+            Wyposazenie.Odswiez();
+        }
+        if (aktywny != "Rekonstrukcje")
+            Rekonstrukcje.Odswiez();
+        if (aktywny != "Bronie")
+            Repliki.Odswiez();
+        if (aktywny != "Zestawy")
+            Zestawy.Odswiez();
+        if (aktywny != "Wyprawy")
+            Wyprawy.Odswiez();
+        if (aktywny != "Ustawienia")
+            Ustawienia.Odswiez();
+        Pulpit.Odswiez();
+        Raporty.Odswiez();
+        DoUzupelnienia.Odswiez();
+        if (!string.IsNullOrWhiteSpace(_stan.SzukajTekst))
+            Szukanie.Szukaj(_stan.SzukajTekst);
+        OnPropertyChanged(nameof(RekonstrukcjeLista));
+        OnPropertyChanged(nameof(AktywnaRekonstrukcjaNazwa));
+    }
+
+    /// <summary>Pełny refresh po imporcie/przywróceniu. Resetuje kopie edycji tylko wtedy.</summary>
     private void OdswiezWszystkieEkrany()
     {
+        _odswiezanieZaplanowane = false;
+        // Aktywne ID musi istnieć w nowej bazie. Inaczej wszystkie listy filtrują do zera.
+        var przywroconeId = _dane.Ustawienia.OstatniaRekonstrukcjaId;
+        if (przywroconeId != null && !_dane.Rekonstrukcje.Any(r => r.Id == przywroconeId))
+        {
+            przywroconeId = null;
+            _dane.Ustawienia.OstatniaRekonstrukcjaId = null;
+            _magazyn.ZapiszDebounce(_dane); // napraw filtr również na kolejny restart
+        }
+        if (_stan.AktywnaRekonstrukcjaId != przywroconeId)
+            _stan.AktywnaRekonstrukcjaId = przywroconeId;
+
+        Slowniki.Odswiez();
+        Kategorie.Odswiez();
+        Rekonstrukcje.Odswiez();
+        Ustawienia.Odswiez();
+        Import.OdswiezZrodla();
+        Pakiety.UniewaznijPodgladPoZmianieDanych();
         Pulpit.Odswiez();
         Wyposazenie.Odswiez();
         Repliki.Odswiez();
         Zestawy.Odswiez();
-        Wyprawy.Odswiez();
+        Wyprawy.PrzeladujPoWymianieDanych();
         Raporty.Odswiez();
         DoUzupelnienia.Odswiez();
+        Szukanie.Szukaj(_stan.SzukajTekst);
         OnPropertyChanged(nameof(RekonstrukcjeLista));
+        OnPropertyChanged(nameof(AktywnaRekonstrukcjaId));
         OnPropertyChanged(nameof(AktywnaRekonstrukcjaNazwa));
     }
 
@@ -130,7 +218,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    /// <summary>Import rekonstrukcji z pliku .kwreko: wyodrębnia dane i zdjęcia, scala konfigurację przez pakiet (FR-1405, FR-1404).</summary>
+    /// <summary>Import .kwreko: najpierw walidacja i potwierdzenie, potem kopia + transakcja.</summary>
     [RelayCommand]
     private void ImportujRekonstrukcje()
     {
@@ -145,31 +233,48 @@ public partial class MainWindowViewModel : ObservableObject
             if (dialog.ShowDialog() != true)
                 return;
             var dane = EksportRekonstrukcji.Wczytaj(dialog.FileName);
-            _magazyn.UtworzKopieZapasowa(_dane); // FR-1107: przed importem kopia automatyczna
-            // konfiguracja (słowniki, kategorie, wzory, szablony) przez pakiet z podglądem scalania (FR-1404)
-            var pakiet = PakietKonfiguracji.Eksportuj(dane, "Z eksportu rekonstrukcji");
-            var podglad = ImporterPakietuKonfiguracji.PrzygotujPodglad(_dane, pakiet);
-            var mapy = ImporterPakietuKonfiguracji.Zastosuj(_dane, podglad);
-            // dane rekonstrukcji: pomiń już istniejące, przemapuj Id słowników na lokalne (ponowny import = bez duplikatów)
-            var wynik = ScalaczRekordow.Scal(_dane, dane, mapy);
-            // ustawienia z eksportu (dzień zerowy, liczniki historyczne wg rok) — tylko gdy lokalnie jeszcze pusto
-            if (_dane.Ustawienia.DzienZerowy == null && dane.Ustawienia.DzienZerowy != null)
-                _dane.Ustawienia.DzienZerowy = dane.Ustawienia.DzienZerowy;
-            foreach (var (rok, liczba) in dane.Ustawienia.HistoryczneWyprawyWgRok)
-                _dane.Ustawienia.HistoryczneWyprawyWgRok.TryAdd(rok, liczba);
-            if (_dane.Ustawienia.DataPierwszejWyprawy == null && dane.Ustawienia.DataPierwszejWyprawy != null)
-                _dane.Ustawienia.DataPierwszejWyprawy = dane.Ustawienia.DataPierwszejWyprawy;
-            // zdjęcia do katalogu danych
-            var liczbaZdjec = EksportRekonstrukcji.WyodrebnijZdjecia(dialog.FileName, _magazyn.KatalogDanych);
+            if (dane.SchemaVersion > _dane.SchemaVersion)
+            {
+                Komunikat = "Ten plik pochodzi z nowszej wersji bazy. Zaktualizuj aplikację przed importem.";
+                return;
+            }
+            var decyzja = System.Windows.MessageBox.Show(
+                $"Import obejmuje {dane.Przedmioty.Count} przedmiotów, {dane.Repliki.Count} replik, " +
+                $"{dane.Zestawy.Count} zestawów i {dane.Wyprawy.Count} wypraw.\n" +
+                "Dopasowane identyfikatory zostaną zachowane; istniejące historyczne liczniki " +
+                "i dzień zerowy nie zostaną nadpisane.\n" +
+                "Istniejące zdjęcia o tych samych nazwach nie będą nadpisywane.\n\nKontynuować?",
+                "Import rekonstrukcji — potwierdzenie",
+                System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
+            if (decyzja != System.Windows.MessageBoxResult.Yes)
+                return;
+
+            _magazyn.UtworzKopieZapasowa(_dane);
+            var (wynik, liczbaZdjec) = TransakcjaDanych.Wykonaj(_dane, robocza =>
+            {
+                var pakiet = PakietKonfiguracji.Eksportuj(dane, "Z eksportu rekonstrukcji");
+                var podglad = ImporterPakietuKonfiguracji.PrzygotujPodglad(robocza, pakiet);
+                var mapy = ImporterPakietuKonfiguracji.Zastosuj(robocza, podglad);
+                var scalanie = ScalaczRekordow.Scal(robocza, dane, mapy);
+                robocza.Ustawienia.DzienZerowy ??= dane.Ustawienia.DzienZerowy;
+                foreach (var (rok, liczba) in dane.Ustawienia.HistoryczneWyprawyWgRok)
+                    robocza.Ustawienia.HistoryczneWyprawyWgRok.TryAdd(rok, liczba);
+                robocza.Ustawienia.DataPierwszejWyprawy ??= dane.Ustawienia.DataPierwszejWyprawy;
+                // W przypadku błędu kopiowania zdjęć transakcja danych nie zostaje zatwierdzona.
+                var zdjecia = EksportRekonstrukcji.WyodrebnijZdjecia(dialog.FileName, _magazyn.KatalogDanych);
+                return (scalanie, zdjecia);
+            });
+            _magazyn.ZapiszDebounce(_dane);
             _magazyn.Zapisz(_dane);
+            OdswiezWszystkieEkrany();
             var pominieteInfo = wynik.Pominiete > 0 ? $" (pominięto {wynik.Pominiete} już istniejących)" : "";
-            Komunikat = $"Zaimportowano rekonstrukcję: {_dane.Przedmioty.Count} przedmiotów (łącznie), {_dane.Repliki.Count} replik, " +
-                $"{_dane.Zestawy.Count} zestawów, {_dane.Wyprawy.Count} wypraw, {liczbaZdjec} zdjęć{pominieteInfo}. " +
-                "Nowe słowniki i kategorie dodano automatycznie (aliasami dopasowano istniejące).";
+            Komunikat = $"Zaimportowano rekonstrukcję: {_dane.Przedmioty.Count} przedmiotów (łącznie), " +
+                $"{_dane.Repliki.Count} replik, {_dane.Zestawy.Count} zestawów, " +
+                $"{_dane.Wyprawy.Count} wypraw, {liczbaZdjec} nowych zdjęć{pominieteInfo}.";
         }
         catch (Exception ex)
         {
-            Komunikat = "Błąd importu: " + ex.Message;
+            Komunikat = "Błąd importu. Poprzedni stan zachowano w kopii zapasowej: " + ex.Message;
         }
     }
 
@@ -225,9 +330,20 @@ public partial class MainWindowViewModel : ObservableObject
         get => _stan.AktywnaRekonstrukcjaId;
         set
         {
+            if (_stan.AktywnaRekonstrukcjaId == value)
+                return;
             _stan.AktywnaRekonstrukcjaId = value;
+            _dane.Ustawienia.OstatniaRekonstrukcjaId = value;
+            _magazyn.ZapiszDebounce(_dane);
             OnPropertyChanged(nameof(AktywnaRekonstrukcjaId));
             OnPropertyChanged(nameof(AktywnaRekonstrukcjaNazwa));
+            Pulpit.Odswiez();
+            Wyposazenie.Odswiez();
+            Repliki.Odswiez();
+            Zestawy.Odswiez();
+            Wyprawy.Odswiez();
+            Raporty.Odswiez();
+            DoUzupelnienia.Odswiez();
         }
     }
 
@@ -243,9 +359,12 @@ public partial class MainWindowViewModel : ObservableObject
         get => _stan.AktualnyEkran;
         set
         {
+            if (_stan.AktualnyEkran == value)
+                return;
             _stan.AktualnyEkran = value;
-            OnPropertyChanged();
             _dane.Ustawienia.OstatniEkran = value;
+            _magazyn.ZapiszDebounce(_dane);
+            OnPropertyChanged();
         }
     }
 

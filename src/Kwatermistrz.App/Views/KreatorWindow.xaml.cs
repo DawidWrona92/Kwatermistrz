@@ -4,7 +4,7 @@ using Kwatermistrz.App.ViewModels;
 
 namespace Kwatermistrz.App.Views;
 
-/// <summary>Kreator pierwszego uruchomienia (FR-1401). W tym etapie tylko wariant „pusta aplikacja”.</summary>
+/// <summary>Kreator pierwszego uruchomienia (FR-1401): pusty, przykładowy lub import z Excel.</summary>
 public partial class KreatorWindow : Window
 {
     public KreatorWindow()
@@ -24,8 +24,8 @@ public partial class KreatorWindow : Window
     /// <summary>Zapisuje wybór punktu startu (radio „Start”; IsChecked jest jednokierunkowe przez MultiBinding, więc wybór trafia do ViewModelu tutaj).</summary>
     private void Start_Checked(object sender, RoutedEventArgs e)
     {
-        if (sender is RadioButton { DataContext: ValueTuple<string, string> start }
+        if (sender is RadioButton { DataContext: OpcjaStartu start }
             && DataContext is KreatorViewModel vm)
-            vm.WybranyStart = start.Item1;
+            vm.WybranyStart = start.Klucz;
     }
 }

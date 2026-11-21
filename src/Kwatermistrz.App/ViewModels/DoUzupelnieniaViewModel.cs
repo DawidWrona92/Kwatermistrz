@@ -14,6 +14,10 @@ public class PozycjaDoUzupelnienia
     public string Opis { get; set; } = "";
     public string? Ekran { get; set; }
     public string? RekordId { get; set; }
+
+    public bool MoznaOtworzyc => Ekran != null;
+    public bool MoznaPotwierdzic => Rodzaj is "Przedmiot z importu" or "Replika z importu"
+        or "Przedmiot do uzupełnienia" or "Licznik do weryfikacji";
 }
 
 /// <summary>ViewModel widoku „Do uzupełnienia” (FR-1204): jedna lista rzeczy wymagających decyzji lub danych.</summary>
@@ -117,12 +121,22 @@ public partial class DoUzupelnieniaViewModel : ObservableObject
         OnPropertyChanged(nameof(Liczba));
     }
 
+    /// <summary>Prosi okno główne o otwarcie powiązanego rekordu; nie zmienia danych.</summary>
+    public event Action<string, string?>? PrzejdzDo;
+
+    [RelayCommand]
+    private void Przejrzyj(PozycjaDoUzupelnienia? pozycja)
+    {
+        if (pozycja?.Ekran != null)
+            PrzejdzDo?.Invoke(pozycja.Ekran, pozycja.RekordId);
+    }
+
     /// <summary>Potwierdza przegląd pozycji (FR-1110) — czyści tylko flagę odpowiadającą rodzajowi pozycji;
     /// potwierdzenie samego licznika nie zamyka też szkicu „do uzupełnienia” ani znacznika z importu.</summary>
     [RelayCommand]
     private void Potwierdz(PozycjaDoUzupelnienia? pozycja)
     {
-        if (pozycja?.RekordId == null)
+        if (pozycja?.RekordId == null || !pozycja.MoznaPotwierdzic)
             return;
         switch (pozycja.Rodzaj)
         {
